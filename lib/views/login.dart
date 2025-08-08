@@ -1,8 +1,33 @@
+import 'package:editorial/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'homelayout.dart';
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+  LoginPage({super.key});
+  
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+final AuthService _authService = AuthService();
+
+void _handleLogin(BuildContext context) async {
+  final email = emailController.text.trim();
+  final password = passwordController.text.trim();
+
+  final user = await _authService.login(email, password);
+
+  if(user != null){
+    Navigator.pushReplacement(
+      context, 
+      MaterialPageRoute(builder: (context) => const HomeLayout()),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Credenciales Incorrectas")),
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +60,9 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               TextField(
+                controller: emailController,
                 decoration: InputDecoration(
-                  labelText: 'Username',
+                  labelText: 'Correo',
                   prefixIcon: Icon(Icons.person),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -45,6 +71,7 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               TextField(
+                controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'Password',
@@ -58,12 +85,7 @@ class LoginPage extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const HomeLayout()),
-                    );
-                  },
+                  onPressed: ()  => _handleLogin(context),
 
 
                   style: ElevatedButton.styleFrom(
