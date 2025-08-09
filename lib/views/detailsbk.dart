@@ -34,7 +34,7 @@ class DetalleLibroPage extends StatelessWidget {
             // 📘 Tarjeta del libro
             Expanded(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
+                constraints: const BoxConstraints(maxWidth: 300),
                 child: Card(
                   elevation: 8,
                   shape: RoundedRectangleBorder(
@@ -115,6 +115,8 @@ class DetalleLibroPage extends StatelessWidget {
                               _buildActionButton(Icons.attach_money, 'Vender'),
                               const SizedBox(height: 12),
                               _buildActionButton(Icons.remove_circle, 'Dar de baja'),
+                              const SizedBox(height: 12),
+                              _buildActionButton(Icons.download, 'Descargar'),
                             ],
                           ),
                         ],
