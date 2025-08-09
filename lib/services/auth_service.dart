@@ -15,4 +15,19 @@ class AuthService {
       return null;
     }
   }
+
+
+  Future<String> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return 'Si el correo está registrado, recibirás un enlace de recuperación.';
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-email') {
+        return 'Por favor ingresa un correo válido.';
+      }
+      return 'Si el correo está registrado, recibirás un enlace de recuperación.';
+    } catch (_) {
+      return 'Ocurrió un error al intentar enviar el correo. Intenta más tarde.';
+    }
+  }
 }

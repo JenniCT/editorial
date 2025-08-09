@@ -81,6 +81,39 @@ void _handleLogin(BuildContext context) async {
                   ),
                 ),
               ),
+              TextButton(
+                onPressed: () {
+                  showDialog(
+                    context: context, 
+                    builder: (context){
+                      final TextEditingController emailController = TextEditingController();
+                      return AlertDialog(
+                        title: const Text('Recuperar Contraseña'),
+                        content: TextField(
+                          controller: emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Correo electronico'
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () async {
+                              final email = emailController.text.trim();
+                              final message = await _authService.sendPasswordResetEmail(email);
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(message)),
+                              ); // Cerrar el diálogo
+                            },
+                            child: const Text('Enviar'),
+                          )
+                        ],
+                      );
+                    }
+                  );
+                }, 
+                child: const Text('¿Olvidaste tu contraseña?'),
+              ),
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
