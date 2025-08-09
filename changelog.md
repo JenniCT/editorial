@@ -1,24 +1,22 @@
 📝 INKVENTORY Changelog
-V[v0.2.0] - 2025-08-09
+V[v0.3.0] - 2025-08-09
 
 Agregados:
-- Implementación del sistema de recuperación de contraseña:
-- Generación de enlace único para restablecimiento.
-- Envío automático de correo al usuario con plantilla HTML personalizada.
-- Validación de token y redirección segura al formulario de nueva contraseña.
-- Creación de plantilla HTML para correo de recuperación:
-- Diseño responsivo y profesional con estilo moderno.
-- Inclusión de ícono temporal de tintero como branding provisional.
-- Variables dinámicas para %EMAIL% y %LINK%.
+- Refactorización completa del módulo de login siguiendo el patrón 
+
+MVVM:
+- Separación de responsabilidades en models, views y viewmodels.
+- Creación de LoginViewModel para manejar la lógica de autenticación y recuperación.
+- Vista de login simplificada y enfocada exclusivamente en la interfaz.
+- Integración de respuesta al teclado (Enter) para mejorar la experiencia de usuario.
+- Mejora del flujo de recuperación de contraseña con mensajes seguros y genéricos.
 
 Notas:
-- El sistema ya permite a los usuarios recuperar su acceso de forma segura.
-- Se recomienda reemplazar el ícono temporal por el logo oficial en cuanto esté disponible.
-- Próximo paso: agregar validaciones más robustas y expiración de tokens.
+- La estructura del proyecto ahora es más escalable y mantenible.
+- Se recomienda aplicar el mismo patrón MVVM a los siguientes módulos (Home, Libros, Dashboard).
+- Listo para subir a GitHub como versión estable de login.
 
 Tech Stack:
 - Flutter Desktop
-- Firebase (Auth + Core)
-- HTML5 + CSS3
-
-
+- Firebase Auth
+- Arquitectura MVVM

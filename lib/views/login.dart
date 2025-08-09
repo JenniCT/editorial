@@ -1,37 +1,69 @@
-import 'package:editorial/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import '../viewmodels/login_viewmodel.dart';
 import 'homelayout.dart';
 
-class LoginPage extends StatelessWidget {
-  LoginPage({super.key});
-  
+class LoginView extends StatefulWidget {
+  const LoginView({super.key});
+
+  @override
+  State<LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
+  final LoginViewModel viewModel = LoginViewModel();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-final AuthService _authService = AuthService();
+  void _handleLogin() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
 
-void _handleLogin(BuildContext context) async {
-  final email = emailController.text.trim();
-  final password = passwordController.text.trim();
+    final user = await viewModel.login(email, password);
+    if (user != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeLayout()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(viewModel.errorMessage ?? 'Error desconocido')),
+      );
+    }
+  }
 
-  final user = await _authService.login(email, password);
-
-  if(user != null){
-    Navigator.pushReplacement(
-      context, 
-      MaterialPageRoute(builder: (context) => const HomeLayout()),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Credenciales Incorrectas")),
+  void _showPasswordResetDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final TextEditingController resetController = TextEditingController();
+        return AlertDialog(
+          title: const Text('Recuperar Contraseña'),
+          content: TextField(
+            controller: resetController,
+            decoration: const InputDecoration(labelText: 'Correo electrónico'),
+          ),
+          actions: [
+            TextButton(
+              
+              onPressed: () async {
+                final message = await viewModel.sendPasswordResetEmail(resetController.text.trim());
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(message)),
+                );
+              },
+              child: const Text('Enviar'),
+            ),           
+          ],
+        );
+      },
     );
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.lightBlue[50],
       body: Center(
         child: Container(
           padding: const EdgeInsets.all(24.0),
@@ -39,7 +71,7 @@ void _handleLogin(BuildContext context) async {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16.0),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
                 color: Colors.black12,
                 blurRadius: 10,
@@ -63,7 +95,7 @@ void _handleLogin(BuildContext context) async {
                 controller: emailController,
                 decoration: InputDecoration(
                   labelText: 'Correo',
-                  prefixIcon: Icon(Icons.person),
+                  prefixIcon: const Icon(Icons.person),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -75,52 +107,22 @@ void _handleLogin(BuildContext context) async {
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock),
+                  prefixIcon: const Icon(Icons.lock),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                onSubmitted: (_) => _handleLogin(),
               ),
               TextButton(
-                onPressed: () {
-                  showDialog(
-                    context: context, 
-                    builder: (context){
-                      final TextEditingController emailController = TextEditingController();
-                      return AlertDialog(
-                        title: const Text('Recuperar Contraseña'),
-                        content: TextField(
-                          controller: emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Correo electronico'
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () async {
-                              final email = emailController.text.trim();
-                              final message = await _authService.sendPasswordResetEmail(email);
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(message)),
-                              ); // Cerrar el diálogo
-                            },
-                            child: const Text('Enviar'),
-                          )
-                        ],
-                      );
-                    }
-                  );
-                }, 
+                onPressed: _showPasswordResetDialog,
                 child: const Text('¿Olvidaste tu contraseña?'),
               ),
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: ()  => _handleLogin(context),
-
-
+                  onPressed: _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueAccent,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -138,7 +140,6 @@ void _handleLogin(BuildContext context) async {
           ),
         ),
       ),
-      backgroundColor: Colors.lightBlue[50],
     );
   }
 }

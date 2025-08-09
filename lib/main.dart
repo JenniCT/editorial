@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import '../../services/firestore/config/firebase_options.dart';
+import 'firestore/config/firebase_options.dart';
 import 'views/login.dart';
 import 'views/homelayout.dart';
 
@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/login',
       routes: {
-        '/login': (context) =>  LoginPage(),
+        '/login': (context) =>  LoginView(),
         '/home': (context) => const HomeLayout(),
       },
     );
