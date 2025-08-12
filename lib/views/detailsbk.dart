@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/bookdata.dart';
+import '../models/bookM.dart';
 
 class DetalleLibroPage extends StatelessWidget {
-  final BookData book;
+  final Book book;
   final VoidCallback onBack;
 
   const DetalleLibroPage({
@@ -13,14 +13,9 @@ class DetalleLibroPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            const Text('Detalle del Libro'),
-          ],
-        ),
+        title: const Text('Detalle del Libro'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: onBack,
@@ -31,7 +26,7 @@ class DetalleLibroPage extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 📘 Tarjeta del libro
+            // Tarjeta del libro con portada y detalles
             Expanded(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 300),
@@ -45,41 +40,53 @@ class DetalleLibroPage extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Portada
+                        // Portada del libro con placeholder si no hay imagen
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            book.imageUrl,
-                            height: 500,
-                            width: 300,
-                            fit: BoxFit.cover,
-                          ),
+                          child: book.imagenUrl != null && book.imagenUrl!.isNotEmpty
+                              ? Image.network(
+                                  book.imagenUrl!,
+                                  height: 500,
+                                  width: 300,
+                                  fit: BoxFit.cover,
+                                )
+                              : Container(
+                                  height: 500,
+                                  width: 300,
+                                  color: Colors.grey.shade300,
+                                  child: const Icon(
+                                    Icons.book,
+                                    size: 100,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                         ),
                         const SizedBox(width: 32),
 
-                        // 📋 Detalles
+                        // Detalles del libro
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                book.title,
+                                book.titulo,
                                 style: const TextStyle(
                                   fontSize: 26,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                book.subtitle,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontStyle: FontStyle.italic,
+                              if (book.subtitulo != null && book.subtitulo!.isNotEmpty)
+                                Text(
+                                  book.subtitulo!,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontStyle: FontStyle.italic,
+                                  ),
                                 ),
-                              ),
                               const SizedBox(height: 24),
 
-                              // 📊 Tabla de atributos
+                              // Tabla con atributos
                               Table(
                                 columnWidths: const {
                                   0: FixedColumnWidth(160),
@@ -87,44 +94,42 @@ class DetalleLibroPage extends StatelessWidget {
                                 },
                                 defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                                 children: [
-                                  _buildRow('Autor', book.author),
+                                  _buildRow('Autor', book.autor),
                                   _buildRow('Editorial', book.editorial),
-                                  _buildRow('Colección', book.collection),
-                                  _buildRow('Año', book.year),
-                                  _buildRow('ISBN', book.isbn),
-                                  _buildRow('Edición', book.edition),
-                                  _buildRow('Ejemplares', book.copies),
-                                  _buildRow('Precio', book.price),
-                                  _buildRow('Formato', book.format),
+                                  _buildRow('Colección', book.coleccion ?? '-'),
+                                  _buildRow('Año', book.anio.toString()),
+                                  _buildRow('ISBN', book.isbn ?? '-'),
+                                  _buildRow('Edición', book.edicion.toString()),
+                                  _buildRow('Ejemplares', book.copias.toString()),
+                                  _buildRow('Precio', '\$${book.precio.toStringAsFixed(2)}'),
+                                  _buildRow('Formato', book.formato),
                                 ],
                               ),
-                            
                             ],
                           ),
                         ),
                         const SizedBox(width: 32),
 
-                          // 🎯 Botones alineados verticalmente dentro de la tarjeta
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              _buildActionButton(Icons.edit, 'Editar'),
-                              const SizedBox(height: 12),
-                              _buildActionButton(Icons.volunteer_activism, 'Donar'),
-                              const SizedBox(height: 12),
-                              _buildActionButton(Icons.attach_money, 'Vender'),
-                              const SizedBox(height: 12),
-                              _buildActionButton(Icons.remove_circle, 'Dar de baja'),
-                              const SizedBox(height: 12),
-                              _buildActionButton(Icons.download, 'Descargar'),
-                            ],
-                          ),
-                        ],
-                      ),
+                        // Botones de acción alineados verticalmente
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            _buildActionButton(Icons.edit, 'Editar'),
+                            const SizedBox(height: 12),
+                            _buildActionButton(Icons.volunteer_activism, 'Donar'),
+                            const SizedBox(height: 12),
+                            _buildActionButton(Icons.attach_money, 'Vender'),
+                            const SizedBox(height: 12),
+                            _buildActionButton(Icons.remove_circle, 'Dar de baja'),
+                            const SizedBox(height: 12),
+                            _buildActionButton(Icons.download, 'Descargar'),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                )
-                
+                ),
+              ),
             ),
           ],
         ),
@@ -132,7 +137,7 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  TableRow _buildRow(String label, String value) {
+  TableRow _buildRow(String label, dynamic value) {
     return TableRow(
       children: [
         Padding(
@@ -143,13 +148,13 @@ class DetalleLibroPage extends StatelessWidget {
                 '$label:',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(width: 32), 
+              const SizedBox(width: 32),
             ],
           ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Text(value),
+          child: Text(value?.toString() ?? '-'),
         ),
       ],
     );
@@ -161,7 +166,7 @@ Widget _buildActionButton(IconData icon, String label, {Color? color}) {
     width: 160,
     height: 48,
     child: ElevatedButton.icon(
-      onPressed: () {}, // Acción pendiente
+      onPressed: () {}, // Aquí puedes agregar las acciones correspondientes
       icon: Icon(icon, size: 20),
       label: Text(label),
       style: ElevatedButton.styleFrom(

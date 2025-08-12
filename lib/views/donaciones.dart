@@ -80,7 +80,7 @@ class _DashboardCard extends StatelessWidget {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: Colors.transparent,
               child: Icon(icon, color: color),
             ),
             const SizedBox(width: 16),

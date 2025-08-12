@@ -1,28 +1,34 @@
 import 'package:flutter/material.dart';
-import '../models/bookdata.dart';
+import '../models/bookM.dart';
+import '../viewmodels/bookVM.dart';
 import 'addbk.dart';
 
-class InventarioPage extends StatelessWidget {
-  final Function(BookData) onBookSelected;
+class InventarioPage extends StatefulWidget {
+  final Function(Book) onBookSelected;
+
   const InventarioPage({required this.onBookSelected, super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final book = BookData(
-      imageUrl: 'https://th.bing.com/th/id/R.96daf80eb401e6eca4c96e5c6a2ab7ac?rik=HpeztcqjJWyrzw&pid=ImgRaw&r=0',
-      title: 'Cien años de soledad',
-      subtitle: 'Una obra maestra del realismo mágico',
-      author: 'Gabriel García Márquez',
-      editorial: 'Sudamericana',
-      collection: 'Clásicos Latinoamericanos',
-      year: '1967',
-      isbn: '9784361878',
-      edition: '1ª',
-      copies: '5',
-      price: '\$20.00',
-      format: 'Impreso',
-    );
+  State<InventarioPage> createState() => _InventarioPageState();
+}
 
+class _InventarioPageState extends State<InventarioPage> {
+  final BookViewModel _viewModel = BookViewModel();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -31,7 +37,6 @@ class InventarioPage extends StatelessWidget {
           // BARRA DE BÚSQUEDA
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 width: 800,
@@ -39,19 +44,14 @@ class InventarioPage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(50),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 12,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 3))],
                 ),
                 child: Row(
                   children: [
                     const SizedBox(width: 16),
                     Expanded(
                       child: TextField(
+                        controller: _searchController,
                         textAlignVertical: TextAlignVertical.center,
                         decoration: InputDecoration(
                           hintText: 'Buscar libros...',
@@ -73,123 +73,43 @@ class InventarioPage extends StatelessWidget {
               const CircleAvatar(
                 radius: 20,
                 backgroundColor: Colors.blueAccent,
-                child: Text(
-                  'EU',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text('EU', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
-              
             ],
           ),
 
           SizedBox(height: MediaQuery.of(context).size.height * 0.04),
 
-          // TITULO Y BOTONES
+          // TÍTULO Y BOTONES
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Libros',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
+              const Text('Libros', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
               Row(
                 children: [
-                  // FILTRAR
-                  Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        )
-                      ],
-                      borderRadius: BorderRadius.circular(12)
-                    ),
-                    child: OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.filter_list),
-                      label: const Text('Filtrar'),
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.grey[700],
-                        side: BorderSide.none,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12), // Bordes redondeados
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      ),
-                    ),
-                  ),
-                  
+                  // Botón FILTRAR
+                  _buildOutlinedButton(Icons.filter_list, 'Filtrar', () {}),
                   const SizedBox(width: 12),
-
-                  // EXPORTAR
-                  Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.download),
-                      label: const Text('Exportar'),
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.grey[700],
-                        side: BorderSide.none,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      ),
-                    ),
-                  ),
-                  
+                  // Botón EXPORTAR
+                  _buildOutlinedButton(Icons.download, 'Exportar', () {}),
                   const SizedBox(width: 12),
-
-                  // AGREGAR LIBRO
-                  Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
+                  // Botón AGREGAR LIBRO
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('Agregar libro'),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AddBookDialog(
+                          onAdd: (newBook) => _viewModel.addBook(newBook),
                         ),
-                      ],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: const Text('Agregar libro'),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AddBookDialog(
-                            onAdd: (newBook) {
-                              print('Libro agregado: ${newBook.title}');
-                            },
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        backgroundColor: Colors.blueAccent,
-                        foregroundColor: Colors.white,
-                      ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
                     ),
                   ),
                 ],
@@ -197,108 +117,130 @@ class InventarioPage extends StatelessWidget {
             ],
           ),
 
-          // TABLA
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // ENCABEZADO
-                Row(
-                  children: const [
-                    Expanded(child: Text('Portada', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('Título', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('Subtítulo', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('Autor', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('Editorial', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('Colección', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('Año', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('ISBN', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('Edición', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('Ejemplares', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('Precio', style: TextStyle(fontWeight: FontWeight.bold))),
-                    VerticalDivider(),
-                    Expanded(child: Text('Formato', style: TextStyle(fontWeight: FontWeight.bold))),
-                  ],
-                ),
-                const Divider(),
+          // TABLA DE LIBROS
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))],
+              ),
+              child: Column(
+                children: [
+                  // Encabezados
+                  _buildHeaderRow(),
+                  const Divider(),
 
-                // FILAS
-                BookRow(
-                  imageUrl: book.imageUrl,
-                  title: book.title,
-                  subtitle: book.subtitle,
-                  author: book.author,
-                  editorial: book.editorial,
-                  collection: book.collection,
-                  year: book.year,
-                  isbn: book.isbn,
-                  edition: book.edition,
-                  copies: book.copies,
-                  price: book.price,
-                  format: book.format,
-                  onTap: () => onBookSelected(book),
-                ),
-                const Divider(),
-                BookRow(
-                  imageUrl: book.imageUrl,
-                  title: book.title,
-                  subtitle: book.subtitle,
-                  author: book.author,
-                  editorial: book.editorial,
-                  collection: book.collection,
-                  year: book.year,
-                  isbn: book.isbn,
-                  edition: book.edition,
-                  copies: book.copies,
-                  price: book.price,
-                  format: book.format,
-                  onTap: () => onBookSelected(book),
-                ),
-                const Divider(),
-                BookRow(
-                  imageUrl: book.imageUrl,
-                  title: book.title,
-                  subtitle: book.subtitle,
-                  author: book.author,
-                  editorial: book.editorial,
-                  collection: book.collection,
-                  year: book.year,
-                  isbn: book.isbn,
-                  edition: book.edition,
-                  copies: book.copies,
-                  price: book.price,
-                  format: book.format,
-                  onTap: () => onBookSelected(book),
-                ),
-                const Divider(),
-              ],
+                  // Lista dinámica desde Firestore
+                  Expanded(
+                    child: StreamBuilder<List<Book>>(
+                      stream: _viewModel.getBooksStream(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(child: Text('No hay libros disponibles'));
+                        }
+
+                        final query = _searchQuery.toLowerCase();
+                        final books = snapshot.data!
+                            .where((book) =>
+                                (book.titulo).toLowerCase().contains(query) || 
+                                (book.autor).toLowerCase().contains(query) ||
+                                (book.subtitulo ?? '').toLowerCase().contains(query) ||
+                                (book.editorial).toLowerCase().contains(query) ||
+                                (book.coleccion ?? '').toLowerCase().contains(query) ||
+                                (book.isbn ?? '').toLowerCase().contains(query) ||
+                                (book.formato).toLowerCase().contains(query))
+                            .toList();
+
+
+                        return ListView.separated(
+                          itemCount: books.length,
+                          separatorBuilder: (_, __) => const Divider(),
+                          itemBuilder: (context, index) {
+                            final book = books[index];
+                            return BookRow(
+                              imageUrl: book.imagenUrl ?? '',
+                              title: book.titulo,
+                              subtitle: book.subtitulo ?? '-',
+                              author: book.autor,
+                              editorial: book.editorial,
+                              collection: book.coleccion ?? '-',
+                              year: book.anio.toString(),
+                              isbn: book.isbn ?? '-',
+                              edition: book.edicion.toString(),
+                              copies: book.copias.toString(),
+                              price: '\$${book.precio.toStringAsFixed(2)}',
+                              format: book.formato,
+                              onTap: () => widget.onBookSelected(book),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 20),
         ],
       ),
+    );
+  }
+
+  Widget _buildOutlinedButton(IconData icon, String text, VoidCallback onPressed) {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(text),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.grey[700],
+          side: BorderSide.none,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderRow() {
+    const headerStyle = TextStyle(fontWeight: FontWeight.bold);
+    return Row(
+      children: const [
+        Expanded(child: Text('Portada', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Título', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Subtítulo', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Autor', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Editorial', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Colección', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Año', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('ISBN', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Edición', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Ejemplares', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Precio', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Formato', style: headerStyle)),
+      ],
     );
   }
 }
@@ -330,17 +272,17 @@ class BookRow extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Expanded(child: Image.network(imageUrl, height: 60, fit: BoxFit.cover)),
+          Expanded(child: Image.network(imageUrl, height: 60, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Icon(Icons.image_not_supported))),
           const VerticalDivider(),
-          Expanded(child: Text(title)),
+          Expanded(child: Text(title, overflow: TextOverflow.ellipsis)),
           const VerticalDivider(),
-          Expanded(child: Text(subtitle)),
+          Expanded(child: Text(subtitle, overflow: TextOverflow.ellipsis)),
           const VerticalDivider(),
-          Expanded(child: Text(author)),
+          Expanded(child: Text(author, overflow: TextOverflow.ellipsis)),
           const VerticalDivider(),
-          Expanded(child: Text(editorial)),
+          Expanded(child: Text(editorial, overflow: TextOverflow.ellipsis)),
           const VerticalDivider(),
-          Expanded(child: Text(collection)),
+          Expanded(child: Text(collection, overflow: TextOverflow.ellipsis)),
           const VerticalDivider(),
           Expanded(child: Text(year)),
           const VerticalDivider(),

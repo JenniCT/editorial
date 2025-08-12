@@ -8,7 +8,7 @@ import '../views/ventas.dart';
 import '../views/analisis.dart';
 import '../views/settings.dart';
 import '../views/detailsbk.dart';
-import '../models/bookdata.dart';
+import '../models/bookM.dart';
 
 class HomeLayout extends StatefulWidget {
   const HomeLayout({super.key});
@@ -19,7 +19,7 @@ class HomeLayout extends StatefulWidget {
 
 class _HomeLayoutState extends State<HomeLayout> {
   final SidebarXController _controller = SidebarXController(selectedIndex: 0);
-  BookData? selectedBook;
+  Book? selectedBook;
   bool showingDetail = false;
 
   final List<String> labels = [
@@ -32,7 +32,7 @@ class _HomeLayoutState extends State<HomeLayout> {
     'Log out',
   ];
 
-  void handleBookSelection(BookData book) {
+  void handleBookSelection(Book book) {
     setState(() {
       selectedBook = book;
       showingDetail = true;
