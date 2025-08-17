@@ -56,6 +56,9 @@ class BookViewModel {
               imagenUrl: data['imagenUrl'],
               estado: data['estado'] ?? true,
               fechaRegistro: (data['fechaRegistro'] as Timestamp).toDate(),
+              estante: data['estante'] ?? 0,
+              almacen: data['almacen'] ?? 0,
+              areaConocimiento: data['areaConocimiento'] ?? '',
             );
           }).toList();
         });

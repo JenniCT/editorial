@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Book {
   final String? id;
   final File? imagenFile;
-  final String? imagenUrl; 
+  final String? imagenUrl;
   final String titulo;
   final String? subtitulo;
   final String autor;
@@ -13,7 +13,10 @@ class Book {
   final int anio;
   final String? isbn;
   final int edicion;
+  final int estante;
+  final int almacen;
   final int copias;
+  final String areaConocimiento;
   final double precio;
   final String formato;
   final bool estado;
@@ -31,7 +34,10 @@ class Book {
     required this.anio,
     this.isbn,
     required this.edicion,
+    required this.estante,
+    required this.almacen,
     required this.copias,
+    required this.areaConocimiento,
     required this.precio,
     required this.formato,
     required this.estado,
@@ -39,9 +45,17 @@ class Book {
   });
 
   factory Book.fromMap(Map<String, dynamic> map, String documentId) {
+    int est = map['estante'] ?? 0;
+    int alm = map['almacen'] ?? 0;
+    int total = map['copias'] ?? map['totalEjemplares'] ?? (est + alm);
+
+    // Autocompletar si falta uno
+    if (est == 0 && total > 0) est = total - alm;
+    if (alm == 0 && total > 0) alm = total - est;
+
     return Book(
       id: documentId,
-      imagenFile: null,  // No se puede recuperar la imagenFile desde Firestore
+      imagenFile: null,
       imagenUrl: map['imagenUrl'] as String?,
       titulo: map['titulo'] ?? '',
       subtitulo: map['subtitulo'] as String?,
@@ -51,12 +65,37 @@ class Book {
       anio: (map['anio'] is int) ? map['anio'] : int.tryParse(map['anio'].toString()) ?? 0,
       isbn: map['isbn'] as String?,
       edicion: (map['edicion'] is int) ? map['edicion'] : int.tryParse(map['edicion'].toString()) ?? 1,
-      copias: (map['copias'] is int) ? map['copias'] : int.tryParse(map['copias'].toString()) ?? 1,
+      estante: est,
+      almacen: alm,
+      copias: total,
+      areaConocimiento: map['areaConocimiento'] ?? 'Sin definir',
       precio: (map['precio'] is double) ? map['precio'] : double.tryParse(map['precio'].toString()) ?? 0.0,
       formato: map['formato'] ?? '',
       estado: map['estado'] ?? true,
       fechaRegistro: (map['fechaRegistro'] as Timestamp).toDate(),
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'imagenUrl': imagenUrl,
+      'titulo': titulo,
+      'subtitulo': subtitulo,
+      'autor': autor,
+      'editorial': editorial,
+      'coleccion': coleccion,
+      'anio': anio,
+      'isbn': isbn,
+      'edicion': edicion,
+      'estante': estante,
+      'almacen': almacen,
+      'copias': copias,
+      'areaConocimiento': areaConocimiento,
+      'precio': precio,
+      'formato': formato,
+      'estado': estado,
+      'fechaRegistro': Timestamp.fromDate(fechaRegistro),
+    };
   }
 
   Book copyWith({
@@ -71,7 +110,10 @@ class Book {
     int? anio,
     String? isbn,
     int? edicion,
+    int? estante,
+    int? almacen,
     int? copias,
+    String? areaConocimiento,
     double? precio,
     String? formato,
     bool? estado,
@@ -89,31 +131,14 @@ class Book {
       anio: anio ?? this.anio,
       isbn: isbn ?? this.isbn,
       edicion: edicion ?? this.edicion,
+      estante: estante ?? this.estante,
+      almacen: almacen ?? this.almacen,
       copias: copias ?? this.copias,
+      areaConocimiento: areaConocimiento ?? this.areaConocimiento,
       precio: precio ?? this.precio,
       formato: formato ?? this.formato,
       estado: estado ?? this.estado,
       fechaRegistro: fechaRegistro ?? this.fechaRegistro,
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      //'id': id, // no se recomienda guardar el id como campo aparte
-      'imagenUrl': imagenUrl,
-      'titulo': titulo,
-      'subtitulo': subtitulo,
-      'autor': autor,
-      'editorial': editorial,
-      'coleccion': coleccion,
-      'anio': anio,
-      'isbn': isbn,
-      'edicion': edicion,
-      'copias': copias,
-      'precio': precio,
-      'formato': formato,
-      'estado': estado,
-      'fechaRegistro': Timestamp.fromDate(fechaRegistro),
-    };
   }
 }

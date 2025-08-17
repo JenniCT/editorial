@@ -4,11 +4,9 @@ import 'package:editorial/models/bookM.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-
 import '../widgets/addbook/image_picker_field.dart';
 import '../widgets/addbook/custom_text_field.dart';
 import '../widgets/addbook/format_dropdown.dart';
-
 import '../viewmodels/bookVM.dart';
 
 class AddBookDialog extends StatefulWidget {
@@ -25,6 +23,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
   final BookViewModel _viewModel = BookViewModel();
 
   String _selectedFormat = 'Impreso';
+  String _selectedAreaConocimiento = 'Sin definir';
   File? _selectedImage;
 
   final TextEditingController _imageUrlController = TextEditingController();
@@ -38,6 +37,20 @@ class _AddBookDialogState extends State<AddBookDialog> {
   final TextEditingController _edicionController = TextEditingController();
   final TextEditingController _copiasController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
+  final TextEditingController _estanteController = TextEditingController();
+  final TextEditingController _almacenController = TextEditingController();
+
+  final List<String> _areasConocimiento = [
+    'Sin definir',
+    'Ciencias Exactas',
+    'Ingeniería',
+    'Ciencias Sociales',
+    'Humanidades',
+    'Arte y Literatura',
+    'Ciencias Naturales',
+    'Salud',
+    'Economía y Negocios'
+  ];
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -50,14 +63,10 @@ class _AddBookDialogState extends State<AddBookDialog> {
   Future<void> _saveBook() async {
     if (_formKey.currentState!.validate()) {
       final book = Book(
-        
         imagenFile: null,
-
-      
         imagenUrl: _imageUrlController.text.isNotEmpty
             ? _imageUrlController.text.trim()
             : null,
-
         titulo: _tituloController.text.trim(),
         subtitulo: _subtituloController.text.isNotEmpty
             ? _subtituloController.text.trim()
@@ -75,6 +84,9 @@ class _AddBookDialogState extends State<AddBookDialog> {
         copias: int.tryParse(_copiasController.text) ?? 1,
         precio: double.tryParse(_precioController.text) ?? 0.0,
         formato: _selectedFormat,
+        estante: int.tryParse(_estanteController.text) ?? 0,
+        almacen: int.tryParse(_almacenController.text) ?? 0,
+        areaConocimiento: _selectedAreaConocimiento,
         estado: true,
         fechaRegistro: DateTime.now(),
       );
@@ -87,8 +99,95 @@ class _AddBookDialogState extends State<AddBookDialog> {
     }
   }
 
+  bool _isUpdating = false;
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _onCopiasChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+
+    final copias = int.tryParse(_copiasController.text) ?? 0;
+    final almacen = int.tryParse(_almacenController.text) ?? 0;
+
+    if (almacen > copias) {
+      _showError('Almacén no puede ser mayor que el número total de copias');
+      _almacenController.text = copias.toString();
+      _estanteController.text = '0';
+    } else {
+      final estante = copias - almacen;
+      if (estante >= 0) {
+        _estanteController.text = estante.toString();
+      }
+    }
+
+    _isUpdating = false;
+  }
+
+  void _onEstanteChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+
+    final copias = int.tryParse(_copiasController.text) ?? 0;
+    final estante = int.tryParse(_estanteController.text) ?? 0;
+
+    if (estante > copias) {
+      _showError('Estante no puede ser mayor que el número total de copias');
+      _estanteController.text = copias.toString();
+      _almacenController.text = '0';
+    } else {
+      final almacen = copias - estante;
+      if (almacen >= 0) {
+        _almacenController.text = almacen.toString();
+      }
+    }
+
+    _isUpdating = false;
+  }
+
+  void _onAlmacenChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+
+    final copias = int.tryParse(_copiasController.text) ?? 0;
+    final almacen = int.tryParse(_almacenController.text) ?? 0;
+
+    if (almacen > copias) {
+      _showError('Almacén no puede ser mayor que el número total de copias');
+      _almacenController.text = copias.toString();
+      _estanteController.text = '0';
+    } else {
+      final estante = copias - almacen;
+      if (estante >= 0) {
+        _estanteController.text = estante.toString();
+      }
+    }
+
+    _isUpdating = false;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _copiasController.addListener(_onCopiasChanged);
+    _estanteController.addListener(_onEstanteChanged);
+    _almacenController.addListener(_onAlmacenChanged);
+  }
+
   @override
   void dispose() {
+    _copiasController.removeListener(_onCopiasChanged);
+    _estanteController.removeListener(_onEstanteChanged);
+    _almacenController.removeListener(_onAlmacenChanged);
+
     _imageUrlController.dispose();
     _tituloController.dispose();
     _subtituloController.dispose();
@@ -100,8 +199,13 @@ class _AddBookDialogState extends State<AddBookDialog> {
     _edicionController.dispose();
     _copiasController.dispose();
     _precioController.dispose();
+    _estanteController.dispose();
+    _almacenController.dispose();
+
     super.dispose();
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +217,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             width: 600,
-            height: 700,
+            height: 750,
             decoration: BoxDecoration(
               color: const Color.fromRGBO(19, 38, 87, 0.3),
               borderRadius: BorderRadius.circular(20),
@@ -146,6 +250,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
                             ),
                             const SizedBox(height: 16),
                             Row(
+                              //TITULO
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
@@ -154,33 +259,30 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                       CustomTextField(
                                         controller: _tituloController,
                                         label: 'Título',
-                                        validator: (value) {
-                                          if (value == null || value.trim().isEmpty) {
-                                            return 'El título es obligatorio';
-                                          }
-                                          return null;
-                                        },
+                                        validator: (value) =>
+                                            value == null || value.trim().isEmpty
+                                                ? 'El título es obligatorio'
+                                                : null,
                                       ),
+                                      // AUTOR
                                       CustomTextField(
                                         controller: _autorController,
                                         label: 'Autor',
-                                        validator: (value) {
-                                          if (value == null || value.trim().isEmpty) {
-                                            return 'El autor es obligatorio';
-                                          }
-                                          return null;
-                                        },
+                                        validator: (value) =>
+                                            value == null || value.trim().isEmpty
+                                                ? 'El autor es obligatorio'
+                                                : null,
                                       ),
+                                      // EDITORIAL
                                       CustomTextField(
                                         controller: _editorialController,
                                         label: 'Editorial',
-                                        validator: (value) {
-                                          if (value == null || value.trim().isEmpty) {
-                                            return 'La editorial es obligatoria';
-                                          }
-                                          return null;
-                                        },
+                                        validator: (value) =>
+                                            value == null || value.trim().isEmpty
+                                                ? 'La editorial es obligatoria'
+                                                : null,
                                       ),
+                                      // AÑO
                                       CustomTextField(
                                         controller: _anioController,
                                         label: 'Año',
@@ -200,14 +302,78 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                         label: 'Colección',
                                         isOptional: true,
                                       ),
+                                      // ÁREA DE CONOCIMIENTO
+                                      FormField<String>(
+                                        initialValue: _selectedAreaConocimiento,
+                                        validator: (value) =>
+                                            value == null || value.isEmpty
+                                                ? 'Selecciona un área de conocimiento válida'
+                                                : null,
+                                        builder: (fieldState) {
+                                          return Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              DropdownButtonFormField<String>(
+                                                value: _selectedAreaConocimiento,
+                                                decoration: InputDecoration(
+                                                  labelText: 'Área de conocimiento',
+                                                  labelStyle: const TextStyle(color: Colors.white),
+                                                  enabledBorder: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    borderSide: const BorderSide(color: Colors.white70),
+                                                  ),
+                                                  focusedBorder: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    borderSide: const BorderSide(color: Color.fromRGBO(47, 65, 87, 1)),
+                                                  ),
+                                                  errorBorder: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    borderSide: const BorderSide(color: Colors.red),
+                                                  ),
+                                                  focusedErrorBorder: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    borderSide: const BorderSide(color: Colors.redAccent),
+                                                  ),
+                                                ),
+                                                dropdownColor: const Color.fromRGBO(30, 50, 100, 1),
+                                                style: const TextStyle(color: Colors.white),
+                                                items: _areasConocimiento.map((area) {
+                                                  return DropdownMenuItem(
+                                                    value: area,
+                                                    child: Text(area),
+                                                  );
+                                                }).toList(),
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    _selectedAreaConocimiento = value ?? 'Sin definir';
+                                                    fieldState.didChange(value);
+                                                  });
+                                                },
+                                              ),
+                                              if (fieldState.hasError)
+                                                Padding(
+                                                  padding: const EdgeInsets.only(top: 4),
+                                                  child: Text(
+                                                    fieldState.errorText ?? '',
+                                                    style: const TextStyle(
+                                                      color: Colors.red,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+
+                                      // FORMATO
+                                      const SizedBox(height: 10),
                                       FormField<String>(
                                         initialValue: _selectedFormat,
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return 'Selecciona un formato válido';
-                                          }
-                                          return null;
-                                        },
+                                        validator: (value) =>
+                                            value == null || value.isEmpty
+                                                ? 'Selecciona un formato válido'
+                                                : null,
                                         builder: (fieldState) {
                                           return Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,19 +408,23 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                   ),
                                 ),
                                 const SizedBox(width: 16),
+                                //SUBTITULO
                                 Expanded(
                                   child: Column(
                                     children: [
+                                      // SUBTITULO
                                       CustomTextField(
                                         controller: _subtituloController,
                                         label: 'Subtítulo',
                                         isOptional: true,
                                       ),
+                                      // ISBN
                                       CustomTextField(
                                         controller: _isbnController,
                                         label: 'ISBN',
                                         isOptional: true,
                                       ),
+                                      // EDICION
                                       CustomTextField(
                                         controller: _edicionController,
                                         label: 'Edición',
@@ -269,6 +439,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                           return null;
                                         },
                                       ),
+                                      //
                                       CustomTextField(
                                         controller: _copiasController,
                                         label: 'Número de copias',
@@ -292,6 +463,34 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                             return 'El precio es obligatorio';
                                           }
                                           if (double.tryParse(value) == null) {
+                                            return 'Debe ser un número válido';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                      CustomTextField(
+                                        controller: _estanteController,
+                                        label: 'Estante',
+                                        isNumeric: true,
+                                        validator: (value) {
+                                          if (value == null || value.trim().isEmpty) {
+                                            return 'El estante es obligatorio';
+                                          }
+                                          if (int.tryParse(value) == null) {
+                                            return 'Debe ser un número válido';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                      CustomTextField(
+                                        controller: _almacenController,
+                                        label: 'Almacén',
+                                        isNumeric: true,
+                                        validator: (value) {
+                                          if (value == null || value.trim().isEmpty) {
+                                            return 'El almacén es obligatorio';
+                                          }
+                                          if (int.tryParse(value) == null) {
                                             return 'Debe ser un número válido';
                                           }
                                           return null;

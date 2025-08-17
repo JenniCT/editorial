@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/bookM.dart';
 import '../viewmodels/bookVM.dart';
+import '../views/import.dart';
+import '../views/export.dart';
 import 'addbk.dart';
 
 class InventarioPage extends StatefulWidget {
@@ -44,7 +46,9 @@ class _InventarioPageState extends State<InventarioPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(50),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 3))],
+                  boxShadow: [
+                    BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 3))
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -58,7 +62,7 @@ class _InventarioPageState extends State<InventarioPage> {
                           hintStyle: TextStyle(color: Colors.grey[600]),
                           border: InputBorder.none,
                           isDense: true,
-                          contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
                         ),
                       ),
                     ),
@@ -73,7 +77,8 @@ class _InventarioPageState extends State<InventarioPage> {
               const CircleAvatar(
                 radius: 20,
                 backgroundColor: Colors.blueAccent,
-                child: Text('EU', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text('EU',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -84,16 +89,26 @@ class _InventarioPageState extends State<InventarioPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Libros', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+              const Text('Libros',
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
               Row(
                 children: [
-                  // Botón FILTRAR
                   _buildOutlinedButton(Icons.filter_list, 'Filtrar', () {}),
                   const SizedBox(width: 12),
-                  // Botón EXPORTAR
-                  _buildOutlinedButton(Icons.download, 'Exportar', () {}),
+                  _buildOutlinedButton(Icons.download, 'Exportar', () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => Dialog(child: ExportarCSVDialog()),
+                    );
+                  }),
                   const SizedBox(width: 12),
-                  // Botón AGREGAR LIBRO
+                  _buildOutlinedButton(Icons.upload, 'Importar', () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => Dialog(child: ImportarCSVDialog()),
+                    );
+                  }),
+                  const SizedBox(width: 12),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
                     label: const Text('Agregar libro'),
@@ -106,8 +121,10 @@ class _InventarioPageState extends State<InventarioPage> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                       backgroundColor: Colors.blueAccent,
                       foregroundColor: Colors.white,
                     ),
@@ -125,15 +142,14 @@ class _InventarioPageState extends State<InventarioPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))],
+                boxShadow: [
+                  BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+                ],
               ),
               child: Column(
                 children: [
-                  // Encabezados
                   _buildHeaderRow(),
                   const Divider(),
-
-                  // Lista dinámica desde Firestore
                   Expanded(
                     child: StreamBuilder<List<Book>>(
                       stream: _viewModel.getBooksStream(),
@@ -148,15 +164,18 @@ class _InventarioPageState extends State<InventarioPage> {
                         final query = _searchQuery.toLowerCase();
                         final books = snapshot.data!
                             .where((book) =>
-                                (book.titulo).toLowerCase().contains(query) || 
+                                (book.titulo).toLowerCase().contains(query) ||
                                 (book.autor).toLowerCase().contains(query) ||
                                 (book.subtitulo ?? '').toLowerCase().contains(query) ||
                                 (book.editorial).toLowerCase().contains(query) ||
                                 (book.coleccion ?? '').toLowerCase().contains(query) ||
                                 (book.isbn ?? '').toLowerCase().contains(query) ||
-                                (book.formato).toLowerCase().contains(query))
+                                (book.formato).toLowerCase().contains(query) ||
+                                (book.estante).toString().contains(query) ||
+                                (book.almacen).toString().contains(query) ||
+                                (book.copias).toString().contains(query) ||
+                                (book.areaConocimiento).toLowerCase().contains(query))
                             .toList();
-
 
                         return ListView.separated(
                           itemCount: books.length,
@@ -174,10 +193,15 @@ class _InventarioPageState extends State<InventarioPage> {
                               isbn: book.isbn ?? '-',
                               edition: book.edicion.toString(),
                               copies: book.copias.toString(),
+                              total: book.copias.toString(), // TotalEjemplares = copies
                               price: '\$${book.precio.toStringAsFixed(2)}',
                               format: book.formato,
+                              estante: book.estante.toString(), // convertido a String
+                              almacen: book.almacen.toString(), // convertido a String
+                              area: book.areaConocimiento,
                               onTap: () => widget.onBookSelected(book),
                             );
+
                           },
                         );
                       },
@@ -235,18 +259,26 @@ class _InventarioPageState extends State<InventarioPage> {
         VerticalDivider(),
         Expanded(child: Text('Edición', style: headerStyle)),
         VerticalDivider(),
-        Expanded(child: Text('Ejemplares', style: headerStyle)),
+        Expanded(child: Text('Copias', style: headerStyle)),
         VerticalDivider(),
         Expanded(child: Text('Precio', style: headerStyle)),
         VerticalDivider(),
         Expanded(child: Text('Formato', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Estante', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Almacén', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Total', style: headerStyle)),
+        VerticalDivider(),
+        Expanded(child: Text('Área de Conocimiento', style: headerStyle)),
       ],
     );
   }
 }
 
 class BookRow extends StatelessWidget {
-  final String imageUrl, title, subtitle, author, editorial, collection, year, isbn, edition, copies, price, format;
+  final String imageUrl, title, subtitle, author, editorial, collection, year, isbn, edition, copies, total, price, format, estante, almacen, area;
   final VoidCallback onTap;
 
   const BookRow({
@@ -260,8 +292,12 @@ class BookRow extends StatelessWidget {
     required this.isbn,
     required this.edition,
     required this.copies,
+    required this.total,
     required this.price,
     required this.format,
+    required this.estante,
+    required this.almacen,
+    required this.area,
     required this.onTap,
     super.key,
   });
@@ -272,7 +308,7 @@ class BookRow extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Expanded(child: Image.network(imageUrl, height: 60, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Icon(Icons.image_not_supported))),
+          Expanded(child: Image.network(imageUrl, height: 60, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported))),
           const VerticalDivider(),
           Expanded(child: Text(title, overflow: TextOverflow.ellipsis)),
           const VerticalDivider(),
@@ -295,6 +331,14 @@ class BookRow extends StatelessWidget {
           Expanded(child: Text(price)),
           const VerticalDivider(),
           Expanded(child: Text(format)),
+          const VerticalDivider(),
+          Expanded(child: Text(estante)),
+          const VerticalDivider(),
+          Expanded(child: Text(almacen)),
+          const VerticalDivider(),
+          Expanded(child: Text(total)), // Aquí TotalEjemplares = copies
+          const VerticalDivider(),
+          Expanded(child: Text(area)),
         ],
       ),
     );
