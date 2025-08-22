@@ -46,6 +46,12 @@ dependencies:
   csv: ^5.0.2
   file_picker: ^6.1.1
   path_provider: ^2.1.2
+  pdf: ^3.10.4
+  qr_flutter: ^4.1.0          # Para generar códigos QR
+  permission_handler: ^11.0.1 # Para manejar permisos
+  share_plus: ^7.2.1          # Para compartir contenido
+
+
 
 
 dev_dependencies:
@@ -71,9 +77,12 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/ocelote.png
+    - assets/siresu.png
+    - assets/unach.png
+    - assets/manita.png
+    - assets/sinportada.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,26 +1,41 @@
 import 'package:flutter/material.dart';
+
+// WIDGETS
 import '../widgets/sidebar.dart';
-import 'package:sidebarx/sidebarx.dart';
+import '../widgets/background.dart';
+
+// MODELO
+import '../models/bookM.dart';
+import '../models/userM.dart';
+
+// VISTAS
 import '../views/dashboard.dart';
-import '../views/inventario.dart';
+import 'stockV.dart';
 import '../views/donaciones.dart';
 import '../views/ventas.dart';
 import '../views/analisis.dart';
 import '../views/settings.dart';
 import '../views/detailsbk.dart';
-import '../models/bookM.dart';
 
 class HomeLayout extends StatefulWidget {
-  const HomeLayout({super.key});
+  final UserModel user;
+
+  const HomeLayout({super.key, required this.user});
 
   @override
   State<HomeLayout> createState() => _HomeLayoutState();
 }
 
 class _HomeLayoutState extends State<HomeLayout> {
-  final SidebarXController _controller = SidebarXController(selectedIndex: 0);
+  int selectedIndex = 0;
   Book? selectedBook;
   bool showingDetail = false;
+  
+  void onItemSelected(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
+  }
 
   final List<String> labels = [
     'Dashboard',
@@ -31,6 +46,7 @@ class _HomeLayoutState extends State<HomeLayout> {
     'Configuracion',
     'Log out',
   ];
+
 
   void handleBookSelection(Book book) {
     setState(() {
@@ -81,14 +97,20 @@ class _HomeLayoutState extends State<HomeLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
+      backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
+      body: Stack(
         children: [
-          Sidebar(controller: _controller),
-          Expanded(
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) {
-                return AnimatedSwitcher(
+          const BackgroundCircles(), 
+          Row(
+            children: [
+              Sidebar(
+                selectedIndex: selectedIndex,
+                onItemSelected: onItemSelected,
+                userEmail: widget.user.email,
+                userRole: widget.user.roleName,
+              ),
+              Expanded(
+                child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   transitionBuilder: (child, animation) => FadeTransition(
                     opacity: animation,
@@ -100,10 +122,10 @@ class _HomeLayoutState extends State<HomeLayout> {
                       child: child,
                     ),
                   ),
-                  child: getView(_controller.selectedIndex),
-                );
-              },
-            ),
+                  child: getView(selectedIndex),
+                ),
+              ),
+            ],
           ),
         ],
       ),

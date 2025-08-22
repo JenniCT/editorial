@@ -1,16 +1,49 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:sidebarx/sidebarx.dart';
 
-class Sidebar extends StatelessWidget {
-  final SidebarXController controller;
+class Sidebar extends StatefulWidget {
+  final int selectedIndex;
+  final Function(int) onItemSelected;
+  final String userEmail;
+  final String userRole;
 
-  const Sidebar({required this.controller, super.key});
+  const Sidebar({
+    required this.selectedIndex,
+    required this.onItemSelected,
+    required this.userEmail,
+    required this.userRole,
+    super.key,
+  });
+
+  @override
+  State<Sidebar> createState() => _SidebarState();
+}
+
+class _SidebarState extends State<Sidebar> {
+  bool isExpanded = false;
+
+  void toggleSidebar() {
+    setState(() {
+      isExpanded = !isExpanded;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(left: 8, top: 8, bottom: 8),
+    final items = [
+      _SidebarItem(icon: Icons.dashboard, label: 'Dashboard'),
+      _SidebarItem(icon: Icons.book, label: 'Libros'),
+      _SidebarItem(icon: Icons.volunteer_activism, label: 'Donaciones'),
+      _SidebarItem(icon: Icons.shopping_cart, label: 'Ventas'),
+      _SidebarItem(icon: Icons.analytics, label: 'Análisis'),
+      _SidebarItem(icon: Icons.settings, label: 'Configuración'),
+      _SidebarItem(icon: Icons.logout, label: 'Cerrar sesión'),
+    ];
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      width: isExpanded ? 220 : 72,
+      margin: const EdgeInsets.all(8),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
@@ -28,60 +61,139 @@ class Sidebar extends StatelessWidget {
                 ),
               ],
             ),
-            child: SidebarX(
-              controller: controller,
-              showToggleButton: true,
-              animationDuration: const Duration(milliseconds: 300),
-              headerBuilder: (context, extended) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  child: Center(
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                CircleAvatar(
+                  radius: 25,
+                  backgroundColor: const Color.fromRGBO(255, 255, 255, 0.9),
+                  child: Icon(
+                    Icons.person,
+                    color: const Color.fromRGBO(47, 65, 87, 0.7),
+                    size: 30,
+                  ),
+                ),
+                if (isExpanded) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Tooltip(
+                      message: widget.userEmail,
+                      child: Text(
+                        widget.userEmail,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Tooltip(
+                      message: widget.userRole,
+                      child: Text(
+                        widget.userRole,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(color: Colors.white24, thickness: 0.8),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 8),
                     child: Text(
-                      'Inkventory',
+                      'MENU',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: extended ? 20 : 0,
-                        fontWeight: FontWeight.bold,
+                        color: Colors.white70,
+                        fontSize: 12,
                         letterSpacing: 1.2,
                       ),
                     ),
                   ),
-                );
-              },
-              theme: SidebarXTheme(
-                decoration: const BoxDecoration(),
-                selectedTextStyle: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+                ],
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(top: 10),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      final isSelected = index == widget.selectedIndex;
+
+                      return GestureDetector(
+                        onTap: () => widget.onItemSelected(index),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isExpanded ? 12 : 0,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color.fromRGBO(255, 255, 255, 0.15)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: isExpanded
+                                ? MainAxisAlignment.start
+                                : MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                item.icon,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.white70,
+                              ),
+                              if (isExpanded) const SizedBox(width: 12),
+                              if (isExpanded)
+                                Expanded(
+                                  child: Text(
+                                    item.label,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-                selectedIconTheme: const IconThemeData(color: Colors.white),
-                iconTheme: const IconThemeData(color: Colors.white70),
-                textStyle: const TextStyle(fontSize: 13, color: Colors.white),
-              ),
-              
-              extendedTheme: SidebarXTheme(
-                width: 220,
-                decoration: const BoxDecoration(),
-                selectedTextStyle: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: IconButton(
+                    icon: Icon(
+                      isExpanded ? Icons.chevron_left : Icons.chevron_right,
+                      color: Colors.white70,
+                    ),
+                    onPressed: toggleSidebar,
+                  ),
                 ),
-                textStyle: const TextStyle(fontSize: 14, color: Colors.white),
-                itemTextPadding: const EdgeInsets.symmetric(horizontal: 16),
-                itemMargin: const EdgeInsets.symmetric(vertical: 8),
-                itemDecoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.transparent,
-                ),
-              ),
-              items: const [
-                SidebarXItem(icon: Icons.dashboard, label: 'Dashboard'),
-                SidebarXItem(icon: Icons.book, label: 'Libros'),
-                SidebarXItem(icon: Icons.volunteer_activism, label: 'Donaciones'),
-                SidebarXItem(icon: Icons.shopping_cart, label: 'Ventas'),
-                SidebarXItem(icon: Icons.analytics, label: 'Analisis'),
-                SidebarXItem(icon: Icons.settings, label: 'Configuración'),
-                SidebarXItem(icon: Icons.logout, label: 'Cerrar sesión'),
               ],
             ),
           ),
@@ -89,4 +201,11 @@ class Sidebar extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SidebarItem {
+  final IconData icon;
+  final String label;
+
+  const _SidebarItem({required this.icon, required this.label});
 }

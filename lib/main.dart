@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firestore/config/firebase_options.dart';
-import 'views/login.dart';
-import 'views/homelayout.dart';
+import 'views/loginv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,8 +21,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/login',
       routes: {
-        '/login': (context) =>  LoginView(),
-        '/home': (context) => const HomeLayout(),
+        '/login': (context) => Login(),
       },
     );
   }

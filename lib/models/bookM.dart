@@ -18,10 +18,10 @@ class Book {
   final int copias;
   final String areaConocimiento;
   final double precio;
-  final String formato;
   final bool estado;
   final DateTime fechaRegistro;
-
+  final String registradoPor;
+  
   Book({
     this.id,
     this.imagenFile,
@@ -39,9 +39,9 @@ class Book {
     required this.copias,
     required this.areaConocimiento,
     required this.precio,
-    required this.formato,
     required this.estado,
     required this.fechaRegistro,
+    required this.registradoPor,
   });
 
   factory Book.fromMap(Map<String, dynamic> map, String documentId) {
@@ -49,7 +49,6 @@ class Book {
     int alm = map['almacen'] ?? 0;
     int total = map['copias'] ?? map['totalEjemplares'] ?? (est + alm);
 
-    // Autocompletar si falta uno
     if (est == 0 && total > 0) est = total - alm;
     if (alm == 0 && total > 0) alm = total - est;
 
@@ -70,9 +69,9 @@ class Book {
       copias: total,
       areaConocimiento: map['areaConocimiento'] ?? 'Sin definir',
       precio: (map['precio'] is double) ? map['precio'] : double.tryParse(map['precio'].toString()) ?? 0.0,
-      formato: map['formato'] ?? '',
       estado: map['estado'] ?? true,
       fechaRegistro: (map['fechaRegistro'] as Timestamp).toDate(),
+      registradoPor: map['registradoPor'] ?? 'desconocido',
     );
   }
 
@@ -92,9 +91,9 @@ class Book {
       'copias': copias,
       'areaConocimiento': areaConocimiento,
       'precio': precio,
-      'formato': formato,
       'estado': estado,
       'fechaRegistro': Timestamp.fromDate(fechaRegistro),
+      'registradoPor': registradoPor,
     };
   }
 
@@ -115,9 +114,9 @@ class Book {
     int? copias,
     String? areaConocimiento,
     double? precio,
-    String? formato,
     bool? estado,
     DateTime? fechaRegistro,
+    String? registradoPor,
   }) {
     return Book(
       id: id ?? this.id,
@@ -136,9 +135,9 @@ class Book {
       copias: copias ?? this.copias,
       areaConocimiento: areaConocimiento ?? this.areaConocimiento,
       precio: precio ?? this.precio,
-      formato: formato ?? this.formato,
       estado: estado ?? this.estado,
       fechaRegistro: fechaRegistro ?? this.fechaRegistro,
+      registradoPor: registradoPor ?? this.registradoPor,
     );
   }
 }

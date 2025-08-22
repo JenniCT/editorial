@@ -3,10 +3,11 @@ import 'dart:ui';
 import 'package:editorial/models/bookM.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+//WIDGETS
 import '../widgets/addbook/image_picker_field.dart';
-import '../widgets/addbook/custom_text_field.dart';
-import '../widgets/addbook/format_dropdown.dart';
+import '../widgets/textfield.dart';
+
 import '../viewmodels/bookVM.dart';
 
 class AddBookDialog extends StatefulWidget {
@@ -22,7 +23,6 @@ class _AddBookDialogState extends State<AddBookDialog> {
   final _formKey = GlobalKey<FormState>();
   final BookViewModel _viewModel = BookViewModel();
 
-  String _selectedFormat = 'Impreso';
   String _selectedAreaConocimiento = 'Sin definir';
   File? _selectedImage;
 
@@ -42,14 +42,14 @@ class _AddBookDialogState extends State<AddBookDialog> {
 
   final List<String> _areasConocimiento = [
     'Sin definir',
-    'Ciencias Exactas',
-    'Ingeniería',
+    'Físico-Matemáticas y Ciencias de la Tierra',
+    'Biología y Química',
+    'Medicina y Ciencias de la Salud',
+    'Humanidades y Ciencias de la Conducta',
     'Ciencias Sociales',
-    'Humanidades',
-    'Arte y Literatura',
-    'Ciencias Naturales',
-    'Salud',
-    'Economía y Negocios'
+    'Biotecnología y Ciencias Agropecuarias',
+    'Ingenierías',
+    'Artes'
   ];
 
   Future<void> _pickImage() async {
@@ -83,22 +83,23 @@ class _AddBookDialogState extends State<AddBookDialog> {
         edicion: int.tryParse(_edicionController.text) ?? 1,
         copias: int.tryParse(_copiasController.text) ?? 1,
         precio: double.tryParse(_precioController.text) ?? 0.0,
-        formato: _selectedFormat,
         estante: int.tryParse(_estanteController.text) ?? 0,
         almacen: int.tryParse(_almacenController.text) ?? 0,
         areaConocimiento: _selectedAreaConocimiento,
         estado: true,
         fechaRegistro: DateTime.now(),
+        registradoPor: FirebaseAuth.instance.currentUser?.uid ?? 'desconocido',
       );
 
-      await _viewModel.addBook(book);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Libro agregado con éxito")),
-      );
-      Navigator.pop(context);
+    
+      await _viewModel.addBook(book, context);
+
+    
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
     }
   }
-
   bool _isUpdating = false;
 
   void _showError(String message) {
@@ -313,81 +314,46 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                           return Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              DropdownButtonFormField<String>(
-                                                value: _selectedAreaConocimiento,
-                                                decoration: InputDecoration(
-                                                  labelText: 'Área de conocimiento',
-                                                  labelStyle: const TextStyle(color: Colors.white),
-                                                  enabledBorder: OutlineInputBorder(
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    borderSide: const BorderSide(color: Colors.white70),
-                                                  ),
-                                                  focusedBorder: OutlineInputBorder(
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    borderSide: const BorderSide(color: Color.fromRGBO(47, 65, 87, 1)),
-                                                  ),
-                                                  errorBorder: OutlineInputBorder(
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    borderSide: const BorderSide(color: Colors.red),
-                                                  ),
-                                                  focusedErrorBorder: OutlineInputBorder(
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    borderSide: const BorderSide(color: Colors.redAccent),
-                                                  ),
-                                                ),
-                                                dropdownColor: const Color.fromRGBO(30, 50, 100, 1),
-                                                style: const TextStyle(color: Colors.white),
-                                                items: _areasConocimiento.map((area) {
-                                                  return DropdownMenuItem(
-                                                    value: area,
-                                                    child: Text(area),
-                                                  );
-                                                }).toList(),
-                                                onChanged: (value) {
-                                                  setState(() {
-                                                    _selectedAreaConocimiento = value ?? 'Sin definir';
-                                                    fieldState.didChange(value);
-                                                  });
-                                                },
-                                              ),
-                                              if (fieldState.hasError)
-                                                Padding(
-                                                  padding: const EdgeInsets.only(top: 4),
-                                                  child: Text(
-                                                    fieldState.errorText ?? '',
-                                                    style: const TextStyle(
-                                                      color: Colors.red,
-                                                      fontSize: 12,
+                                              Container(
+                                                width: double.infinity, // ✅ Ocupa todo el ancho disponible
+                                                child: DropdownButtonFormField<String>(
+                                                  value: _selectedAreaConocimiento,
+                                                  decoration: InputDecoration(
+                                                    labelText: 'Área de conocimiento',
+                                                    labelStyle: const TextStyle(color: Colors.white),
+                                                    enabledBorder: OutlineInputBorder(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      borderSide: const BorderSide(color: Colors.white70),
+                                                    ),
+                                                    focusedBorder: OutlineInputBorder(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      borderSide: const BorderSide(color: Color.fromRGBO(47, 65, 87, 1)),
+                                                    ),
+                                                    errorBorder: OutlineInputBorder(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      borderSide: const BorderSide(color: Colors.red),
+                                                    ),
+                                                    focusedErrorBorder: OutlineInputBorder(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      borderSide: const BorderSide(color: Colors.redAccent),
                                                     ),
                                                   ),
-                                                ),
-                                            ],
-                                          );
-                                        },
-                                      ),
-
-                                      // FORMATO
-                                      const SizedBox(height: 10),
-                                      FormField<String>(
-                                        initialValue: _selectedFormat,
-                                        validator: (value) =>
-                                            value == null || value.isEmpty
-                                                ? 'Selecciona un formato válido'
-                                                : null,
-                                        builder: (fieldState) {
-                                          return Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              FormatDropdown(
-                                                value: _selectedFormat,
-                                                onChanged: (v) {
-                                                  if (v != null) {
+                                                  dropdownColor: const Color.fromRGBO(30, 50, 100, 1),
+                                                  style: const TextStyle(color: Colors.white),
+                                                  isExpanded: true, // ✅ Muy importante para evitar truncamiento
+                                                  items: _areasConocimiento.map((area) {
+                                                    return DropdownMenuItem(
+                                                      value: area,
+                                                      child: Text(area, overflow: TextOverflow.ellipsis),
+                                                    );
+                                                  }).toList(),
+                                                  onChanged: (value) {
                                                     setState(() {
-                                                      _selectedFormat = v;
-                                                      fieldState.didChange(v);
+                                                      _selectedAreaConocimiento = value ?? 'Sin definir';
+                                                      fieldState.didChange(value);
                                                     });
-                                                  }
-                                                },
+                                                  },
+                                                ),
                                               ),
                                               if (fieldState.hasError)
                                                 Padding(
@@ -439,7 +405,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                           return null;
                                         },
                                       ),
-                                      //
+                                      // COPIAS
                                       CustomTextField(
                                         controller: _copiasController,
                                         label: 'Número de copias',
@@ -454,6 +420,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                           return null;
                                         },
                                       ),
+                                      // PRECIO
                                       CustomTextField(
                                         controller: _precioController,
                                         label: 'Precio',
@@ -468,6 +435,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                           return null;
                                         },
                                       ),
+                                      // ESTANTE
                                       CustomTextField(
                                         controller: _estanteController,
                                         label: 'Estante',
@@ -482,6 +450,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                           return null;
                                         },
                                       ),
+                                      // ALMACÉN
                                       CustomTextField(
                                         controller: _almacenController,
                                         label: 'Almacén',
