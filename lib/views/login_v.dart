@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 
 //WIDGETS
 import '../widgets/logintext.dart';
+import '../widgets/background.dart';
 
 //VISTA-MODELO
-import '../viewmodels/loginVM.dart';
+import '../viewmodels/login_vm.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -22,11 +23,12 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
-  void _showPasswordResetDialog() {
+  void _showPasswordResetDialog(BuildContext context, LoginVM viewModel) {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         final TextEditingController resetController = TextEditingController();
+
         return AlertDialog(
           title: const Text('Recuperar Contraseña'),
           content: TextField(
@@ -35,16 +37,22 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
           ),
           actions: [
             TextButton(
-              
               onPressed: () async {
-                final message = await viewModel.sendPasswordResetEmail(resetController.text.trim());
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
+                final navigator = Navigator.of(dialogContext);
+                final messenger = ScaffoldMessenger.of(dialogContext);
+
+                final message = await viewModel.sendPasswordResetEmail(
+                  resetController.text.trim(),
+                );
+
+                if (navigator.canPop()) navigator.pop();
+
+                messenger.showSnackBar(
                   SnackBar(content: Text(message)),
                 );
               },
               child: const Text('Enviar'),
-            ),           
+            ),
           ],
         );
       },
@@ -80,38 +88,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
       backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
       body: Stack(
         children: [
-          // FONDO
-          Positioned(
-            top: 100,
-            left: 50,
-            child: _buildCircle(200, Colors.red),
-          ),
-          Positioned(
-            bottom: 150,
-            right: 80,
-            child: _buildCircle(180, Colors.green),
-          ),
-          Positioned(
-            top: 300,
-            right: 200,
-            child: _buildCircle(150, Colors.purple),
-          ),
-          Positioned(
-            top: 50,
-            left: 1200,
-            child: _buildCircle(200, Colors.red),
-          ),
-          Positioned(
-            bottom: 150,
-            right: 800,
-            child: _buildCircle(180, Colors.green),
-          ),
-          Positioned(
-            top: 400,
-            right: 1000,
-            child: _buildCircle(150, Colors.purple),
-          ),
-
+          const BackgroundCircles(), 
           // FORMULARIO
           Center(
             child: SingleChildScrollView(
@@ -222,7 +199,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                         const SizedBox(height: 20),
                                         TextButton(
                                           onPressed: () {
-                                            _showPasswordResetDialog();
+                                            _showPasswordResetDialog(context, vm);
                                           },
                                           child: const Text(
                                             '¿Olvidaste tu contraseña?',
@@ -237,12 +214,18 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                         const SizedBox(height: 20),
                                         ElevatedButton(
                                           onPressed: () {
-                                            debugPrint('Email: ${vm.emailController.text}');
-                                            debugPrint('Password: ${vm.passwordController.text}');
+                                            final email = vm.emailController.text.trim();
+                                            final password = vm.passwordController.text.trim();
+
+                                            if (email.isEmpty || password.isEmpty) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('Completa todos los campos')),
+                                              );
+                                              return;
+                                            }
+
                                             vm.login(
-                                              email: vm.emailController.text,
-                                              password: vm.passwordController.text,
-                                              context: context,
+                                              context,
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
@@ -253,7 +236,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                             ),
                                           ),
                                           child: const Text(
-                                            'Ingresar',
+                                            'Iniciar sesión',
                                             style: TextStyle(fontSize: 16, color: Colors.white),
                                           ),
                                         ),
@@ -290,15 +273,4 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
     );
   }
 
-  // CIRCULO DIFUMINADO
-  Widget _buildCircle(double size, Color color) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withOpacity(0.4),
-      ),
-    );
-  }
 }

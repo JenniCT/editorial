@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
-
 class BackgroundCircles extends StatelessWidget {
   const BackgroundCircles({super.key});
 

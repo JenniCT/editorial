@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 //MODELO
-import '../models/bookM.dart';
+import '../models/book_m.dart';
 //VISTAMODELO
-import '../viewmodels/bookVM.dart';
+import '../viewmodels/book_vm.dart';
 //VISTAS
 import '../views/import.dart';
-import '../views/export.dart';
-import 'addbk.dart';
+import 'export_v.dart';
+import 'add_bk.dart';
 
 class InventarioPage extends StatefulWidget {
   final Function(Book) onBookSelected;

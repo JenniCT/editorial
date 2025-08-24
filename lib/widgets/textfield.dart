@@ -21,8 +21,7 @@ class CustomTextField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.textInputAction = TextInputAction.done,
     this.onFieldSubmitted,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomTextField> createState() => _CustomTextFieldState();
@@ -47,11 +46,17 @@ class _CustomTextFieldState extends State<CustomTextField> {
           labelText: widget.label,
           labelStyle: const TextStyle(color: Colors.white),
           focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: Color.fromRGBO(47, 65, 87, 1), width: 2),
+            borderSide: const BorderSide(
+              color: Color.fromRGBO(47, 65, 87, 1),
+              width: 2,
+            ),
             borderRadius: BorderRadius.circular(8),
           ),
           enabledBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: Color.fromRGBO(255, 255, 255, 0.9), width: 1.5),
+            borderSide: const BorderSide(
+              color: Color.fromRGBO(255, 255, 255, 0.9),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(8),
           ),
           filled: true,

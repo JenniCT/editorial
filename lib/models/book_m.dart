@@ -140,4 +140,18 @@ class Book {
       registradoPor: registradoPor ?? this.registradoPor,
     );
   }
+  String bookToQrData(Book book) {
+  final data = {
+    'Título': book.titulo,
+    'Autor': book.autor,
+    'Editorial': book.editorial,
+    'Año': book.anio,
+    'ISBN': book.isbn ?? 'Sin ISBN',
+    'Área': book.areaConocimiento,
+    'Copias': book.copias,
+    'Registrado por': book.registradoPor,
+  };
+
+  return data.entries.map((e) => '${e.key}: ${e.value}').join('\n');
+}
 }

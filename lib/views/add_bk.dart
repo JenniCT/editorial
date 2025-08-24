@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
-import 'package:editorial/models/bookM.dart';
+import 'package:editorial/models/book_m.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,7 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/addbook/image_picker_field.dart';
 import '../widgets/textfield.dart';
 
-import '../viewmodels/bookVM.dart';
+import '../viewmodels/book_vm.dart';
 
 class AddBookDialog extends StatefulWidget {
   final Function(Book) onAdd;

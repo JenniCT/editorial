@@ -1,28 +1,27 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../models/bookM.dart';
+import '../models/book_m.dart';
+
 
 class DetalleLibroPage extends StatelessWidget {
   final Book book;
   final VoidCallback onBack;
 
-  const DetalleLibroPage({
-    required this.book,
-    required this.onBack,
-    super.key,
-  });
+  const DetalleLibroPage({required this.book, required this.onBack, super.key});
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-
     final isMobile = screenWidth < 900;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text('Detalles del Libro', style: TextStyle(fontSize: 24, fontFamily: 'Roboto')),
+        title: const Text(
+          'Detalles del Libro',
+          style: TextStyle(fontSize: 24, fontFamily: 'Roboto'),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, size: 28),
           onPressed: onBack,
@@ -34,10 +33,10 @@ class DetalleLibroPage extends StatelessWidget {
           builder: (context, constraints) {
             // ANCHO APROPIADO
             final minWidth = constraints.maxWidth;
-            final maxWidth = isMobile ? 
-                (constraints.maxWidth < 800 ? 800.0 : constraints.maxWidth) : 
-                constraints.maxWidth;
-            
+            final maxWidth = isMobile
+                ? (constraints.maxWidth < 800 ? 800.0 : constraints.maxWidth)
+                : constraints.maxWidth;
+
             return SingleChildScrollView(
               // SCROLL VERTICAL
               child: SingleChildScrollView(
@@ -48,8 +47,12 @@ class DetalleLibroPage extends StatelessWidget {
                     maxWidth: maxWidth,
                   ),
                   child: isMobile
-                      ? _buildTarjetaMovil(book, availableWidth: constraints.maxWidth)
-                      : _buildTarjetaEscritorio(book),
+                      ? _buildTarjetaMovil(
+                          context,
+                          book,
+                          availableWidth: constraints.maxWidth,
+                        )
+                      : _buildTarjetaEscritorio(context, book),
                 ),
               ),
             );
@@ -59,10 +62,14 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTarjetaMovil(Book book, {required double availableWidth}) {
+  Widget _buildTarjetaMovil(
+    BuildContext context,
+    Book book, {
+    required double availableWidth,
+  }) {
     // SE FORZA UN ANCHO MÍNIMO
     final containerWidth = availableWidth < 600 ? 700.0 : availableWidth;
-    
+
     return Column(
       children: [
         ClipRRect(
@@ -108,20 +115,58 @@ class DetalleLibroPage extends StatelessWidget {
           spacing: 12.0,
           runSpacing: 12.0,
           children: [
-            _buildActionButton(Icons.edit, 'Editar', color: const Color.fromRGBO(255, 171, 64, 0.6)),
-            _buildActionButton(Icons.volunteer_activism, 'Donar', color: const Color.fromRGBO(255, 64, 129, 0.6)),
-            _buildActionButton(Icons.attach_money, 'Vender', color: const Color.fromRGBO(76, 175, 80, 0.6)),
-            _buildActionButton(Icons.remove_circle, 'Dar de baja', color: const Color.fromRGBO(255, 0, 0, 0.6)),
-            _buildActionButton(Icons.download, 'Descargar', color: const Color.fromRGBO(0, 123, 255, 0.6)),
-            _buildActionButton(Icons.qr_code_2, 'Descargar QR', color: const Color.fromRGBO(138, 43, 226, 0.6)),
-            _buildActionButton(Icons.history, 'Historial', color: const Color.fromRGBO(0, 0, 0, 0.6)),
+            _buildActionButton(
+              context,
+              Icons.edit,
+              'Editar',
+              color: const Color.fromRGBO(255, 171, 64, 0.6),
+            ),
+            _buildActionButton(
+              context,
+              Icons.volunteer_activism,
+              'Donar',
+              color: const Color.fromRGBO(255, 64, 129, 0.6),
+            ),
+            _buildActionButton(
+              context,
+              Icons.attach_money,
+              'Vender',
+              color: const Color.fromRGBO(76, 175, 80, 0.6),
+            ),
+            _buildActionButton(
+              context,
+              Icons.remove_circle,
+              'Dar de baja',
+              color: const Color.fromRGBO(255, 0, 0, 0.6),
+            ),
+            _buildActionButton(
+              context,
+              Icons.download,
+              'Descargar',
+              color: const Color.fromRGBO(0, 123, 255, 0.6),
+            ),
+            _buildActionButton(
+              context,
+              Icons.qr_code_2,
+              'Descargar QR',
+              color: const Color.fromRGBO(138, 43, 226, 0.6),
+              onPressed: () {
+                // Implementar la lógica para descargar el código QR
+              },
+            ),
+            _buildActionButton(
+              context,
+              Icons.history,
+              'Historial',
+              color: const Color.fromRGBO(0, 0, 0, 0.6),
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildTarjetaEscritorio(Book book) {
+  Widget _buildTarjetaEscritorio(BuildContext context, book) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -135,7 +180,7 @@ class DetalleLibroPage extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 24),
-        _buildBotoneraVertical(),
+        _buildBotoneraVertical(context),
       ],
     );
   }
@@ -177,7 +222,11 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPortada(Book book, {required double height, required double width}) {
+  Widget _buildPortada(
+    Book book, {
+    required double height,
+    required double width,
+  }) {
     final hasUrl = book.imagenUrl != null && book.imagenUrl!.isNotEmpty;
 
     return ClipRRect(
@@ -213,20 +262,25 @@ class DetalleLibroPage extends StatelessWidget {
       children: [
         Text(
           book.titulo,
-          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+          style: const TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         const SizedBox(height: 8),
         if (book.subtitulo != null && book.subtitulo!.isNotEmpty)
           Text(
             book.subtitulo!,
-            style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic, color: Colors.white70),
+            style: const TextStyle(
+              fontSize: 18,
+              fontStyle: FontStyle.italic,
+              color: Colors.white70,
+            ),
           ),
         const SizedBox(height: 24),
         Table(
-          columnWidths: const {
-            0: IntrinsicColumnWidth(),
-            1: FlexColumnWidth(),
-          },
+          columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
           children: [
             _buildRow('Autor', book.autor),
@@ -237,6 +291,9 @@ class DetalleLibroPage extends StatelessWidget {
             _buildRow('Edición', book.edicion.toString()),
             _buildRow('Ejemplares', book.copias.toString()),
             _buildRow('Precio', '\$${book.precio.toStringAsFixed(2)}'),
+            _buildRow('Estante', book.estante.toString()),
+            _buildRow('Almacén', book.almacen.toString()),
+            _buildRow('Área', book.areaConocimiento),
           ],
         ),
       ],
@@ -250,7 +307,10 @@ class DetalleLibroPage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Text(
             '$label:',
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ),
         Padding(
@@ -264,28 +324,72 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBotoneraVertical() {
+  Widget _buildBotoneraVertical(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        _buildActionButton(Icons.edit, 'Editar', color: const Color.fromRGBO(255, 171, 64, 0.6)),
+        _buildActionButton(
+          context,
+          Icons.edit,
+          'Editar',
+          color: const Color.fromRGBO(255, 171, 64, 0.6),
+        ),
         const SizedBox(height: 12),
-        _buildActionButton(Icons.volunteer_activism, 'Donar', color: const Color.fromRGBO(255, 64, 129, 0.6)),
+        _buildActionButton(
+          context,
+          Icons.volunteer_activism,
+          'Donar',
+          color: const Color.fromRGBO(255, 64, 129, 0.6),
+        ),
         const SizedBox(height: 12),
-        _buildActionButton(Icons.attach_money, 'Vender', color: const Color.fromRGBO(76, 175, 80, 0.6)),
+        _buildActionButton(
+          context,
+          Icons.attach_money,
+          'Vender',
+          color: const Color.fromRGBO(76, 175, 80, 0.6),
+        ),
         const SizedBox(height: 12),
-        _buildActionButton(Icons.remove_circle, 'Dar de baja', color: const Color.fromRGBO(255, 0, 0, 0.6)),
+        _buildActionButton(
+          context,
+          Icons.remove_circle,
+          'Dar de baja',
+          color: const Color.fromRGBO(255, 0, 0, 0.6),
+        ),
         const SizedBox(height: 12),
-        _buildActionButton(Icons.download, 'Descargar', color: const Color.fromRGBO(0, 123, 255, 0.6)),
+        _buildActionButton(
+          context,
+          Icons.download,
+          'Descargar',
+          color: const Color.fromRGBO(0, 123, 255, 0.6),
+        ),
         const SizedBox(height: 12),
-        _buildActionButton(Icons.qr_code_2, 'Descargar QR', color: const Color.fromRGBO(138, 43, 226, 0.6)),
+        _buildActionButton(
+          context,
+          Icons.qr_code_2,
+          'Descargar QR',
+          color: const Color.fromRGBO(138, 43, 226, 0.6),
+          onPressed: () {
+            // Implementar la lógica para descargar el código QR
+          },
+        ),
         const SizedBox(height: 12),
-        _buildActionButton(Icons.history, 'Historial', color: const Color.fromRGBO(0, 0, 0, 0.6)),
+        _buildActionButton(
+          context,
+          Icons.history,
+          'Historial',
+          color: const Color.fromRGBO(0, 0, 0, 0.6),
+        ),
       ],
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, {Color? color, VoidCallback? onPressed}) {
+  Widget _buildActionButton(
+    BuildContext context,
+    IconData icon,
+    String label, {
+    Color? color,
+    VoidCallback? onPressed,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
@@ -296,7 +400,10 @@ class DetalleLibroPage extends StatelessWidget {
           decoration: BoxDecoration(
             color: (color ?? Colors.white),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.4), width: 1),
+            border: Border.all(
+              color: const Color.fromRGBO(255, 255, 255, 0.4),
+              width: 1,
+            ),
           ),
           child: InkWell(
             onTap: onPressed ?? () {},
@@ -317,4 +424,5 @@ class DetalleLibroPage extends StatelessWidget {
       ),
     );
   }
+
 }

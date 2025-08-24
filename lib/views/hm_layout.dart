@@ -5,12 +5,12 @@ import '../widgets/sidebar.dart';
 import '../widgets/background.dart';
 
 // MODELO
-import '../models/bookM.dart';
-import '../models/userM.dart';
+import '../models/book_m.dart';
+import '../models/user_m.dart';
 
 // VISTAS
 import '../views/dashboard.dart';
-import 'stockV.dart';
+import 'stock_v.dart';
 import '../views/donaciones.dart';
 import '../views/ventas.dart';
 import '../views/analisis.dart';
@@ -19,8 +19,8 @@ import '../views/detailsbk.dart';
 
 class HomeLayout extends StatefulWidget {
   final UserModel user;
-
-  const HomeLayout({super.key, required this.user});
+  final Role role;
+  const HomeLayout({required this.user, required this.role, super.key});
 
   @override
   State<HomeLayout> createState() => _HomeLayoutState();
