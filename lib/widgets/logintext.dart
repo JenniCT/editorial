@@ -15,8 +15,8 @@ class CustomTextField extends StatefulWidget {
     this.validator,
     required this.icon,
     required this.keyboardType,
-    Key? key,
-  }) : super(key: key);
+    super.key, // ✅ Modernizado
+  });
 
   @override
   State<CustomTextField> createState() => _CustomTextFieldState();

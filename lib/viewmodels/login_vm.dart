@@ -77,7 +77,7 @@ class LoginVM with ChangeNotifier {
       await _showDialog(
         context,
         "Inicio de sesión exitoso",
-        "Bienvenido a Bitoteca",
+        "Bienvenido a InkVentory",
         Colors.green,
         Icons.check_circle,
       );

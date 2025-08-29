@@ -1,13 +1,37 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../models/book_m.dart';
+import '../../models/book_m.dart';
+//VISTAS
+import '../qr_v.dart';
+import '../book/edit_bk.dart';
+import '../book/history_bk.dart';
 
-
-class DetalleLibroPage extends StatelessWidget {
+class DetalleLibroPage extends StatefulWidget {
   final Book book;
   final VoidCallback onBack;
-
   const DetalleLibroPage({required this.book, required this.onBack, super.key});
+
+  @override
+  _DetalleLibroPageState createState() => _DetalleLibroPageState();
+}
+
+class _DetalleLibroPageState extends State<DetalleLibroPage> {
+  late Book book;
+  late VoidCallback onBack;
+
+  @override
+  void initState() {
+    super.initState();
+    book = widget.book;
+    onBack = widget.onBack; 
+  }
+
+  // Método para actualizar el libro cuando se edite
+  void _updateBook(Book updatedBook) {
+    setState(() {
+      book = updatedBook;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +144,13 @@ class DetalleLibroPage extends StatelessWidget {
               Icons.edit,
               'Editar',
               color: const Color.fromRGBO(255, 171, 64, 0.6),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) =>
+                      EditBookDialog(book: book, onUpdate: _updateBook),
+                );
+              },
             ),
             _buildActionButton(
               context,
@@ -151,7 +182,7 @@ class DetalleLibroPage extends StatelessWidget {
               'Descargar QR',
               color: const Color.fromRGBO(138, 43, 226, 0.6),
               onPressed: () {
-                // Implementar la lógica para descargar el código QR
+                showBookQrDialog(context, book);
               },
             ),
             _buildActionButton(
@@ -289,7 +320,7 @@ class DetalleLibroPage extends StatelessWidget {
             _buildRow('Año', book.anio.toString()),
             _buildRow('ISBN', book.isbn ?? '-'),
             _buildRow('Edición', book.edicion.toString()),
-            _buildRow('Ejemplares', book.copias.toString()),
+            _buildRow('Total', book.copias.toString()),
             _buildRow('Precio', '\$${book.precio.toStringAsFixed(2)}'),
             _buildRow('Estante', book.estante.toString()),
             _buildRow('Almacén', book.almacen.toString()),
@@ -333,6 +364,13 @@ class DetalleLibroPage extends StatelessWidget {
           Icons.edit,
           'Editar',
           color: const Color.fromRGBO(255, 171, 64, 0.6),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) =>
+                  EditBookDialog(book: book, onUpdate: _updateBook),
+            );
+          },
         ),
         const SizedBox(height: 12),
         _buildActionButton(
@@ -369,7 +407,7 @@ class DetalleLibroPage extends StatelessWidget {
           'Descargar QR',
           color: const Color.fromRGBO(138, 43, 226, 0.6),
           onPressed: () {
-            // Implementar la lógica para descargar el código QR
+            showBookQrDialog(context, book);
           },
         ),
         const SizedBox(height: 12),
@@ -378,7 +416,15 @@ class DetalleLibroPage extends StatelessWidget {
           Icons.history,
           'Historial',
           color: const Color.fromRGBO(0, 0, 0, 0.6),
-        ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => HistorialView(idLibro: book.id!),
+              ),
+            );
+          },
+        )
       ],
     );
   }
@@ -424,5 +470,4 @@ class DetalleLibroPage extends StatelessWidget {
       ),
     );
   }
-
 }

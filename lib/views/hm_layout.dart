@@ -11,11 +11,11 @@ import '../models/user_m.dart';
 // VISTAS
 import '../views/dashboard.dart';
 import 'stock_v.dart';
-import '../views/donaciones.dart';
-import '../views/ventas.dart';
+import 'donations/donations.dart';
+import 'market.dart';
 import '../views/analisis.dart';
 import '../views/settings.dart';
-import '../views/detailsbk.dart';
+import 'book/details_bk.dart';
 
 class HomeLayout extends StatefulWidget {
   final UserModel user;

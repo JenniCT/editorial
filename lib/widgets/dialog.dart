@@ -31,6 +31,7 @@ class CustomDialog extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
+            width: 400,
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: const Color.fromARGB(51, 0, 0, 0),

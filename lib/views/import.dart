@@ -43,7 +43,7 @@ class _ImportadorCSVState extends State<ImportadorCSV> {
       });
     } catch (e) {
       setState(() {
-        error = '❌ Error al leer el archivo: $e';
+        error = 'Error al leer el archivo: $e';
         datosCSV = null;
       });
     }
@@ -93,12 +93,12 @@ class _ImportadorCSVState extends State<ImportadorCSV> {
         await FirebaseFirestore.instance.collection('books').add(book.toMap());
         subidos++;
       } catch (e) {
-        debugPrint('❌ Error al subir fila: $e');
+        debugPrint('Error al subir fila: $e');
       }
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('✅ $subidos libros subidos exitosamente')),
+      SnackBar(content: Text('$subidos libros subidos exitosamente')),
     );
   }
 

@@ -12,6 +12,7 @@ class CustomTextField extends StatefulWidget {
   final void Function(String)? onFieldSubmitted;
 
   const CustomTextField({
+    super.key,
     required this.controller,
     required this.label,
     this.isOptional = false,

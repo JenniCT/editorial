@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-//MODELO
+// MODELO
 import '../models/book_m.dart';
-//VISTAMODELO
+// VISTAMODELO
 import '../viewmodels/book_vm.dart';
-//VISTAS
+// VISTAS
 import '../views/import.dart';
-import 'export_v.dart';
-import 'add_bk.dart';
+import '../views/export_v.dart';
+import '../views/add_bk.dart';
+//WIDGETS
+import '../widgets/search.dart';
 
 class InventarioPage extends StatefulWidget {
   final Function(Book) onBookSelected;
@@ -21,19 +23,28 @@ class InventarioPage extends StatefulWidget {
 class _InventarioPageState extends State<InventarioPage> {
   final BookViewModel _viewModel = BookViewModel();
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  List<Book> _filteredBooks = [];
+  List<Book> _allBooks = [];
   int _currentPage = 0;
   final int _booksPerPage = 10;
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.trim().toLowerCase();
-      });
+    
+  }
+
+  void _handleSearchResults(List<Book> results) {
+    debugPrint('Resultados recibidos: ${results.length}');
+    setState(() {
+      _filteredBooks = results;
+      _isSearching = results.isNotEmpty || _searchController.text.isNotEmpty;
+      _currentPage = 0;
     });
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -43,146 +54,88 @@ class _InventarioPageState extends State<InventarioPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            //BARRA DE BÚSQUEDA
-            LayoutBuilder(
-              builder: (context, constraints) {
-                
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        //BUSCADOR
-                        Expanded(
-                          child: Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(50),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 12,
-                                  offset: Offset(0, 3),
-                                ),
-                              ],
+            // 🔍 BARRA DE BÚSQUEDA
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Search(
+                    controller: _searchController,
+                    allBooks: _allBooks,
+                    onResults: _handleSearchResults,
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+
+            //TÍTULO
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Libros',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // BOTONES
+                Flexible(
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.end,
+                    children: [
+                      _buildOutlinedButton(Icons.filter_list, 'Filtrar', () {}),
+                      _buildOutlinedButton(Icons.download, 'Exportar', () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => Dialog(child: ExportarCSV()),
+                        );
+                      }),
+                      _buildOutlinedButton(Icons.upload, 'Importar', () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => Dialog(child: ImportadorCSV()),
+                        );
+                      }),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar libro'),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AddBookDialog(
+                              onAdd: (newBook) =>
+                                  _viewModel.addBook(newBook, context),
                             ),
-                            child: Row(
-                              children: [
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _searchController,
-                                    textAlignVertical: TextAlignVertical.center,
-                                    decoration: InputDecoration(
-                                      hintText: 'Buscar libros...',
-                                      hintStyle: TextStyle(
-                                        color: Colors.grey[600],
-                                      ),
-                                      border: InputBorder.none,
-                                      isDense: true,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            vertical: 10,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 16),
-                                  child: Icon(
-                                    Icons.search,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.04),
-
-                    // TITULO Y BOTONES
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Libros',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
                           ),
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
                         ),
-                        const SizedBox(width: 12),
-
-                        // BOTONES
-                        Flexible(
-                          child: Wrap(
-                            spacing: 12,
-                            runSpacing: 8,
-                            alignment: WrapAlignment.end,
-                            children: [
-                              // FILTRO
-                              _buildOutlinedButton(Icons.filter_list, 'Filtrar', () {}),
-                              // EXPORTAR
-                              _buildOutlinedButton(Icons.download, 'Exportar', () {
-                                showDialog(
-                                  context: context,
-                                  builder: (_) =>
-                                        Dialog(child: ExportarCSV()),
-                                  );
-                                },
-                              ),
-                              // IMPORTAR
-                              _buildOutlinedButton(Icons.upload, 'Importar', () {
-                                showDialog(
-                                  context: context,
-                                  builder: (_) =>
-                                        Dialog(child: ImportadorCSV()),
-                                  );
-                                },
-                              ),
-                              // AGREGAR
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.add),
-                                label: const Text('Agregar libro'),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AddBookDialog(
-                                      onAdd: (newBook) =>
-                                          _viewModel.addBook(newBook, context),
-                                    ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 14,
-                                  ),
-                                  backgroundColor: Colors.blueAccent,
-                                  foregroundColor: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 20),
 
-            // TABLA DE LIBROS
+            //TABLA DE LIBROS
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: BackdropFilter(
@@ -208,50 +161,38 @@ class _InventarioPageState extends State<InventarioPage> {
                             const Divider(color: Colors.white54),
                             StreamBuilder<List<Book>>(
                               stream: _viewModel.getBooksStream(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                                if (!snapshot.hasData ||
-                                    snapshot.data!.isEmpty) {
-                                  return const Center(
-                                    child: Text('No hay libros disponibles'),
-                                  );
-                                }
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return const Center(child: CircularProgressIndicator());
+                                  }
+                                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                    return const Center(child: Text('No hay libros disponibles'));
+                                  }
 
-                                final query = _searchQuery.toLowerCase();
-                                final filteredBooks = snapshot.data!
-                                    .where(
-                                      (book) => (book.titulo).toLowerCase().contains( query,) ||
-                                          (book.autor).toLowerCase().contains( query,) ||
-                                          (book.subtitulo ?? '').toLowerCase().contains(query) ||
-                                          (book.editorial).toLowerCase().contains(query) ||
-                                          (book.coleccion ?? '').toLowerCase().contains(query) ||
-                                          (book.isbn ?? '').toLowerCase().contains(query) ||
-                                          (book.estante).toString().contains(query,) ||
-                                          (book.almacen).toString().contains(query,) ||
-                                          (book.copias).toString().contains(query,) ||
-                                          (book.areaConocimiento)
-                                              .toLowerCase()
-                                              .contains(query),
-                                    )
-                                    .toList();
+                                  _allBooks = snapshot.data!;
+                                  List<Book> booksToShow = _isSearching ? _filteredBooks : _allBooks;
+
+                                  if (_isSearching && _filteredBooks.isEmpty && _searchController.text.isNotEmpty) {
+                                    return const Center(
+                                      child: Text(
+                                        'No se encontraron libros con ese criterio de búsqueda',
+                                        style: TextStyle(color: Colors.white70),
+                                      ),
+                                    );
+                                  }
 
                                 // PAGINACIÓN
                                 final startIndex = _currentPage * _booksPerPage;
                                 final endIndex = (startIndex + _booksPerPage)
-                                    .clamp(0, filteredBooks.length);
-                                final books = filteredBooks.sublist(
+                                    .clamp(0, booksToShow.length);
+                                final books = booksToShow.sublist(
                                   startIndex,
                                   endIndex,
                                 );
 
                                 return Column(
                                   children: [
-                                    //ENCABEZADO
+                                    // ENCABEZADO
                                     SingleChildScrollView(
                                       scrollDirection: Axis.horizontal,
                                       child: SizedBox(
@@ -261,9 +202,9 @@ class _InventarioPageState extends State<InventarioPage> {
                                     ),
                                     const Divider(color: Colors.white54),
 
-                                    // TABLA DE LIBROS
+                                    // FILAS DE LIBROS
                                     SizedBox(
-                                      height: 400, 
+                                      height: 400,
                                       child: SingleChildScrollView(
                                         scrollDirection: Axis.vertical,
                                         child: SingleChildScrollView(
@@ -291,10 +232,7 @@ class _InventarioPageState extends State<InventarioPage> {
                                                           estante: book.estante.toString(),
                                                           almacen: book.almacen.toString(),
                                                           area: book.areaConocimiento,
-                                                          onTap: () => widget
-                                                              .onBookSelected(
-                                                                book,
-                                                              ),
+                                                          onTap: () => widget.onBookSelected(book),
                                                         ),
                                                         const Divider(
                                                           color: Colors.white30,
@@ -309,18 +247,15 @@ class _InventarioPageState extends State<InventarioPage> {
                                       ),
                                     ),
 
-                                    // PAGINACIÓN
-                                    if (filteredBooks.length > _booksPerPage)
+                                    // CONTROLES DE PAGINACIÓN
+                                    if (booksToShow.length > _booksPerPage)
                                       Padding(
                                         padding: const EdgeInsets.only(top: 12),
                                         child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
+                                          mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
                                             IconButton(
-                                              icon: const Icon(
-                                                Icons.arrow_left,
-                                              ),
+                                              icon: const Icon(Icons.arrow_left),
                                               onPressed: _currentPage > 0
                                                   ? () {
                                                       setState(() {
@@ -330,15 +265,11 @@ class _InventarioPageState extends State<InventarioPage> {
                                                   : null,
                                             ),
                                             Text(
-                                              '${_currentPage + 1} / ${((filteredBooks.length - 1) / _booksPerPage).ceil() + 1}',
+                                              '${_currentPage + 1} / ${((booksToShow.length - 1) / _booksPerPage).ceil() + 1}',
                                             ),
                                             IconButton(
-                                              icon: const Icon(
-                                                Icons.arrow_right,
-                                              ),
-                                              onPressed:
-                                                  endIndex <
-                                                      filteredBooks.length
+                                              icon: const Icon(Icons.arrow_right),
+                                              onPressed: endIndex < booksToShow.length
                                                   ? () {
                                                       setState(() {
                                                         _currentPage++;
@@ -347,6 +278,19 @@ class _InventarioPageState extends State<InventarioPage> {
                                                   : null,
                                             ),
                                           ],
+                                        ),
+                                      ),
+
+                                    // Mostrar información de resultados
+                                    if (_isSearching)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(
+                                          'Mostrando ${booksToShow.length} resultado(s) de búsqueda',
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                          ),
                                         ),
                                       ),
                                   ],
@@ -397,7 +341,8 @@ class _InventarioPageState extends State<InventarioPage> {
   }
 
   Widget _buildHeaderRow() {
-    const headerStyle = TextStyle(fontWeight: FontWeight.bold, color: Colors.white);
+    const headerStyle =
+        TextStyle(fontWeight: FontWeight.bold, color: Colors.white);
     return Row(
       children: const [
         Expanded(child: Text('Portada', style: headerStyle)),
@@ -429,6 +374,12 @@ class _InventarioPageState extends State<InventarioPage> {
         Expanded(child: Text('Área de Conocimiento', style: headerStyle)),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }
 
@@ -482,8 +433,12 @@ class BookRow extends StatelessWidget {
                     imageUrl,
                     height: 100,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
-                        Image.asset('assets/sinportada.png', height: 100, width: 40, fit: BoxFit.cover),
+                    errorBuilder: (_, _, _) => Image.asset(
+                      'assets/sinportada.png',
+                      height: 100,
+                      width: 40,
+                      fit: BoxFit.cover,
+                    ),
                   )
                 : Image.asset(
                     'assets/sinportada.png',
@@ -493,7 +448,7 @@ class BookRow extends StatelessWidget {
                   ),
           ),
           const VerticalDivider(),
-          Expanded(child: Text(title, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white),)),
+          Expanded(child: Text(title, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white))),
           const VerticalDivider(),
           Expanded(child: Text(subtitle, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white))),
           const VerticalDivider(),

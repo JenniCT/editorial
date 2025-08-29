@@ -13,8 +13,7 @@ import '../viewmodels/book_vm.dart';
 class AddBookDialog extends StatefulWidget {
   final Function(Book) onAdd;
 
-  const AddBookDialog({required this.onAdd, Key? key}) : super(key: key);
-
+  const AddBookDialog({required this.onAdd, super.key});
   @override
   State<AddBookDialog> createState() => _AddBookDialogState();
 }
@@ -63,23 +62,15 @@ class _AddBookDialogState extends State<AddBookDialog> {
   Future<void> _saveBook() async {
     if (_formKey.currentState!.validate()) {
       final book = Book(
-        imagenFile: null,
-        imagenUrl: _imageUrlController.text.isNotEmpty
-            ? _imageUrlController.text.trim()
-            : null,
+        imagenFile: _selectedImage, // 🔥 Usar la imagen seleccionada
+        imagenUrl: _imageUrlController.text.isNotEmpty ? _imageUrlController.text.trim() : null,
         titulo: _tituloController.text.trim(),
-        subtitulo: _subtituloController.text.isNotEmpty
-            ? _subtituloController.text.trim()
-            : null,
+        subtitulo: _subtituloController.text.isNotEmpty ? _subtituloController.text.trim() : null,
         autor: _autorController.text.trim(),
         editorial: _editorialController.text.trim(),
-        coleccion: _coleccionController.text.isNotEmpty
-            ? _coleccionController.text.trim()
-            : null,
+        coleccion: _coleccionController.text.isNotEmpty ? _coleccionController.text.trim() : null,
         anio: int.tryParse(_anioController.text) ?? 0,
-        isbn: _isbnController.text.isNotEmpty
-            ? _isbnController.text.trim()
-            : null,
+        isbn: _isbnController.text.isNotEmpty ? _isbnController.text.trim() : null,
         edicion: int.tryParse(_edicionController.text) ?? 1,
         copias: int.tryParse(_copiasController.text) ?? 1,
         precio: double.tryParse(_precioController.text) ?? 0.0,
@@ -91,13 +82,11 @@ class _AddBookDialogState extends State<AddBookDialog> {
         registradoPor: FirebaseAuth.instance.currentUser?.uid ?? 'desconocido',
       );
 
-    
+      // 🔥 SOLO LLAMAR AL VIEWMODEL - ÉL SE ENCARGA DE CERRAR EL DIÁLOGO
       await _viewModel.addBook(book, context);
-
-    
-      if (context.mounted) {
-        Navigator.pop(context);
-      }
+      
+      // 🔥 QUITAR ESTA LÍNEA:
+      // if (mounted) Navigator.pop(context);
     }
   }
   bool _isUpdating = false;
@@ -306,18 +295,15 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                       // ÁREA DE CONOCIMIENTO
                                       FormField<String>(
                                         initialValue: _selectedAreaConocimiento,
-                                        validator: (value) =>
-                                            value == null || value.isEmpty
-                                                ? 'Selecciona un área de conocimiento válida'
-                                                : null,
+                                        validator: (value) => value == null || value.isEmpty ? 'Selecciona un área de conocimiento válida' : null,
                                         builder: (fieldState) {
                                           return Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Container(
-                                                width: double.infinity, // ✅ Ocupa todo el ancho disponible
+                                              SizedBox(
+                                                width: double.infinity,
                                                 child: DropdownButtonFormField<String>(
-                                                  value: _selectedAreaConocimiento,
+                                                  initialValue: _selectedAreaConocimiento,
                                                   decoration: InputDecoration(
                                                     labelText: 'Área de conocimiento',
                                                     labelStyle: const TextStyle(color: Colors.white),
@@ -340,7 +326,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                                   ),
                                                   dropdownColor: const Color.fromRGBO(30, 50, 100, 1),
                                                   style: const TextStyle(color: Colors.white),
-                                                  isExpanded: true, // ✅ Muy importante para evitar truncamiento
+                                                  isExpanded: true,
                                                   items: _areasConocimiento.map((area) {
                                                     return DropdownMenuItem(
                                                       value: area,
@@ -524,8 +510,8 @@ void showAddBookDialog(BuildContext context, Function(Book) onAdd) {
     barrierDismissible: true,
     barrierLabel: 'Agregar libro',
     transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (_, __, ___) => const SizedBox(),
-    transitionBuilder: (context, animation, _, __) {
+    pageBuilder: (_, _, _) => const SizedBox(),
+    transitionBuilder: (context, animation, _, _) {
       final curvedAnimation = CurvedAnimation(
         parent: animation,
         curve: Curves.easeOutCubic,

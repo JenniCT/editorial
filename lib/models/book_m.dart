@@ -6,9 +6,12 @@ class Book {
   final File? imagenFile;
   final String? imagenUrl;
   final String titulo;
+  final String tituloLower;
   final String? subtitulo;
   final String autor;
+  final String autorLower;
   final String editorial;
+  final String editorialLower;
   final String? coleccion;
   final int anio;
   final String? isbn;
@@ -17,19 +20,21 @@ class Book {
   final int almacen;
   final int copias;
   final String areaConocimiento;
+  final String areaLower;
   final double precio;
   final bool estado;
   final DateTime fechaRegistro;
   final String registradoPor;
-  
+
   Book({
     this.id,
     this.imagenFile,
     this.imagenUrl,
     required this.titulo,
-    this.subtitulo,
     required this.autor,
     required this.editorial,
+    required this.areaConocimiento,
+    this.subtitulo,
     this.coleccion,
     required this.anio,
     this.isbn,
@@ -37,12 +42,14 @@ class Book {
     required this.estante,
     required this.almacen,
     required this.copias,
-    required this.areaConocimiento,
     required this.precio,
     required this.estado,
     required this.fechaRegistro,
     required this.registradoPor,
-  });
+  })  : tituloLower = titulo.toLowerCase(),
+        autorLower = autor.toLowerCase(),
+        editorialLower = editorial.toLowerCase(),
+        areaLower = areaConocimiento.toLowerCase();
 
   factory Book.fromMap(Map<String, dynamic> map, String documentId) {
     int est = map['estante'] ?? 0;
@@ -52,14 +59,19 @@ class Book {
     if (est == 0 && total > 0) est = total - alm;
     if (alm == 0 && total > 0) alm = total - est;
 
+    final titulo = map['titulo'] ?? '';
+    final autor = map['autor'] ?? '';
+    final editorial = map['editorial'] ?? '';
+    final area = map['areaConocimiento'] ?? 'Sin definir';
+
     return Book(
       id: documentId,
       imagenFile: null,
       imagenUrl: map['imagenUrl'] as String?,
-      titulo: map['titulo'] ?? '',
+      titulo: titulo,
       subtitulo: map['subtitulo'] as String?,
-      autor: map['autor'] ?? '',
-      editorial: map['editorial'] ?? '',
+      autor: autor,
+      editorial: editorial,
       coleccion: map['coleccion'] as String?,
       anio: (map['anio'] is int) ? map['anio'] : int.tryParse(map['anio'].toString()) ?? 0,
       isbn: map['isbn'] as String?,
@@ -67,7 +79,7 @@ class Book {
       estante: est,
       almacen: alm,
       copias: total,
-      areaConocimiento: map['areaConocimiento'] ?? 'Sin definir',
+      areaConocimiento: area,
       precio: (map['precio'] is double) ? map['precio'] : double.tryParse(map['precio'].toString()) ?? 0.0,
       estado: map['estado'] ?? true,
       fechaRegistro: (map['fechaRegistro'] as Timestamp).toDate(),
@@ -140,18 +152,17 @@ class Book {
       registradoPor: registradoPor ?? this.registradoPor,
     );
   }
-  String bookToQrData(Book book) {
-  final data = {
-    'Título': book.titulo,
-    'Autor': book.autor,
-    'Editorial': book.editorial,
-    'Año': book.anio,
-    'ISBN': book.isbn ?? 'Sin ISBN',
-    'Área': book.areaConocimiento,
-    'Copias': book.copias,
-    'Registrado por': book.registradoPor,
-  };
 
-  return data.entries.map((e) => '${e.key}: ${e.value}').join('\n');
-}
+  String bookToQrData(Book book) {
+    return [
+      'Título: ${book.titulo}',
+      'Autor: ${book.autor}',
+      'Editorial: ${book.editorial}',
+      'Año: ${book.anio}',
+      'ISBN: ${book.isbn ?? 'Sin ISBN'}',
+      'Área: ${book.areaConocimiento}',
+      'Copias: ${book.copias}',
+      'Registrado por: ${book.registradoPor}',
+    ].join('\n');
+  }
 }
