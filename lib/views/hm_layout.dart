@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 
 // WIDGETS
-import '../widgets/sidebar.dart';
-import '../widgets/background.dart';
+import '../widgets/global/sidebar.dart';
+import '../widgets/global/background.dart';
 
 // MODELO
 import '../models/book_m.dart';
-import '../models/user_m.dart';
+import '../models/user.dart';
+import '../models/acervo_bk.dart';
 
 // VISTAS
 import '../views/dashboard.dart';
-import 'stock_v.dart';
-import 'donations/donations.dart';
-import 'market.dart';
+import 'stock/stock.dart';
+import 'acervo/acervo.dart';
+import 'market/market.dart';
 import '../views/analisis.dart';
 import '../views/settings.dart';
 import 'book/details_bk.dart';
@@ -29,6 +30,7 @@ class HomeLayout extends StatefulWidget {
 class _HomeLayoutState extends State<HomeLayout> {
   int selectedIndex = 0;
   Book? selectedBook;
+  Acervo? selectedAcervo;
   bool showingDetail = false;
   
   void onItemSelected(int index) {
@@ -54,6 +56,18 @@ class _HomeLayoutState extends State<HomeLayout> {
       showingDetail = true;
     });
   }
+
+  void handleAcervoSelection(Acervo acervo) {
+    setState(() {
+      selectedAcervo = acervo;
+      selectedBook = null;
+      showingDetail = true;
+    });
+  }
+
+
+
+  
 
   Widget getView(int index) {
     if (showingDetail && selectedBook != null) {
@@ -82,7 +96,10 @@ class _HomeLayoutState extends State<HomeLayout> {
           onBookSelected: handleBookSelection,
         );
       case 2:
-        return const DonacionesPage(key: ValueKey('Donaciones'));
+        return AcervoPage(
+          key: const ValueKey('Donaciones'),
+          onAcervoSelected: handleAcervoSelection,
+        );
       case 3:
         return const VentasPage(key: ValueKey('Ventas'));
       case 4:

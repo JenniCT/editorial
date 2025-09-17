@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../views/hm_layout.dart';
 import '../models/auth_service.dart';
-import '../models/user_m.dart';
-import '../widgets/dialog.dart';
+import '../models/user.dart';
+import '../widgets/global/dialog.dart';
 
 class LoginVM with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -40,7 +40,13 @@ class LoginVM with ChangeNotifier {
       final user = credential.user;
       if (user == null) {
         if (!context.mounted) return;
-        await _showDialog(context, "Error", "No se encontró el usuario", Colors.red, Icons.error);
+        await _showDialog(
+          context,
+          "Error",
+          "No se encontró el usuario",
+          Colors.red,
+          Icons.error,
+        );
         return;
       }
 
@@ -54,22 +60,20 @@ class LoginVM with ChangeNotifier {
 
       if (query.docs.isEmpty) {
         if (!context.mounted) return;
-        await _showDialog(context, "Error", "Usuario no registrado en la base de datos", Colors.red, Icons.error);
+        await _showDialog(
+          context,
+          "Error",
+          "Usuario no registrado en la base de datos",
+          Colors.red,
+          Icons.error,
+        );
         return;
       }
 
       final doc = query.docs.first;
       final data = doc.data();
 
-      final nombre = (data['name'] as String?) ?? '';
       final rolStr = (data['role'] as String?) ?? '';
-      debugPrint("=== Datos del usuario ===");
-      debugPrint("UID: ${doc.id}");
-      debugPrint("Nombre: $nombre");
-      debugPrint("Email: ${data['email']}");
-      debugPrint("Rol: $rolStr");
-      debugPrint("=========================");
-
       final role = _parseRole(rolStr);
       final userModel = UserModel.fromMap(data, docId: doc.id);
 
@@ -97,20 +101,51 @@ class LoginVM with ChangeNotifier {
       });
     } on FirebaseAuthException catch (e) {
       if (!context.mounted) return;
-      if (e.code == 'user-not-found' || e.code == "unknown-error" || e.code == 'wrong-password' || e.code == 'invalid-credential') {
-        await _showDialog(context, "Error", "Correo o contraseña incorrectos", Colors.red, Icons.error);
-        debugPrint("Error: ${e.code}");
+      if (e.code == 'user-not-found' ||
+          e.code == "unknown-error" ||
+          e.code == 'wrong-password' ||
+          e.code == 'invalid-credential') {
+        await _showDialog(
+          context,
+          "Error",
+          "Correo o contraseña incorrectos",
+          Colors.red,
+          Icons.error,
+        );
       } else if (e.code == 'invalid-email') {
-        await _showDialog(context, "Error", "Formato de correo inválido", Colors.orange, Icons.warning_amber_rounded);
+        await _showDialog(
+          context,
+          "Error",
+          "Formato de correo inválido",
+          Colors.orange,
+          Icons.warning_amber_rounded,
+        );
       } else if (e.code == 'user-disabled') {
-        await _showDialog(context, "Error", "Esta cuenta ha sido deshabilitada", Colors.red, Icons.block);
+        await _showDialog(
+          context,
+          "Error",
+          "Esta cuenta ha sido deshabilitada",
+          Colors.red,
+          Icons.block,
+        );
       } else {
-        await _showDialog(context, "Error", "Error de autenticación: ${e.code}", Colors.red, Icons.error);
+        await _showDialog(
+          context,
+          "Error",
+          "Error de autenticación: ${e.code}",
+          Colors.red,
+          Icons.error,
+        );
       }
-    } catch (e) {
-      debugPrint("Error: $e");
+    } catch (_) {
       if (!context.mounted) return;
-      await _showDialog(context, "Error", "Error desconocido, revisa tu conexión", Colors.red, Icons.error);
+      await _showDialog(
+        context,
+        "Error",
+        "Error desconocido, revisa tu conexión",
+        Colors.red,
+        Icons.error,
+      );
     } finally {
       isLoading = false;
       notifyListeners();
@@ -121,11 +156,11 @@ class LoginVM with ChangeNotifier {
     switch (value) {
       case 'adm':
         return Role.adm;
-      case 'lib':
-        return Role.lib;
-      case 'tem':
+      case 'staff':
+        return Role.staff;
+      case 'guest':
       default:
-        return Role.tem;
+        return Role.guest;
     }
   }
 

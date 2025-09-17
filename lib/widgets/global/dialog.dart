@@ -34,9 +34,9 @@ class CustomDialog extends StatelessWidget {
             width: 400,
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color.fromARGB(51, 0, 0, 0),
+              color: const Color.fromRGBO(0, 0, 0, 0.2),
               borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: const Color.fromARGB(26, 10, 10, 10)),
+              border: Border.all(color: const Color.fromRGBO(10, 10, 10, 0.102)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

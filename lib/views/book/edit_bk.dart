@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../models/book_m.dart';
 import '../../viewmodels/book_vm.dart';
 import '../../widgets/addbook/image_picker_field.dart';
-import '../../widgets/textfield.dart';
+import '../../widgets/global/textfield.dart';
 import 'package:image_picker/image_picker.dart';
 
 class EditBookDialog extends StatefulWidget {

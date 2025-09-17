@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path/path.dart' as path;
-import '../models/book_m.dart';
+import '../../models/book_m.dart';
 
 class ExportarCSV extends StatelessWidget {
   const ExportarCSV({super.key});

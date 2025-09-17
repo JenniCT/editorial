@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../models/book_m.dart';
 //VISTAS
-import '../qr_v.dart';
+import 'qr_v.dart';
 import '../book/edit_bk.dart';
 import '../book/history_bk.dart';
 
@@ -151,12 +151,6 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                       EditBookDialog(book: book, onUpdate: _updateBook),
                 );
               },
-            ),
-            _buildActionButton(
-              context,
-              Icons.volunteer_activism,
-              'Donar',
-              color: const Color.fromRGBO(255, 64, 129, 0.6),
             ),
             _buildActionButton(
               context,
@@ -372,13 +366,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             );
           },
         ),
-        const SizedBox(height: 12),
-        _buildActionButton(
-          context,
-          Icons.volunteer_activism,
-          'Donar',
-          color: const Color.fromRGBO(255, 64, 129, 0.6),
-        ),
+    
         const SizedBox(height: 12),
         _buildActionButton(
           context,

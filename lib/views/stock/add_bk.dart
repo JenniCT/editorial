@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 //WIDGETS
-import '../widgets/addbook/image_picker_field.dart';
-import '../widgets/textfield.dart';
+import '../../widgets/addbook/image_picker_field.dart';
+import '../../widgets/global/textfield.dart';
 
-import '../viewmodels/book_vm.dart';
+import '../../viewmodels/book_vm.dart';
 
 class AddBookDialog extends StatefulWidget {
   final Function(Book) onAdd;
@@ -62,7 +62,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
   Future<void> _saveBook() async {
     if (_formKey.currentState!.validate()) {
       final book = Book(
-        imagenFile: _selectedImage, // 🔥 Usar la imagen seleccionada
+        imagenFile: _selectedImage,
         imagenUrl: _imageUrlController.text.isNotEmpty ? _imageUrlController.text.trim() : null,
         titulo: _tituloController.text.trim(),
         subtitulo: _subtituloController.text.isNotEmpty ? _subtituloController.text.trim() : null,

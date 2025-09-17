@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../models/book_m.dart'; 
+import '../../models/book_m.dart'; 
 
 void showBookQrDialog(BuildContext context, Book book) {
   showDialog(

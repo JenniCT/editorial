@@ -3,7 +3,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:diacritic/diacritic.dart';
-import '../widgets/dialog.dart';
+import '../widgets/global/dialog.dart';
 //MODELOS
 import '../models/book_m.dart';
 import '../models/history_bk.dart';
@@ -52,91 +52,89 @@ class BookViewModel {
         .replaceAll(RegExp(r'[^a-z0-9_]+'), '');
   }
 
-  /// AGREGA UN LIBRO SI NO EXISTE PREVIAMENTE
+  // AGREGA UN LIBRO SI NO EXISTE PREVIAMENTE
   Future<void> addBook(Book book, BuildContext context) async {
-    try {
-      final idLibro = generarIdLibro(book);
-      debugPrint('ID generado: $idLibro');
+  try {
+    // Generamos un ID temporal solo para la verificación de duplicados
+    final tempId = generarIdLibro(book);
+    debugPrint('ID temporal para duplicados: $tempId');
 
-      final existing = await _firestore
-          .collection('books')
-          .where('idLibro', isEqualTo: idLibro)
-          .get();
-      
-      //  SI HAY DUPLICADOS, MOSTRAR DIÁLOGO SIN CERRAR EL PRINCIPAL
-      if (existing.docs.isNotEmpty) {
+    final existing = await _firestore
+        .collection('books')
+        .where('idBook', isEqualTo: tempId)
+        .get();
+
+    if (existing.docs.isNotEmpty) {
+      if (context.mounted) {
+        _mostrarDialogo(
+          context,
+          title: 'Registro duplicado',
+          message: 'Ya existe un libro con ese título, autor y año.',
+          color: Colors.orangeAccent,
+          icon: Icons.warning_amber_rounded,
+          autoCerrar: false,
+        );
+      }
+      return;
+    }
+
+    // Subir imagen si aplica
+    String? uploadedUrl = book.imagenUrl;
+    if (book.imagenFile != null) {
+      final fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      final ref = _storage.ref().child('book_images/$fileName');
+      await ref.putFile(book.imagenFile!);
+      uploadedUrl = await ref.getDownloadURL();
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    final registrador = user?.email ?? 'desconocido';
+    final fecha = DateTime.now();
+
+    final bookToSave = book.copyWith(
+      imagenUrl: uploadedUrl,
+      fechaRegistro: fecha,
+    );
+
+    // Creamos el documento y dejamos que Firebase genere el ID
+    final docRef = await _firestore.collection('books').add({
+      ...bookToSave.toMap(),
+      'registradoPor': registrador,
+      'fechaRegistro': fecha,
+    });
+
+    // Actualizamos el campo idBook con el UID generado
+    await docRef.update({'idBook': docRef.id});
+
+    if (context.mounted) {
+      _mostrarDialogo(
+        context,
+        title: '¡Registro exitoso!',
+        message: 'El libro ha sido guardado correctamente.',
+        color: Colors.green,
+        icon: Icons.check_circle_outline,
+      );
+    }
+  } catch (e, stackTrace) {
+    debugPrint('Error al subir imagen o guardar libro: $e');
+    debugPrintStack(stackTrace: stackTrace);
+
+    if (context.mounted) {
+      Future.delayed(const Duration(milliseconds: 200), () {
         if (context.mounted) {
           _mostrarDialogo(
             context,
-            title: 'Registro duplicado',
-            message: 'Ya existe un libro con ese título, autor y año.',
-            color: Colors.orangeAccent,
-            icon: Icons.warning_amber_rounded,
-            autoCerrar: false,
+            title: 'Error',
+            message: 'No se pudo registrar el libro. Intenta nuevamente.',
+            color: Colors.redAccent,
+            icon: Icons.error_outline,
           );
         }
-        return;
-      }
-
-      // CONTINUAR CON EL REGISTRO
-      String? uploadedUrl = book.imagenUrl;
-
-      if (book.imagenFile != null) {
-        final fileName = DateTime.now().millisecondsSinceEpoch.toString();
-        final ref = _storage.ref().child('book_images/$fileName');
-        await ref.putFile(book.imagenFile!);
-        uploadedUrl = await ref.getDownloadURL();
-      }
-
-      final user = FirebaseAuth.instance.currentUser;
-      final registrador = user?.email ?? 'desconocido';
-      final fecha = DateTime.now();
-
-      final bookToSave = book.copyWith(
-        imagenUrl: uploadedUrl,
-        fechaRegistro: fecha,
-      );
-
-      await _firestore.collection('books').add({
-        ...bookToSave.toMap(),
-        'idLibro': idLibro,
-        'registradoPor': registrador,
-        'fechaRegistro': fecha,
       });
-
-      // CERRAR DIÁLOGO PRINCIPAL SOLO DESPUÉS DEL ÉXITO
-      if (context.mounted) {
-        if (context.mounted) {
-            _mostrarDialogo(
-              context,
-              title: '¡Registro exitoso!',
-              message: 'El libro ha sido guardado correctamente.',
-              color: Colors.green,
-              icon: Icons.check_circle_outline,
-            );
-        }
-      }
-    } catch (e, stackTrace) {
-      debugPrint('Error al subir imagen o guardar libro: $e');
-      debugPrintStack(stackTrace: stackTrace);
-
-      if (context.mounted) {
-        // EN CASO DE ERROR, CERRAR EL DIÁLOGO PRINCIPAL Y MOSTRAR ERROR
-        Navigator.pop(context);
-        Future.delayed(const Duration(milliseconds: 200), () {
-          if (context.mounted) {
-            _mostrarDialogo(
-              context,
-              title: 'Error',
-              message: 'No se pudo registrar el libro. Intenta nuevamente.',
-              color: Colors.redAccent,
-              icon: Icons.error_outline,
-            );
-          }
-        });
-      }
     }
   }
+}
+
 
   /// EDITAR LIBRO EXISTENTE
   Future<void> editBook(Book book, BuildContext context) async {
