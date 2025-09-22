@@ -5,6 +5,7 @@ import '../../models/book_m.dart';
 import 'qr_v.dart';
 import '../book/edit_bk.dart';
 import '../book/history_bk.dart';
+import '../market/sale.dart';
 
 class DetalleLibroPage extends StatefulWidget {
   final Book book;
@@ -157,7 +158,23 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               Icons.attach_money,
               'Vender',
               color: const Color.fromRGBO(76, 175, 80, 0.6),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => SellDialog(
+                    book: book,
+                    onSold: (Book updatedBook) {
+                      setState(() {
+                        // ACTUALIZA EL LIBRO ACTUAL
+                        book = updatedBook;
+                      });
+                    },
+                  ),
+                );
+              },
             ),
+
+
             _buildActionButton(
               context,
               Icons.remove_circle,
@@ -373,6 +390,20 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           Icons.attach_money,
           'Vender',
           color: const Color.fromRGBO(76, 175, 80, 0.6),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (_) => SellDialog(
+              book: book,
+              onSold: (Book updatedBook) {
+                setState(() {
+                  // Actualiza el libro actual con el Book devuelto
+                  book = updatedBook;
+                });
+              },
+            ),
+            );
+          },
         ),
         const SizedBox(height: 12),
         _buildActionButton(

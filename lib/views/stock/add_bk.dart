@@ -8,7 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/addbook/image_picker_field.dart';
 import '../../widgets/global/textfield.dart';
 
-import '../../viewmodels/book_vm.dart';
+import '../../viewmodels/book/book_vm.dart';
 
 class AddBookDialog extends StatefulWidget {
   final Function(Book) onAdd;

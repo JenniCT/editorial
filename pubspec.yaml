@@ -52,7 +52,8 @@ dependencies:
   permission_handler: ^12.0.1 # Para manejar permisos
   share_plus: ^11.1.0          # Para compartir contenido
   screenshot: 3.0.0
-  diacritic: ^0.1.3
+  diacritic: ^0.1.6
+  supabase_flutter: ^2.0.0
 
 
 

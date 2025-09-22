@@ -1,11 +1,6 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:csv/csv.dart';
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:file_picker/file_picker.dart';
-import '../../models/book_m.dart';
+import '../../viewmodels/stock/import_vm.dart';
 
 class ImportadorCSV extends StatefulWidget {
   const ImportadorCSV({super.key});
@@ -15,131 +10,220 @@ class ImportadorCSV extends StatefulWidget {
 }
 
 class _ImportadorCSVState extends State<ImportadorCSV> {
-  List<List<dynamic>>? datosCSV;
-  String? error;
-
-  String limpiarUrl(dynamic valor) {
-    final url = valor?.toString().trim() ?? '';
-    return url.startsWith('http') ? url : '';
-  }
-
-  Future<void> importarCSV() async {
-    try {
-      final resultado = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['csv'],
-      );
-
-      if (resultado == null || resultado.files.isEmpty) return;
-
-      final path = resultado.files.single.path!;
-      final bytes = await File(path).readAsBytes();
-      final contenido = utf8.decode(bytes);
-
-      final csv = const CsvToListConverter().convert(contenido);
-      setState(() {
-        datosCSV = csv;
-        error = null;
-      });
-    } catch (e) {
-      setState(() {
-        error = 'Error al leer el archivo: $e';
-        datosCSV = null;
-      });
-    }
-  }
-
-  Future<void> subirDatosAFirestore() async {
-    if (datosCSV == null || datosCSV!.length < 2) {
-      setState(() {
-        error = '⚠️ No hay datos para subir';
-      });
-      return;
-    }
-
-    final encabezados = datosCSV!.first.map((e) => e.toString().trim()).toList();
-    final registros = datosCSV!.skip(1);
-    final email = FirebaseAuth.instance.currentUser?.email ?? 'desconocido';
-
-    int subidos = 0;
-
-    for (var fila in registros) {
-      final mapa = <String, dynamic>{};
-      for (int i = 0; i < encabezados.length; i++) {
-        mapa[encabezados[i]] = fila[i];
-      }
-
-      try {
-        final book = Book(
-          imagenUrl: limpiarUrl(mapa['imagenUrl']),
-          titulo: mapa['titulo']?.toString() ?? '',
-          subtitulo: mapa['subtitulo']?.toString(),
-          autor: mapa['autor']?.toString() ?? '',
-          editorial: mapa['editorial']?.toString() ?? '',
-          coleccion: mapa['coleccion']?.toString(),
-          anio: int.tryParse(mapa['anio']?.toString() ?? '') ?? 0,
-          isbn: mapa['isbn']?.toString(),
-          edicion: int.tryParse(mapa['edicion']?.toString() ?? '') ?? 1,
-          copias: int.tryParse(mapa['copias']?.toString() ?? '') ?? 1,
-          estante: int.tryParse(mapa['estante']?.toString() ?? '') ?? 0,
-          almacen: int.tryParse(mapa['almacen']?.toString() ?? '') ?? 0,
-          precio: double.tryParse(mapa['precio']?.toString() ?? '') ?? 0.0,
-          areaConocimiento: mapa['areaConocimiento']?.toString() ?? 'Sin definir',
-          estado: true,
-          fechaRegistro: DateTime.now(),
-          registradoPor: email,
-        );
-
-        await FirebaseFirestore.instance.collection('books').add(book.toMap());
-        subidos++;
-      } catch (e) {
-        debugPrint('Error al subir fila: $e');
-      }
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$subidos libros subidos exitosamente')),
-    );
-  }
+  final ImportadorCSVViewModel _vm = ImportadorCSVViewModel();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('📚 Importar libros desde CSV', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.upload_file),
-            label: const Text('Seleccionar archivo CSV'),
-            onPressed: importarCSV,
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.cloud_upload),
-            label: const Text('Subir a Firestore'),
-            onPressed: subirDatosAFirestore,
-          ),
-          const SizedBox(height: 20),
-          if (error != null)
-            Text(error!, style: const TextStyle(color: Colors.red)),
-          if (datosCSV != null)
-            SizedBox(
-              height: 200,
-              child: ListView.builder(
-                itemCount: datosCSV!.length,
-                itemBuilder: (context, index) {
-                  final fila = datosCSV![index];
-                  return ListTile(
-                    dense: true,
-                    title: Text(fila.join(', ')),
-                  );
-                },
+    final previewRows = _vm.datosCSV ?? [];
+
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              width: previewRows.isNotEmpty ? 600 : 400,
+              height: previewRows.isNotEmpty ? 500 : 200,
+              decoration: BoxDecoration(
+                color: const Color.fromRGBO(19, 38, 87, 0.3),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color.fromRGBO(47, 65, 87, 0.3)),
+              ),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Text(
+                    'Importar libros desde CSV',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          if (previewRows.isNotEmpty)
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 250,
+                                  child: ElevatedButton.icon(
+                                    icon: const Icon(Icons.upload_file, size: 20),
+                                    label: const Text(
+                                      'Seleccionar archivo CSV',
+                                      style: TextStyle(
+                                          fontSize: 14, fontWeight: FontWeight.w500),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF2D4A91),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 18),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12)),
+                                      elevation: 6,
+                                    ),
+                                    onPressed: () async {
+                                      await _vm.importarCSV();
+                                      setState(() {});
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                SizedBox(
+                                  width: 250,
+                                  child: ElevatedButton.icon(
+                                    icon: const Icon(Icons.cloud_upload, size: 20),
+                                    label: Text(
+                                      _vm.loading ? 'Subiendo...' : 'Subir datos',
+                                      style: const TextStyle(
+                                          fontSize: 14, fontWeight: FontWeight.w500),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF4CAF50),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 18),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12)),
+                                      elevation: 6,
+                                    ),
+                                    onPressed: _vm.loading
+                                        ? null
+                                        : () async {
+                                            setState(() {
+                                              _vm.loading = true;
+                                              _vm.cancelarImportacion = false;
+                                            });
+                                            await _vm.subirDatosAFirestore(context);
+                                            setState(() {
+                                              _vm.loading = false;
+                                            });
+                                          },
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            Center(
+                              child: SizedBox(
+                                width: 250,
+                                child: ElevatedButton.icon(
+                                  icon: const Icon(Icons.upload_file, size: 20),
+                                  label: const Text(
+                                    'Seleccionar archivo CSV',
+                                    style: TextStyle(
+                                        fontSize: 14, fontWeight: FontWeight.w500),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2D4A91),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 32, vertical: 18),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12)),
+                                    elevation: 6,
+                                  ),
+                                  onPressed: () async {
+                                    await _vm.importarCSV();
+                                    setState(() {});
+                                  },
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          if (_vm.error != null) ...[
+                            Text(
+                              _vm.error!,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                          if (previewRows.isNotEmpty) ...[
+                            Text(
+                              'Vista previa (primeras 20 filas):',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(color: Colors.white70),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 220,
+                              child: ListView.builder(
+                                itemCount: previewRows.length > 20
+                                    ? 20
+                                    : previewRows.length,
+                                itemBuilder: (context, index) {
+                                  final fila = previewRows[index];
+                                  final texto =
+                                      fila.map((c) => (c ?? '').toString()).join(' , ');
+                                  return ListTile(
+                                    dense: true,
+                                    tileColor:
+                                        const Color.fromRGBO(255, 255, 255, 0.05),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    title: Text(
+                                      texto,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    leading: Text(
+                                      '$index',
+                                      style: const TextStyle(
+                                          color: Colors.white70, fontSize: 16),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // --- Botón de detener importación, abajo ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_vm.loading)
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _vm.cancelarImportacion = true;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF05B54),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 28, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 4,
+                          ),
+                          child: const Text(
+                            'Detener importación',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ),
             ),
-        ],
+          ),
+        ),
       ),
     );
   }

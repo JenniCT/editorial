@@ -8,12 +8,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/addbook/image_picker_field.dart';
 import '../../widgets/global/textfield.dart';
 
-// MODELO Y VIEWMODEL DE ACERVO
-import '../../models/acervo_bk.dart';
-import '../../viewmodels/acervo_vm.dart';
+// MODELO Y VIEWMODEL DE BOOK
+import '../../models/book_m.dart';
+import '../../viewmodels/acervo_vm.dart'; // VM adaptada para manejar acervo dentro de books
 
 class AddAcervoDialog extends StatefulWidget {
-  final Function(Acervo) onAdd;
+  final Function(Book) onAdd;
 
   const AddAcervoDialog({required this.onAdd, super.key});
 
@@ -62,7 +62,9 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
 
   Future<void> _saveAcervo() async {
     if (_formKey.currentState!.validate()) {
-      final acervo = Acervo(
+      final copias = int.tryParse(_copiasController.text) ?? 1;
+
+      final book = Book(
         imagenFile: _selectedImage,
         imagenUrl: _imageUrlController.text.isNotEmpty ? _imageUrlController.text.trim() : null,
         titulo: _tituloController.text.trim(),
@@ -73,15 +75,17 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
         anio: int.tryParse(_anioController.text) ?? 0,
         isbn: _isbnController.text.isNotEmpty ? _isbnController.text.trim() : null,
         edicion: int.tryParse(_edicionController.text) ?? 1,
-        copias: int.tryParse(_copiasController.text) ?? 1,
-        precio: double.tryParse(_precioController.text) ?? 0.0,
+        copias: copias,
+        estante: 0, // acervo
+        almacen: copias, // acervo
         areaConocimiento: _selectedAreaConocimiento,
-        estado: true,
+        precio: double.tryParse(_precioController.text) ?? 0.0,
+        estado: false, // acervo
         fechaRegistro: DateTime.now(),
         registradoPor: FirebaseAuth.instance.currentUser?.uid ?? 'desconocido',
       );
 
-      await _viewModel.addAcervo(acervo, context);
+      await _viewModel.addAcervo(book, context);
     }
   }
 
@@ -232,14 +236,14 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
   }
 }
 
-void showAddAcervoDialog(BuildContext context, Function(Acervo) onAdd) {
+void showAddAcervoDialog(BuildContext context, Function(Book) onAdd) {
   showGeneralDialog(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Agregar libro al acervo',
     transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (_, __, ___) => const SizedBox(),
-    transitionBuilder: (context, animation, _, __) {
+    pageBuilder: (_, _, _) => const SizedBox(),
+    transitionBuilder: (context, animation, _, _) {
       final curvedAnimation = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
       return ScaleTransition(scale: curvedAnimation, child: AddAcervoDialog(onAdd: onAdd));
     },

@@ -7,15 +7,14 @@ import '../widgets/global/background.dart';
 // MODELO
 import '../models/book_m.dart';
 import '../models/user.dart';
-import '../models/acervo_bk.dart';
 
 // VISTAS
-import '../views/dashboard.dart';
+import 'dashboard/dashboard.dart';
 import 'stock/stock.dart';
 import 'acervo/acervo.dart';
-import 'market/market.dart';
-import '../views/analisis.dart';
-import '../views/settings.dart';
+import 'market/sales.dart';
+import 'users/analisis.dart';
+import 'setting/settings.dart';
 import 'book/details_bk.dart';
 
 class HomeLayout extends StatefulWidget {
@@ -30,7 +29,6 @@ class HomeLayout extends StatefulWidget {
 class _HomeLayoutState extends State<HomeLayout> {
   int selectedIndex = 0;
   Book? selectedBook;
-  Acervo? selectedAcervo;
   bool showingDetail = false;
   
   void onItemSelected(int index) {
@@ -42,13 +40,12 @@ class _HomeLayoutState extends State<HomeLayout> {
   final List<String> labels = [
     'Dashboard',
     'Libros',
-    'Donaciones',
+    'Acervo',
     'Ventas',
     'Analisis',
     'Configuracion',
     'Log out',
   ];
-
 
   void handleBookSelection(Book book) {
     setState(() {
@@ -56,18 +53,6 @@ class _HomeLayoutState extends State<HomeLayout> {
       showingDetail = true;
     });
   }
-
-  void handleAcervoSelection(Acervo acervo) {
-    setState(() {
-      selectedAcervo = acervo;
-      selectedBook = null;
-      showingDetail = true;
-    });
-  }
-
-
-
-  
 
   Widget getView(int index) {
     if (showingDetail && selectedBook != null) {
@@ -97,11 +82,11 @@ class _HomeLayoutState extends State<HomeLayout> {
         );
       case 2:
         return AcervoPage(
-          key: const ValueKey('Donaciones'),
-          onAcervoSelected: handleAcervoSelection,
+          key: const ValueKey('Acervo'),
+          onAcervoSelected: handleBookSelection, // ahora devuelve Book
         );
       case 3:
-        return const VentasPage(key: ValueKey('Ventas'));
+        return const SalesPage(key: ValueKey('Ventas'));
       case 4:
         return const AnalisisPage(key: ValueKey('Analisis'));
       case 5:

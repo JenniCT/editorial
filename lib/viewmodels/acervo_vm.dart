@@ -4,11 +4,12 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:diacritic/diacritic.dart';
 import '../widgets/global/dialog.dart';
-import '../models/acervo_bk.dart';
+import '../models/book_m.dart';
 
 class AcervoViewModel {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+
   void _mostrarDialogo(
     BuildContext context, {
     required String title,
@@ -37,26 +38,24 @@ class AcervoViewModel {
     );
   }
 
-  /// GENERA ID ÚNICO
-  String generarIdAcervo(Acervo acervo) {
-    final titulo = removeDiacritics(acervo.titulo.trim().toLowerCase());
-    final autor = removeDiacritics(acervo.autor.trim().toLowerCase());
-    final anio = acervo.anio.toString();
+  /// Genera ID único basado en título, autor y año
+  String generarIdAcervo(Book book) {
+    final titulo = removeDiacritics(book.titulo.trim().toLowerCase());
+    final autor = removeDiacritics(book.autor.trim().toLowerCase());
+    final anio = book.anio.toString();
     return '$titulo$autor$anio'
         .replaceAll(RegExp(r'\s+'), '_')
         .replaceAll(RegExp(r'[^a-z0-9_]+'), '');
   }
 
-
-  /// AGREGAR ACERVO
-  Future<void> addAcervo(Acervo acervo, BuildContext context) async {
+  /// Agregar libro como "acervo" (estado = false)
+  Future<void> addAcervo(Book book, BuildContext context) async {
     try {
-      // ID temporal solo para verificar duplicados
-      final tempId = generarIdAcervo(acervo);
+      final tempId = generarIdAcervo(book);
 
       final existing = await _firestore
-          .collection('acervo')
-          .where('idAcervo', isEqualTo: tempId)
+          .collection('books')
+          .where('idBook', isEqualTo: tempId)
           .get();
 
       if (existing.docs.isNotEmpty) {
@@ -74,11 +73,11 @@ class AcervoViewModel {
       }
 
       // Subir imagen si aplica
-      String? uploadedUrl = acervo.imagenUrl;
-      if (acervo.imagenFile != null) {
+      String? uploadedUrl = book.imagenUrl;
+      if (book.imagenFile != null) {
         final fileName = DateTime.now().millisecondsSinceEpoch.toString();
-        final ref = _storage.ref().child('acervo_images/$fileName');
-        await ref.putFile(acervo.imagenFile!);
+        final ref = _storage.ref().child('book_images/$fileName');
+        await ref.putFile(book.imagenFile!);
         uploadedUrl = await ref.getDownloadURL();
       }
 
@@ -86,26 +85,29 @@ class AcervoViewModel {
       final registrador = user?.email ?? 'desconocido';
       final fecha = DateTime.now();
 
-      final acervoToSave = acervo.copyWith(
+      // Aplicamos reglas de negocio
+      final bookToSave = book.copyWith(
         imagenUrl: uploadedUrl,
         fechaRegistro: fecha,
+        estado: false, 
+        estante: 0,
+        almacen: book.copias,
       );
 
-      // Crear documento y dejar que Firebase genere el UID
-      final docRef = await _firestore.collection('acervo').add({
-        ...acervoToSave.toMap(),
+      // Crear documento en "books"
+      final docRef = await _firestore.collection('books').add({
+        ...bookToSave.toMap(),
         'registradoPor': registrador,
         'fechaRegistro': fecha,
       });
 
-      // Actualizar idAcervo con el UID generado
-      await docRef.update({'idAcervo': docRef.id});
+      await docRef.update({'idBook': docRef.id});
 
       if (context.mounted) {
         _mostrarDialogo(
           context,
           title: '¡Registro exitoso!',
-          message: 'El libro ha sido guardado correctamente.',
+          message: 'El libro ha sido guardado correctamente en acervo.',
           color: Colors.green,
           icon: Icons.check_circle_outline,
         );
@@ -118,7 +120,7 @@ class AcervoViewModel {
         _mostrarDialogo(
           context,
           title: 'Error',
-          message: 'No se pudo registrar el libro. Intenta nuevamente.',
+          message: 'No se pudo registrar el acervo. Intenta nuevamente.',
           color: Colors.redAccent,
           icon: Icons.error_outline,
         );
@@ -126,16 +128,21 @@ class AcervoViewModel {
     }
   }
 
-  /// STREAM DE ACERVO
-  Stream<List<Acervo>> getAcervosStream() {
+  /// Stream de libros en estado false
+  Stream<List<Book>> getAcervosStream() {
     return _firestore
-        .collection('acervo')
+        .collection('books')
+        .where('estado', isEqualTo: false)
         .orderBy('titulo')
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs.map((doc) {
+        .snapshots(includeMetadataChanges: true)
+        .map((snapshot) {
+          if (snapshot.metadata.isFromCache) {
+            return [];
+          }
+
+          return snapshot.docs.map((doc) {
             final data = doc.data();
-            return Acervo(
+            return Book(
               id: doc.id,
               titulo: data['titulo'] ?? '',
               subtitulo: data['subtitulo'] ?? '',
@@ -148,12 +155,15 @@ class AcervoViewModel {
               copias: data['copias'] ?? 0,
               precio: (data['precio'] ?? 0).toDouble(),
               imagenUrl: data['imagenUrl'],
-              estado: data['estado'] ?? true,
+              estado: data['estado'] ?? false,
               fechaRegistro: (data['fechaRegistro'] as Timestamp).toDate(),
+              estante: data['estante'] ?? 0,
+              almacen: data['almacen'] ?? 0,
               areaConocimiento: data['areaConocimiento'] ?? '',
               registradoPor: data['registradoPor'] ?? 'desconocido',
             );
-          }).toList(),
-        );
+          }).toList();
+        });
   }
+
 }

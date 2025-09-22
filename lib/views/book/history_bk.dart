@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../viewmodels/book_vm.dart';
+import '../../viewmodels/book/book_vm.dart';
 import '../../models/history_bk.dart';
 
 class HistorialView extends StatelessWidget {

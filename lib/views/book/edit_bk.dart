@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../models/book_m.dart';
-import '../../viewmodels/book_vm.dart';
+import '../../viewmodels/book/book_vm.dart';
 import '../../widgets/addbook/image_picker_field.dart';
 import '../../widgets/global/textfield.dart';
 import 'package:image_picker/image_picker.dart';
@@ -92,6 +92,7 @@ class _EditBookDialogState extends State<EditBookDialog> {
   Future<void> _updateBook() async {
     if (_formKey.currentState!.validate()) {
       final updatedBook = widget.book.copyWith(
+        imagenFile: _selectedImage, // <--- PASAMOS LA IMAGEN SELECCIONADA
         imagenUrl: _imageUrlController.text.isNotEmpty ? _imageUrlController.text : null,
         titulo: _tituloController.text,
         subtitulo: _subtituloController.text.isNotEmpty ? _subtituloController.text : null,
@@ -110,10 +111,10 @@ class _EditBookDialogState extends State<EditBookDialog> {
 
       // Actualizar en la base de datos
       await _viewModel.editBook(updatedBook, context);
-      
-      // Llamar al callback para actualizar la UI padre
+
+      // Actualizar la UI del padre
       widget.onUpdate(updatedBook);
-      
+
       // Cerrar el diálogo
       if (mounted) {
         Navigator.of(context).pop();

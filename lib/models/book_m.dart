@@ -22,7 +22,7 @@ class Book {
   final String areaConocimiento;
   final String areaLower;
   final double precio;
-  final bool estado;
+  final bool estado; // 👈 con valor default
   final DateTime fechaRegistro;
   final String registradoPor;
 
@@ -43,7 +43,7 @@ class Book {
     required this.almacen,
     required this.copias,
     required this.precio,
-    required this.estado,
+    this.estado = true,
     required this.fechaRegistro,
     required this.registradoPor,
   })  : tituloLower = titulo.toLowerCase(),
@@ -73,14 +73,20 @@ class Book {
       autor: autor,
       editorial: editorial,
       coleccion: map['coleccion'] as String?,
-      anio: (map['anio'] is int) ? map['anio'] : int.tryParse(map['anio'].toString()) ?? 0,
+      anio: (map['anio'] is int)
+          ? map['anio']
+          : int.tryParse(map['anio'].toString()) ?? 0,
       isbn: map['isbn'] as String?,
-      edicion: (map['edicion'] is int) ? map['edicion'] : int.tryParse(map['edicion'].toString()) ?? 1,
+      edicion: (map['edicion'] is int)
+          ? map['edicion']
+          : int.tryParse(map['edicion'].toString()) ?? 1,
       estante: est,
       almacen: alm,
       copias: total,
       areaConocimiento: area,
-      precio: (map['precio'] is double) ? map['precio'] : double.tryParse(map['precio'].toString()) ?? 0.0,
+      precio: (map['precio'] is double)
+          ? map['precio']
+          : double.tryParse(map['precio'].toString()) ?? 0.0,
       estado: map['estado'] ?? true,
       fechaRegistro: (map['fechaRegistro'] as Timestamp).toDate(),
       registradoPor: map['registradoPor'] ?? 'desconocido',

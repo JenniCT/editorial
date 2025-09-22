@@ -1,35 +1,32 @@
 import 'package:flutter/material.dart';
+
 // MODELO
-import '../../models/book_m.dart';
+import '../../models/sale_m.dart';
 // VISTAMODELO
-import '../../viewmodels/acervo_vm.dart';
-// VISTAS
-import '../acervo/add_acervo.dart';
+import '../../viewmodels/sales_vm.dart';
 // WIDGETS
 //import '../../widgets/global/search.dart';
 import '../../widgets/global/table.dart';
 
-class AcervoPage extends StatefulWidget {
-  final Function(Book) onAcervoSelected;
-
-  const AcervoPage({required this.onAcervoSelected, super.key});
+class SalesPage extends StatefulWidget {
+  const SalesPage({super.key});
 
   @override
-  State<AcervoPage> createState() => _AcervoPageState();
+  State<SalesPage> createState() => _SalesPageState();
 }
 
-class _AcervoPageState extends State<AcervoPage> {
-  final AcervoViewModel _viewModel = AcervoViewModel();
+class _SalesPageState extends State<SalesPage> {
+  final SalesViewModel _viewModel = SalesViewModel();
   final TextEditingController _searchController = TextEditingController();
-  List<Book> _filteredBooks = [];
-  List<Book> _allBooks = [];
+  List<Sale> _filteredSales = [];
+  List<Sale> _allSales = [];
   int _currentPage = 0;
   final int _itemsPerPage = 10;
   bool _isSearching = false;
 
-  /*void _handleSearchResults(List<Book> results) {
+  /*void _handleSearchResults(List<Sale> results) {
     setState(() {
-      _filteredBooks = results;
+      _filteredSales = results;
       _isSearching = results.isNotEmpty || _searchController.text.isNotEmpty;
       _currentPage = 0;
     });
@@ -50,7 +47,7 @@ class _AcervoPageState extends State<AcervoPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Acervo',
+                  'Ventas',
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 Flexible(
@@ -62,21 +59,6 @@ class _AcervoPageState extends State<AcervoPage> {
                       _buildOutlinedButton(Icons.filter_list, 'Filtrar', () {}),
                       _buildOutlinedButton(Icons.download, 'Exportar', () {}),
                       _buildOutlinedButton(Icons.upload, 'Importar', () {}),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.add),
-                        label: const Text('Agregar libro'),
-                        onPressed: () {
-                          showAddAcervoDialog(context, (newBook) =>
-                              _viewModel.addAcervo(newBook, context));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -84,21 +66,21 @@ class _AcervoPageState extends State<AcervoPage> {
             ),
             const SizedBox(height: 20),
 
-            // TABLA DE ACERVOS
-            StreamBuilder<List<Book>>(
-              stream: _viewModel.getAcervosStream(),
+            // TABLA DE VENTAS
+            StreamBuilder<List<Sale>>(
+              stream: _viewModel.getSalesStream(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No hay libros disponibles'));
+                  return const Center(child: Text('No hay ventas registradas'));
                 }
 
-                _allBooks = snapshot.data!;
-                List<Book> itemsToShow = _isSearching ? _filteredBooks : _allBooks;
+                _allSales = snapshot.data!;
+                List<Sale> itemsToShow = _isSearching ? _filteredSales : _allSales;
 
-                if (_isSearching && _filteredBooks.isEmpty && _searchController.text.isNotEmpty) {
+                if (_isSearching && _filteredSales.isEmpty && _searchController.text.isNotEmpty) {
                   return const Center(
                     child: Text(
-                      'No se encontraron libros con ese criterio de búsqueda',
+                      'No se encontraron ventas con ese criterio de búsqueda',
                       style: TextStyle(color: Colors.white70),
                     ),
                   );
@@ -106,57 +88,33 @@ class _AcervoPageState extends State<AcervoPage> {
 
                 final startIndex = _currentPage * _itemsPerPage;
                 final endIndex = (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
-                final booksPage = itemsToShow.sublist(startIndex, endIndex);
+                final salesPage = itemsToShow.sublist(startIndex, endIndex);
 
                 final columnWidths = <double>[
-                  80,  // Portada
                   180, // Título
-                  150, // Subtítulo
                   140, // Autor
-                  120, // Editorial
-                  120, // Colección
-                  60,  // Año
-                  120, // ISBN
-                  60,  // Edición
-                  60,  // Copias
-                  80,  // Precio
-                  150, // Área
+                  60,  // Cantidad
+                  80,  // Total
+                  150, // Fecha
+                  150, // Usuario
+                  120, // Lugar
                 ];
 
                 return Column(
                   children: [
                     CustomTable(
                       headers: [
-                        'Portada','Título','Subtítulo','Autor','Editorial','Colección','Año','ISBN','Edición','Copias','Precio','Área'
+                        'Título','Autor','Cantidad','Total','Fecha','Usuario','Lugar'
                       ],
-                      rows: booksPage.map((book) {
+                      rows: salesPage.map((sale) {
                         return [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              book.imagenUrl ?? 'assets/sinportada.png',
-                              height: 100,
-                              width: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Image.asset(
-                                'assets/sinportada.png',
-                                height: 100,
-                                width: 80,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          _buildText(book.titulo),
-                          _buildText(book.subtitulo ?? '-'),
-                          _buildText(book.autor),
-                          _buildText(book.editorial),
-                          _buildText(book.coleccion ?? '-'),
-                          _buildText(book.anio.toString()),
-                          _buildText(book.isbn ?? '-'),
-                          _buildText(book.edicion.toString()),
-                          _buildText(book.copias.toString()),
-                          _buildText('\$${book.precio.toStringAsFixed(2)}'),
-                          _buildText(book.areaConocimiento),
+                          _buildText(sale.titulo),
+                          _buildText(sale.autor),
+                          _buildText(sale.cantidad.toString()),
+                          _buildText('\$${sale.total.toStringAsFixed(2)}'),
+                          _buildText('${sale.fecha.day}/${sale.fecha.month}/${sale.fecha.year}'),
+                          _buildText(sale.userEmail),
+                          _buildText(sale.lugar),
                         ];
                       }).toList(),
                       columnWidths: columnWidths,

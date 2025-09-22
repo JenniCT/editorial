@@ -73,7 +73,17 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const SizedBox(height: 70),
+                                  const SizedBox(height: 30),
+                                  Row(
+                                    mainAxisAlignment:  MainAxisAlignment.center,
+                                    children: [
+                                      Image.asset('assets/unach.png', height: 50,),
+                                      const SizedBox(width: 20,),
+                                      Image.asset('assets/siresu.png', height: 50,)
+                                    ],
+                                  ),
+                                  const SizedBox(height: 50),
+                                  //TITULO
                                   const Text(
                                     'Iniciar sesión',
                                     style: TextStyle(
