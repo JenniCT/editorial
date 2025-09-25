@@ -32,10 +32,10 @@ class _SidebarState extends State<Sidebar> {
   Widget build(BuildContext context) {
     final items = [
       _SidebarItem(icon: Icons.dashboard, label: 'Dashboard'),
-      _SidebarItem(icon: Icons.book, label: 'Libros'),
-      _SidebarItem(icon: Icons.volunteer_activism, label: 'Donaciones'),
+      _SidebarItem(icon: Icons.book_rounded, label: 'Libros'),
+      _SidebarItem(icon: Icons.archive_rounded, label: 'Acervo'),
       _SidebarItem(icon: Icons.shopping_cart, label: 'Ventas'),
-      _SidebarItem(icon: Icons.analytics, label: 'Análisis'),
+      _SidebarItem(icon: Icons.people_alt_rounded, label: 'Usuarios'),
       _SidebarItem(icon: Icons.settings, label: 'Configuración'),
       _SidebarItem(icon: Icons.logout, label: 'Cerrar sesión'),
     ];

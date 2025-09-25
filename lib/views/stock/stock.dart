@@ -95,12 +95,25 @@ class _InventarioPageState extends State<InventarioPage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Search(
+                  child: Search<Book>(
                     controller: _searchController,
-                    allBooks: _allBooks,
+                    allItems: _allBooks,
                     onResults: _handleSearchResults,
+                    filter: (book, query) {
+                      return book.tituloLower.contains(query) ||
+                          book.autorLower.contains(query) ||
+                          (book.subtitulo ?? '').toLowerCase().contains(query) ||
+                          book.editorialLower.contains(query) ||
+                          (book.coleccion ?? '').toLowerCase().contains(query) ||
+                          (book.isbn ?? '').toLowerCase().contains(query) ||
+                          book.estante.toString().contains(query) ||
+                          book.almacen.toString().contains(query) ||
+                          book.copias.toString().contains(query) ||
+                          book.areaLower.contains(query);
+                    },
                   ),
                 ),
+
               ],
             ),
             SizedBox(height: MediaQuery.of(context).size.height * 0.04),

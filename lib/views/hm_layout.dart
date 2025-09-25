@@ -13,13 +13,14 @@ import 'dashboard/dashboard.dart';
 import 'stock/stock.dart';
 import 'acervo/acervo.dart';
 import 'market/sales.dart';
-import 'users/analisis.dart';
+import 'users/users.dart';
 import 'setting/settings.dart';
 import 'book/details_bk.dart';
 
 class HomeLayout extends StatefulWidget {
   final UserModel user;
   final Role role;
+
   const HomeLayout({required this.user, required this.role, super.key});
 
   @override
@@ -30,7 +31,7 @@ class _HomeLayoutState extends State<HomeLayout> {
   int selectedIndex = 0;
   Book? selectedBook;
   bool showingDetail = false;
-  
+
   void onItemSelected(int index) {
     setState(() {
       selectedIndex = index;
@@ -42,7 +43,7 @@ class _HomeLayoutState extends State<HomeLayout> {
     'Libros',
     'Acervo',
     'Ventas',
-    'Analisis',
+    'Usuarios',
     'Configuracion',
     'Log out',
   ];
@@ -52,6 +53,10 @@ class _HomeLayoutState extends State<HomeLayout> {
       selectedBook = book;
       showingDetail = true;
     });
+  }
+
+  void handleUserSelection(UserModel user) {
+    // Aquí puedes manejar la acción al seleccionar un usuario
   }
 
   Widget getView(int index) {
@@ -83,12 +88,15 @@ class _HomeLayoutState extends State<HomeLayout> {
       case 2:
         return AcervoPage(
           key: const ValueKey('Acervo'),
-          onAcervoSelected: handleBookSelection, // ahora devuelve Book
+          onAcervoSelected: handleBookSelection, // devuelve Book
         );
       case 3:
         return const SalesPage(key: ValueKey('Ventas'));
       case 4:
-        return const AnalisisPage(key: ValueKey('Analisis'));
+        return UsersPage(
+          key: const ValueKey('Usuarios'),
+          onUsuarioSelected: handleUserSelection,
+        );
       case 5:
         return const SettingsPage(key: ValueKey('Configuracion'));
       default:
@@ -102,7 +110,7 @@ class _HomeLayoutState extends State<HomeLayout> {
       backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
       body: Stack(
         children: [
-          const BackgroundCircles(), 
+          const BackgroundCircles(),
           Row(
             children: [
               Sidebar(

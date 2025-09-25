@@ -6,7 +6,7 @@ import '../../viewmodels/acervo_vm.dart';
 // VISTAS
 import '../acervo/add_acervo.dart';
 // WIDGETS
-//import '../../widgets/global/search.dart';
+import '../../widgets/global/search.dart';
 import '../../widgets/global/table.dart';
 
 class AcervoPage extends StatefulWidget {
@@ -27,14 +27,6 @@ class _AcervoPageState extends State<AcervoPage> {
   final int _itemsPerPage = 10;
   bool _isSearching = false;
 
-  /*void _handleSearchResults(List<Book> results) {
-    setState(() {
-      _filteredBooks = results;
-      _isSearching = results.isNotEmpty || _searchController.text.isNotEmpty;
-      _currentPage = 0;
-    });
-  }*/
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -43,8 +35,40 @@ class _AcervoPageState extends State<AcervoPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+            // BARRA DE BÚSQUEDA
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Search<Book>(
+                    controller: _searchController,
+                    allItems: _allBooks,
+                    onResults: (results) {
+                      setState(() {
+                        _filteredBooks = results;
+                        _isSearching = results.isNotEmpty || _searchController.text.isNotEmpty;
+                        _currentPage = 0;
+                      });
+                    },
+                    filter: (book, query) {
+                      return book.tituloLower.contains(query) ||
+                          book.autorLower.contains(query) ||
+                          (book.subtitulo ?? '').toLowerCase().contains(query) ||
+                          book.editorialLower.contains(query) ||
+                          (book.coleccion ?? '').toLowerCase().contains(query) ||
+                          (book.isbn ?? '').toLowerCase().contains(query) ||
+                          book.anio.toString().contains(query) ||
+                          book.edicion.toString().contains(query) ||
+                          book.copias.toString().contains(query) ||
+                          book.areaLower.contains(query);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
 
+            SizedBox(height: MediaQuery.of(context).size.height * 0.04),
             // TÍTULO Y BOTONES
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -138,7 +162,7 @@ class _AcervoPageState extends State<AcervoPage> {
                               height: 100,
                               width: 80,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Image.asset(
+                              errorBuilder: (_, _, _) => Image.asset(
                                 'assets/sinportada.png',
                                 height: 100,
                                 width: 80,

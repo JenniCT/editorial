@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
-import '../../models/book_m.dart';
 
-class Search extends StatefulWidget {
+class Search<T> extends StatefulWidget {
   final TextEditingController controller;
-  final List<Book> allBooks;
-  final ValueChanged<List<Book>> onResults;
+  final List<T> allItems;
+  final ValueChanged<List<T>> onResults;
+  final bool Function(T item, String query) filter;
 
   const Search({
     required this.controller,
-    required this.allBooks,
+    required this.allItems,
     required this.onResults,
+    required this.filter,
     super.key,
   });
 
   @override
-  State<Search> createState() => _SearchState();
+  State<Search<T>> createState() => _SearchState<T>();
 }
 
-class _SearchState extends State<Search> {
+class _SearchState<T> extends State<Search<T>> {
   bool _loading = false;
-
 
   @override
   void initState() {
@@ -29,10 +29,10 @@ class _SearchState extends State<Search> {
 
   void _onSearchChanged() {
     final query = widget.controller.text.trim().toLowerCase();
-    _filterBooks(query);
+    _filterItems(query);
   }
 
-  void _filterBooks(String query) {
+  void _filterItems(String query) {
     if (query.isEmpty) {
       widget.onResults([]);
       return;
@@ -40,21 +40,9 @@ class _SearchState extends State<Search> {
 
     setState(() => _loading = true);
 
-    final filtered = widget.allBooks.where((book) =>
-      book.tituloLower.contains(query) ||
-      book.autorLower.contains(query) ||
-      (book.subtitulo ?? '').toLowerCase().contains(query) ||
-      book.editorialLower.contains(query) ||
-      (book.coleccion ?? '').toLowerCase().contains(query) ||
-      (book.isbn ?? '').toLowerCase().contains(query) ||
-      book.estante.toString().contains(query) ||
-      book.almacen.toString().contains(query) ||
-      book.copias.toString().contains(query) ||
-      book.areaLower.contains(query)
-    ).toList();
+    final filtered = widget.allItems.where((item) => widget.filter(item, query)).toList();
 
     widget.onResults(filtered);
-
     setState(() => _loading = false);
   }
 
@@ -63,7 +51,6 @@ class _SearchState extends State<Search> {
     widget.controller.removeListener(_onSearchChanged);
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +78,7 @@ class _SearchState extends State<Search> {
               keyboardType: TextInputType.text,
               cursorColor: const Color.fromRGBO(47, 65, 87, 1),
               decoration: InputDecoration(
-                hintText: 'Buscar por título, autor, editorial...',
+                hintText: 'Buscar...',
                 hintStyle: TextStyle(color: Colors.grey[600]),
                 border: InputBorder.none,
                 isDense: true,
