@@ -1,0 +1,7 @@
+msix_config:
+  display_name: InkVentory
+  publisher_display_name: TejChiapan
+  identity_name: com.tejchiapan.inkventory
+  msix_version: 1.0.0.0
+  logo_path: assets/logo.png
+  capabilities: internetClient, location

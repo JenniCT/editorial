@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
 // MODELO
 import '../../models/user.dart';
 // VIEWMODEL
 import '../../viewmodels/users/add_user_vm.dart';
 // VISTAS
 import '../users/add_user.dart';
+import 'details_user.dart';
 // WIDGETS
 import '../../widgets/global/search.dart';
 import '../../widgets/global/table.dart';
@@ -99,7 +102,7 @@ class _UsersPageState extends State<UsersPage> {
                         label: const Text('Agregar usuario'),
                         onPressed: () async {
                           await showAddUserDialog(context);
-                          await _loadUsuarios(); // Recargar usuarios desde Firebase
+                          await _loadUsuarios();
                         },
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -133,21 +136,47 @@ class _UsersPageState extends State<UsersPage> {
     final endIndex = (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
     final usuariosPage = itemsToShow.sublist(startIndex, endIndex);
 
-    final columnWidths = <double>[200, 250, 100];
+    final columnWidths = <double>[200, 250, 100, 150, 180, 120];
 
     return Column(
       children: [
         CustomTable(
-          headers: ['Nombre', 'Email', 'Rol'],
+          headers: [
+            'Nombre',
+            'Email',
+            'Rol',
+            'Fecha de creación',
+            'Fecha de expiración',
+            'Estado'
+          ],
           rows: usuariosPage.map((usuario) {
             return [
-              _buildText(usuario.name),
+              // 🔹 Hacemos que toda la fila sea "clickeable"
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailsUserPage(usuario: usuario, onBack: () => Navigator.pop(context),),
+                    ),
+                  );
+                },
+                child: _buildText(usuario.name),
+              ),
               _buildText(usuario.email),
               _buildText(usuario.role.toString().split('.').last),
+              _buildText(DateFormat('dd/MM/yyyy').format(usuario.createAt)),
+              _buildText(
+                usuario.expiresAt != null
+                    ? DateFormat('dd/MM/yyyy').format(usuario.expiresAt!)
+                    : 'No asignado',
+              ),
+              _buildStatusIcon(usuario.status),
             ];
           }).toList(),
           columnWidths: columnWidths,
         ),
+
         // PAGINACIÓN
         if (itemsToShow.length > _itemsPerPage)
           Padding(
@@ -157,12 +186,17 @@ class _UsersPageState extends State<UsersPage> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_left),
-                  onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                  onPressed:
+                      _currentPage > 0 ? () => setState(() => _currentPage--) : null,
                 ),
-                Text('${_currentPage + 1} / ${((itemsToShow.length - 1) / _itemsPerPage).ceil() + 1}'),
+                Text(
+                  '${_currentPage + 1} / ${((itemsToShow.length - 1) / _itemsPerPage).ceil() + 1}',
+                ),
                 IconButton(
                   icon: const Icon(Icons.arrow_right),
-                  onPressed: endIndex < itemsToShow.length ? () => setState(() => _currentPage++) : null,
+                  onPressed: endIndex < itemsToShow.length
+                      ? () => setState(() => _currentPage++)
+                      : null,
                 ),
               ],
             ),
@@ -178,6 +212,7 @@ class _UsersPageState extends State<UsersPage> {
       ],
     );
   }
+
 
   Widget _buildOutlinedButton(IconData icon, String text, VoidCallback onPressed) => Container(
         decoration: BoxDecoration(
@@ -198,10 +233,29 @@ class _UsersPageState extends State<UsersPage> {
         ),
       );
 
-  Widget _buildText(String text) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Text(text, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white)),
-      );
+  Widget _buildText(String text) => 
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(text, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white)),
+    );
+
+  Widget _buildStatusIcon(bool status) {
+  return Row(
+    children: [
+      Icon(
+        Icons.circle,
+        size: 12,
+        color: status ? Colors.green : Colors.red,
+      ),
+      const SizedBox(width: 6),
+      Text(
+        status ? 'Activo' : 'Inactivo',
+        style: const TextStyle(color: Colors.white),
+      ),
+    ],
+  );
+}
+
 
   @override
   void dispose() {

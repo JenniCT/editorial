@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+// MODELOS
 import '../../models/book_m.dart';
 import '../../models/sale_m.dart';
+// VIEWMODEL
 import '../../viewmodels/sales_vm.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class SellDialog extends StatefulWidget {
   final Book book;
@@ -11,10 +14,10 @@ class SellDialog extends StatefulWidget {
   const SellDialog({required this.book, required this.onSold, super.key});
 
   @override
-  _SellDialogState createState() => _SellDialogState();
+  SellDialogState createState() => SellDialogState();
 }
 
-class _SellDialogState extends State<SellDialog> {
+class SellDialogState extends State<SellDialog> {
   final _cantidadController = TextEditingController(text: '1');
   final _lugarController = TextEditingController();
   final SalesViewModel _salesVM = SalesViewModel();

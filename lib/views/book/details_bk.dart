@@ -13,10 +13,10 @@ class DetalleLibroPage extends StatefulWidget {
   const DetalleLibroPage({required this.book, required this.onBack, super.key});
 
   @override
-  _DetalleLibroPageState createState() => _DetalleLibroPageState();
+  DetalleLibroPageState createState() => DetalleLibroPageState();
 }
 
-class _DetalleLibroPageState extends State<DetalleLibroPage> {
+class DetalleLibroPageState extends State<DetalleLibroPage> {
   late Book book;
   late VoidCallback onBack;
 

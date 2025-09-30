@@ -37,6 +37,8 @@ dependencies:
   
   # MANEJO DE ARCHIVOS, COMPARTIR Y GENERACIÓN DE DOCUMENTOS
   image_picker: ^1.0.4   # SELECCIÓN DE IMÁGENES DESDE GALERÍA O CÁMARA
+  file_selector: ^1.0.3  #SELECTOR DE CARPETA DE ARCHIVOS
+  file_selector_windows: ^0.9.2
   screenshot: 3.0.0      # CAPTURA DE PANTALLA DEL WIDGET
   share_plus: ^11.1.0    # COMPARTIR CONTENIDO ENTRE APLICACIONES
   file_picker: ^10.3.2   # SELECCIÓN DE ARCHIVOS DESDE EL SITEMA
@@ -49,13 +51,14 @@ dependencies:
   cupertino_icons: ^1.0.8 # ICONOS ESTILO IOS
   fl_chart: ^1.0.0        # GRAFICAS Y VISUALIZACIONES DE DATOS
   intl: ^0.20.2           # FORMATO DE FECHAS, NÚMEROS Y LOCAZIÓN
-
+  
   # PERMISOS Y UTILIDADES
   permission_handler: ^12.0.1 # MANEJO DE PERMISOS DEL SISTEMA
   diacritic: ^0.1.6           # ELIMINA ACENTOS Y CARACTERES ESPECIALES DE TEXTOS
   
   # AUTENTICACIÓN Y BASE DE DATOS ALTERNATIVA
   supabase_flutter: ^2.0.0    #CLIENTE PARA SUPABASE, ALTERNATIVA A FIREBASE
+  msix: ^3.16.12
 
 
 # DEPENDENCIAS DE DESARROLLO
@@ -63,8 +66,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter          # PRUEBAS UNITARIA Y DE WIDGETS
   flutter_lints: ^6.0.0   # REGLAS DE ESTILO Y BUENAS PRÁCTICAS  DE CÓDIGO
-  drift_dev: ^2.16.0           # GENERADOR DE CÓDIGO PARA DRIFT
-  build_runner: ^2.4.8         # EJECUTA LA GENERACIÓN DE CÓDIGO
+  drift_dev: ^2.16.0      # GENERADOR DE CÓDIGO PARA DRIFT
+  build_runner: ^2.4.8    # EJECUTA LA GENERACIÓN DE CÓDIGO
 
 # 
 flutter:
@@ -77,4 +80,5 @@ flutter:
     - assets/unach.png
     - assets/manita.png
     - assets/sinportada.png
+    - assets/icono.png
 

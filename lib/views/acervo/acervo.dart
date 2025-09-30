@@ -5,6 +5,7 @@ import '../../models/book_m.dart';
 import '../../viewmodels/acervo_vm.dart';
 // VISTAS
 import '../acervo/add_acervo.dart';
+import '../book/details_bk.dart';
 // WIDGETS
 import '../../widgets/global/search.dart';
 import '../../widgets/global/table.dart';
@@ -26,9 +27,43 @@ class _AcervoPageState extends State<AcervoPage> {
   int _currentPage = 0;
   final int _itemsPerPage = 10;
   bool _isSearching = false;
+  // VARIABLE PARA EL LIBRO SELCCIONADO Y ESTADO DE DETALLE
+  Book? _selectedBook;
+  bool _showingDetail = false;
+
+  // MÉTODO PARA SELECCIONAR UN LIBRO
+  void _handleBookSelection(Book book) {
+    setState(() {
+      _selectedBook = book;
+      _showingDetail = true;
+    });
+  }
+
+  // MÉTODO PARA CREAR UNA CELDA CLICKEABLE EN LA TABLA
+  Widget _buildClickableCell(Widget child, Book book) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => _handleBookSelection(book),
+        child: SizedBox(
+          width: double.infinity,
+          height: double.infinity,
+          child: child,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    //MOSTRAR DETALLE DEL LIBRO SI SE SELECCIONA
+    if (_showingDetail && _selectedBook != null) {
+      return DetalleLibroPage(
+        book: _selectedBook!,
+        onBack: () => setState(() => _showingDetail = false),
+        key: const ValueKey('DetalleLibro'),
+      );
+    }
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -46,16 +81,22 @@ class _AcervoPageState extends State<AcervoPage> {
                     onResults: (results) {
                       setState(() {
                         _filteredBooks = results;
-                        _isSearching = results.isNotEmpty || _searchController.text.isNotEmpty;
+                        _isSearching =
+                            results.isNotEmpty ||
+                            _searchController.text.isNotEmpty;
                         _currentPage = 0;
                       });
                     },
                     filter: (book, query) {
                       return book.tituloLower.contains(query) ||
                           book.autorLower.contains(query) ||
-                          (book.subtitulo ?? '').toLowerCase().contains(query) ||
+                          (book.subtitulo ?? '').toLowerCase().contains(
+                            query,
+                          ) ||
                           book.editorialLower.contains(query) ||
-                          (book.coleccion ?? '').toLowerCase().contains(query) ||
+                          (book.coleccion ?? '').toLowerCase().contains(
+                            query,
+                          ) ||
                           (book.isbn ?? '').toLowerCase().contains(query) ||
                           book.anio.toString().contains(query) ||
                           book.edicion.toString().contains(query) ||
@@ -90,13 +131,19 @@ class _AcervoPageState extends State<AcervoPage> {
                         icon: const Icon(Icons.add),
                         label: const Text('Agregar libro'),
                         onPressed: () {
-                          showAddAcervoDialog(context, (newBook) =>
-                              _viewModel.addAcervo(newBook, context));
+                          showAddAcervoDialog(
+                            context,
+                            (newBook) => _viewModel.addAcervo(newBook, context),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           backgroundColor: Colors.blueAccent,
                           foregroundColor: Colors.white,
                         ),
@@ -117,9 +164,13 @@ class _AcervoPageState extends State<AcervoPage> {
                 }
 
                 _allBooks = snapshot.data!;
-                List<Book> itemsToShow = _isSearching ? _filteredBooks : _allBooks;
+                List<Book> itemsToShow = _isSearching
+                    ? _filteredBooks
+                    : _allBooks;
 
-                if (_isSearching && _filteredBooks.isEmpty && _searchController.text.isNotEmpty) {
+                if (_isSearching &&
+                    _filteredBooks.isEmpty &&
+                    _searchController.text.isNotEmpty) {
                   return const Center(
                     child: Text(
                       'No se encontraron libros con ese criterio de búsqueda',
@@ -129,21 +180,24 @@ class _AcervoPageState extends State<AcervoPage> {
                 }
 
                 final startIndex = _currentPage * _itemsPerPage;
-                final endIndex = (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
+                final endIndex = (startIndex + _itemsPerPage).clamp(
+                  0,
+                  itemsToShow.length,
+                );
                 final booksPage = itemsToShow.sublist(startIndex, endIndex);
 
                 final columnWidths = <double>[
-                  80,  // Portada
+                  80, // Portada
                   180, // Título
                   150, // Subtítulo
                   140, // Autor
                   120, // Editorial
                   120, // Colección
-                  60,  // Año
+                  60, // Año
                   120, // ISBN
-                  60,  // Edición
-                  60,  // Copias
-                  80,  // Precio
+                  60, // Edición
+                  60, // Copias
+                  80, // Precio
                   150, // Área
                 ];
 
@@ -151,36 +205,51 @@ class _AcervoPageState extends State<AcervoPage> {
                   children: [
                     CustomTable(
                       headers: [
-                        'Portada','Título','Subtítulo','Autor','Editorial','Colección','Año','ISBN','Edición','Copias','Precio','Área'
+                        'Portada',
+                        'Título',
+                        'Subtítulo',
+                        'Autor',
+                        'Editorial',
+                        'Colección',
+                        'Año',
+                        'ISBN',
+                        'Edición',
+                        'Copias',
+                        'Precio',
+                        'Área',
                       ],
                       rows: booksPage.map((book) {
                         return [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              book.imagenUrl ?? 'assets/sinportada.png',
-                              height: 100,
-                              width: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Image.asset(
-                                'assets/sinportada.png',
+                          
+                          _buildClickableCell(
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                book.imagenUrl ?? 'assets/sinportada.png',
                                 height: 100,
                                 width: 80,
                                 fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => Image.asset(
+                                  'assets/sinportada.png',
+                                  height: 100,
+                                  width: 80,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
+                            book
                           ),
-                          _buildText(book.titulo),
-                          _buildText(book.subtitulo ?? '-'),
-                          _buildText(book.autor),
-                          _buildText(book.editorial),
-                          _buildText(book.coleccion ?? '-'),
-                          _buildText(book.anio.toString()),
-                          _buildText(book.isbn ?? '-'),
-                          _buildText(book.edicion.toString()),
-                          _buildText(book.copias.toString()),
-                          _buildText('\$${book.precio.toStringAsFixed(2)}'),
-                          _buildText(book.areaConocimiento),
+                          _buildClickableCell(_buildText(book.titulo),book),
+                          _buildClickableCell(_buildText(book.subtitulo ?? '-'),book),
+                          _buildClickableCell(_buildText(book.autor),book),
+                          _buildClickableCell(_buildText(book.editorial),book),
+                          _buildClickableCell(_buildText(book.coleccion ?? '-'), book),
+                          _buildClickableCell(_buildText(book.anio.toString()), book),
+                          _buildClickableCell(_buildText(book.isbn ?? '-'), book),
+                          _buildClickableCell(_buildText(book.edicion.toString()), book),
+                          _buildClickableCell(_buildText(book.copias.toString()), book),
+                          _buildClickableCell(_buildText('\$${book.precio.toStringAsFixed(2)}'), book),
+                          _buildClickableCell(_buildText(book.areaConocimiento), book),
                         ];
                       }).toList(),
                       columnWidths: columnWidths,
@@ -198,7 +267,9 @@ class _AcervoPageState extends State<AcervoPage> {
                                   ? () => setState(() => _currentPage--)
                                   : null,
                             ),
-                            Text('${_currentPage + 1} / ${((itemsToShow.length - 1) / _itemsPerPage).ceil() + 1}'),
+                            Text(
+                              '${_currentPage + 1} / ${((itemsToShow.length - 1) / _itemsPerPage).ceil() + 1}',
+                            ),
                             IconButton(
                               icon: const Icon(Icons.arrow_right),
                               onPressed: endIndex < itemsToShow.length
@@ -213,7 +284,10 @@ class _AcervoPageState extends State<AcervoPage> {
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
                           'Mostrando ${itemsToShow.length} resultado(s) de búsqueda',
-                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                   ],
@@ -226,9 +300,15 @@ class _AcervoPageState extends State<AcervoPage> {
     );
   }
 
-  Widget _buildOutlinedButton(IconData icon, String text, VoidCallback onPressed) => Container(
+  Widget _buildOutlinedButton(
+    IconData icon,
+    String text,
+    VoidCallback onPressed,
+  ) => Container(
     decoration: BoxDecoration(
-      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))],
+      boxShadow: [
+        BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+      ],
       borderRadius: BorderRadius.circular(12),
     ),
     child: OutlinedButton.icon(
@@ -247,7 +327,11 @@ class _AcervoPageState extends State<AcervoPage> {
 
   Widget _buildText(String text) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 4),
-    child: Text(text, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white)),
+    child: Text(
+      text,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(color: Colors.white),
+    ),
   );
 
   @override

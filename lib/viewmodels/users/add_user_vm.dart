@@ -8,7 +8,7 @@ class AddUserVM {
 
   AddUserVM();
 
-  /// Agregar usuario usando Firebase Auth + Firestore
+  /// AGREGAR USUARIO Firebase Auth + Firestore
   Future<void> addUsuario(UserModel user) async {
     final errors = user.validate();
     if (errors.isNotEmpty) {
@@ -16,7 +16,7 @@ class AddUserVM {
     }
 
     try {
-      // Crear usuario en Firebase Auth (genera UID automáticamente)
+      // CREAR USUARIO EN Firebase Auth 
       final credential = await _auth.createUserWithEmailAndPassword(
         email: user.email,
         password: user.password,
@@ -24,19 +24,19 @@ class AddUserVM {
 
       final uid = credential.user!.uid;
 
-      // Guardar info en Firestore usando UID generado
+      // GUARDAR INFO EN Firestore 
       final userData = user.toMap();
-      userData['uid'] = uid; // asegurarnos de usar UID real de Firebase
+      userData['uid'] = uid; 
       await _firestore.collection('users').doc(uid).set(userData);
     } catch (e) {
       rethrow;
     }
   }
 
-  /// Obtener todos los usuarios desde Firebase
+  /// OBTENER LOS USUARIOS
   Future<List<UserModel>> getUsuariosFirebase() async {
     try {
-      final snapshot = await _firestore.collection('users').get();
+      final snapshot = await _firestore.collection('users').orderBy('name').get();
       return snapshot.docs
           .map((doc) => UserModel.fromMap(doc.data(), docId: doc.id))
           .toList();

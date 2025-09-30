@@ -168,6 +168,8 @@ class Book {
       'ISBN: ${book.isbn ?? 'Sin ISBN'}',
       'Área: ${book.areaConocimiento}',
       'Copias: ${book.copias}',
+      'Estante: ${book.estante}',
+      'Almacén: ${book.almacen}',
       'Registrado por: ${book.registradoPor}',
     ].join('\n');
   }
