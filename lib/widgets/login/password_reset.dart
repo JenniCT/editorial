@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../viewmodels/login_vm.dart';
+import '../../viewmodels/login/login_vm.dart';
 import '../global/dialog.dart';
 
 Future<void> showPasswordResetDialog(BuildContext context, LoginVM viewModel) async {

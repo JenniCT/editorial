@@ -172,7 +172,6 @@ class ImportadorCSVViewModel {
             copias: copias,
             estante: int.tryParse(mapa['estante']?.toString() ?? '') ?? 0,
             almacen: int.tryParse(mapa['almacen']?.toString() ?? '') ?? 0,
-            precio: double.tryParse(mapa['precio']?.toString() ?? '') ?? 0.0,
             areaConocimiento:
                 areaRaw?.isNotEmpty == true ? areaRaw! : 'Sin definir',
             estado: copias > 2,

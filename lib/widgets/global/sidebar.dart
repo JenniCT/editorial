@@ -132,52 +132,55 @@ class _SidebarState extends State<Sidebar> {
                       final item = items[index];
                       final isSelected = index == widget.selectedIndex;
 
-                      return GestureDetector(
-                        onTap: () => widget.onItemSelected(index),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 6,
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isExpanded ? 12 : 0,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color.fromRGBO(255, 255, 255, 0.15)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: isExpanded
-                                ? MainAxisAlignment.start
-                                : MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                item.icon,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.white70,
-                              ),
-                              if (isExpanded) const SizedBox(width: 12),
-                              if (isExpanded)
-                                Expanded(
-                                  child: Text(
-                                    item.label,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                      return MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () => widget.onItemSelected(index),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 6,
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isExpanded ? 12 : 0,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color.fromRGBO(255, 255, 255, 0.15)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: isExpanded
+                                  ? MainAxisAlignment.start
+                                  : MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  item.icon,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.white70,
                                 ),
-                            ],
+                                if (isExpanded) const SizedBox(width: 12),
+                                if (isExpanded)
+                                  Expanded(
+                                    child: Text(
+                                      item.label,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       );

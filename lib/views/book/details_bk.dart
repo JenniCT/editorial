@@ -332,7 +332,6 @@ class DetalleLibroPageState extends State<DetalleLibroPage> {
             _buildRow('ISBN', book.isbn ?? '-'),
             _buildRow('Edición', book.edicion.toString()),
             _buildRow('Total', book.copias.toString()),
-            _buildRow('Precio', '\$${book.precio.toStringAsFixed(2)}'),
             _buildRow('Estante', book.estante.toString()),
             _buildRow('Almacén', book.almacen.toString()),
             _buildRow('Área', book.areaConocimiento),

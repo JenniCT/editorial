@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -5,7 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/book_m.dart';
 import '../../models/sale_m.dart';
 // VIEWMODEL
-import '../../viewmodels/sales_vm.dart';
+import '../../viewmodels/market/sales_vm.dart';
+// WIDGETS
+//import '../../widgets/global/textfield.dart';
 
 class SellDialog extends StatefulWidget {
   final Book book;
@@ -14,111 +17,194 @@ class SellDialog extends StatefulWidget {
   const SellDialog({required this.book, required this.onSold, super.key});
 
   @override
-  SellDialogState createState() => SellDialogState();
+  State<SellDialog> createState() => _SellDialogState();
 }
 
-class SellDialogState extends State<SellDialog> {
-  final _cantidadController = TextEditingController(text: '1');
-  final _lugarController = TextEditingController();
-  final SalesViewModel _salesVM = SalesViewModel();
+class _SellDialogState extends State<SellDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _cantidadController =
+      TextEditingController(text: '1');
+  final TextEditingController _lugarController = TextEditingController();
+
+  late final SalesViewModel _salesVM;
   double total = 0;
 
   @override
   void initState() {
     super.initState();
-    total = widget.book.precio;
+    _salesVM = SalesViewModel();
+  }
+
+  Future<void> _saveSale() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    int cantidadFinal = int.tryParse(_cantidadController.text) ?? 1;
+    if (cantidadFinal <= 0 || cantidadFinal > widget.book.copias) return;
+
+    final lugar = _lugarController.text.trim();
+    if (lugar.isEmpty) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    final sale = Sale(
+      bookId: widget.book.id!,
+      titulo: widget.book.titulo,
+      autor: widget.book.autor,
+      cantidad: cantidadFinal,
+      fecha: DateTime.now(),
+      userId: user?.uid ?? 'anonimo',
+      userEmail: user?.email ?? 'anonimo',
+      lugar: lugar,
+    );
+
+    try {
+      await _salesVM.addSale(sale);
+
+      final updatedBook = widget.book.copyWith(
+        copias: widget.book.copias - cantidadFinal,
+      );
+
+      widget.onSold(updatedBook);
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error al registrar venta: $e")),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Vender libro'),
-      content: StatefulBuilder(
-        builder: (context, setStateDialog) {
-          int cantidad = int.tryParse(_cantidadController.text) ?? 1;
-          if (cantidad > widget.book.copias) cantidad = widget.book.copias;
-          total = cantidad * widget.book.precio;
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            width: 420,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color.fromRGBO(19, 38, 87, 0.3),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color.fromRGBO(47, 65, 87, 0.3),
+              ),
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Registrar venta",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Libro: ${widget.book.titulo}\nAutor: ${widget.book.autor}",
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _cantidadController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "Cantidad a vender (Máx ${widget.book.copias})",
+                      border: const OutlineInputBorder(),
+                    ),
+                    validator: (v) {
+                      final val = int.tryParse(v ?? "");
+                      if (val == null || val <= 0) return "Cantidad inválida";
+                      if (val > widget.book.copias) return "Excede copias disponibles";
+                      return null;
+                    },
+                    onChanged: (value) {
+                      int nuevaCantidad = int.tryParse(value) ?? 1;
+                      if (nuevaCantidad > widget.book.copias) {
+                        nuevaCantidad = widget.book.copias;
+                        _cantidadController.text = widget.book.copias.toString();
+                      }
+                    },
+                  ),
 
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Título: ${widget.book.titulo}'),
-              Text('Autor: ${widget.book.autor}'),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _cantidadController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Cantidad a vender',
-                  hintText: 'Máx ${widget.book.copias}',
-                ),
-                onChanged: (value) {
-                  int nuevaCantidad = int.tryParse(value) ?? 1;
-                  if (nuevaCantidad > widget.book.copias) {
-                    nuevaCantidad = widget.book.copias;
-                    _cantidadController.text = widget.book.copias.toString();
-                  }
-                  setStateDialog(() => total = nuevaCantidad * widget.book.precio);
-                },
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _lugarController,
+                    decoration: const InputDecoration(
+                      labelText: "Lugar de venta",
+                      hintText: "Ej: Librería Central",
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        v == null || v.isEmpty ? "Requerido" : null,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Total: \$${total.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromRGBO(240, 91, 84, 1),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text("Cancelar"),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurpleAccent,
+                        ),
+                        onPressed: _saveSale,
+                        child: const Text("Registrar"),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _lugarController,
-                decoration: const InputDecoration(
-                  labelText: 'Lugar de venta',
-                  hintText: 'Ej: Librería Central',
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text('Total: \$${total.toStringAsFixed(2)}'),
-            ],
-          );
-        },
+            ),
+          ),
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            int cantidadFinal = int.tryParse(_cantidadController.text) ?? 1;
-            if (cantidadFinal <= 0 || cantidadFinal > widget.book.copias) return;
-
-            final lugar = _lugarController.text.trim();
-            if (lugar.isEmpty) return;
-
-            final user = FirebaseAuth.instance.currentUser;
-
-            final sale = Sale(
-              bookId: widget.book.id!,
-              titulo: widget.book.titulo,
-              autor: widget.book.autor,
-              cantidad: cantidadFinal,
-              total: cantidadFinal * widget.book.precio,
-              fecha: DateTime.now(),
-              userId: user?.uid ?? 'anonimo',
-              userEmail: user?.email ?? 'anonimo',
-              lugar: lugar,
-            );
-
-            // Registrar venta en Firestore
-            await _salesVM.addSale(sale);
-
-            // Crear nuevo Book con copias actualizadas
-            final updatedBook = widget.book.copyWith(
-              copias: widget.book.copias - cantidadFinal,
-            );
-
-            // Mandar Book actualizado al callback para refrescar UI
-            widget.onSold(updatedBook);
-
-            Navigator.pop(context);
-          },
-          child: const Text('Vender'),
-        ),
-      ],
     );
   }
+}
+
+Future<void> showSellDialog(
+    BuildContext context, Book book, Function(Book) onSold) async {
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: "Registrar venta",
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (_, __, ___) => const SizedBox(),
+    transitionBuilder: (context, animation, _, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      );
+      return ScaleTransition(
+        scale: curved,
+        child: SellDialog(book: book, onSold: onSold),
+      );
+    },
+  );
 }

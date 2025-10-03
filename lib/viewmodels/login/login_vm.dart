@@ -1,10 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../views/hm_layout.dart';
-import '../models/auth_service.dart';
-import '../models/user.dart';
-import '../widgets/global/dialog.dart';
+import '../../views/hm_layout.dart';
+import '../../models/auth_service.dart';
+import '../../models/user.dart';
+import '../../widgets/global/dialog.dart';
 
 class LoginVM with ChangeNotifier {
   final AuthService _authService = AuthService();

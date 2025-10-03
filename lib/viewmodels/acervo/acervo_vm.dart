@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:diacritic/diacritic.dart';
-import '../widgets/global/dialog.dart';
-import '../models/book_m.dart';
+import '../../widgets/global/dialog.dart';
+import '../../models/book_m.dart';
 
 class AcervoViewModel {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -153,7 +153,6 @@ class AcervoViewModel {
               isbn: data['isbn'] ?? '',
               edicion: data['edicion'] ?? 0,
               copias: data['copias'] ?? 0,
-              precio: (data['precio'] ?? 0).toDouble(),
               imagenUrl: data['imagenUrl'],
               estado: data['estado'] ?? false,
               fechaRegistro: (data['fechaRegistro'] as Timestamp).toDate(),

@@ -277,7 +277,6 @@ class BookViewModel {
           isbn: data['isbn'] ?? '',
           edicion: data['edicion'] ?? 0,
           copias: data['copias'] ?? 0,
-          precio: (data['precio'] ?? 0).toDouble(),
           imagenUrl: (data['imagenUrl'] ?? 'assets/sinportada.png'),
           estado: data['estado'] ?? true,
           fechaRegistro: (data['fechaRegistro'] as Timestamp).toDate(),

@@ -1,11 +1,15 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+//MODELO
 import '../../models/book_m.dart';
+//VISTA-MODELO
 import '../../viewmodels/book/book_vm.dart';
+//WIDGETS
 import '../../widgets/addbook/image_picker_field.dart';
 import '../../widgets/global/textfield.dart';
-import 'package:image_picker/image_picker.dart';
+
 
 class EditBookDialog extends StatefulWidget {
   final Book book;
@@ -34,7 +38,6 @@ class _EditBookDialogState extends State<EditBookDialog> {
   late TextEditingController _isbnController;
   late TextEditingController _edicionController;
   late TextEditingController _copiasController;
-  late TextEditingController _precioController;
   late TextEditingController _estanteController;
   late TextEditingController _almacenController;
 
@@ -66,7 +69,6 @@ class _EditBookDialogState extends State<EditBookDialog> {
     _isbnController = TextEditingController(text: b.isbn ?? '');
     _edicionController = TextEditingController(text: b.edicion.toString());
     _copiasController = TextEditingController(text: b.copias.toString());
-    _precioController = TextEditingController(text: b.precio.toString());
     _estanteController = TextEditingController(text: b.estante.toString());
     _almacenController = TextEditingController(text: b.almacen.toString());
   }
@@ -83,7 +85,6 @@ class _EditBookDialogState extends State<EditBookDialog> {
     _isbnController.dispose();
     _edicionController.dispose();
     _copiasController.dispose();
-    _precioController.dispose();
     _estanteController.dispose();
     _almacenController.dispose();
     super.dispose();
@@ -103,7 +104,6 @@ class _EditBookDialogState extends State<EditBookDialog> {
         isbn: _isbnController.text.isNotEmpty ? _isbnController.text : null,
         edicion: int.tryParse(_edicionController.text) ?? 1,
         copias: int.tryParse(_copiasController.text) ?? 1,
-        precio: double.tryParse(_precioController.text) ?? 0.0,
         estante: int.tryParse(_estanteController.text) ?? 0,
         almacen: int.tryParse(_almacenController.text) ?? 0,
         areaConocimiento: _selectedAreaConocimiento,
@@ -359,13 +359,6 @@ class _EditBookDialogState extends State<EditBookDialog> {
                                       CustomTextField(
                                         controller: _copiasController,
                                         label: 'Copias',
-                                        isNumeric: true,
-                                        validator: (v) =>
-                                            v!.isEmpty ? 'Obligatorio' : null,
-                                      ),
-                                      CustomTextField(
-                                        controller: _precioController,
-                                        label: 'Precio',
                                         isNumeric: true,
                                         validator: (v) =>
                                             v!.isEmpty ? 'Obligatorio' : null,

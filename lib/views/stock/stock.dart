@@ -216,7 +216,7 @@ class _InventarioPageState extends State<InventarioPage> {
 
                 // ANCHOS DEFINIDOS
                 final columnWidths = <double>[
-                  80, 180, 150, 140, 120, 120, 60, 120, 60, 60, 80, 60, 80, 150
+                  80, 180, 150, 140, 120, 120, 60, 120, 60, 60, 80, 80, 150
                 ];
 
                 return Column(
@@ -226,7 +226,7 @@ class _InventarioPageState extends State<InventarioPage> {
                       headers: [
                         'Portada', 'Título', 'Subtítulo', 'Autor',
                         'Editorial', 'Colección', 'Año', 'ISBN',
-                        'Edición', 'Copias', 'Precio', 'Estante',
+                        'Edición', 'Copias', 'Estante',
                         'Almacén', 'Área de conocimiento'
                       ],
                       rows: books.map((book) {
@@ -268,7 +268,6 @@ class _InventarioPageState extends State<InventarioPage> {
                           _buildClickableCell(_buildText(book.isbn ?? '-'), book),
                           _buildClickableCell(_buildText(book.edicion.toString()), book),
                           _buildClickableCell(_buildText(book.copias.toString()), book),
-                          _buildClickableCell(_buildText('\$${book.precio.toStringAsFixed(2)}'), book),
                           _buildClickableCell(_buildText(book.estante.toString()), book),
                           _buildClickableCell(_buildText(book.almacen.toString()), book),
                           _buildClickableCell(_buildText(book.areaConocimiento), book),

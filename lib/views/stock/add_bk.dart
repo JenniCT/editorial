@@ -35,7 +35,6 @@ class _AddBookDialogState extends State<AddBookDialog> {
   final TextEditingController _isbnController = TextEditingController();
   final TextEditingController _edicionController = TextEditingController();
   final TextEditingController _copiasController = TextEditingController();
-  final TextEditingController _precioController = TextEditingController();
   final TextEditingController _estanteController = TextEditingController();
   final TextEditingController _almacenController = TextEditingController();
 
@@ -72,10 +71,9 @@ class _AddBookDialogState extends State<AddBookDialog> {
         anio: int.tryParse(_anioController.text) ?? 0,
         isbn: _isbnController.text.isNotEmpty ? _isbnController.text.trim() : null,
         edicion: int.tryParse(_edicionController.text) ?? 1,
-        copias: int.tryParse(_copiasController.text) ?? 1,
-        precio: double.tryParse(_precioController.text) ?? 0.0,
         estante: int.tryParse(_estanteController.text) ?? 0,
         almacen: int.tryParse(_almacenController.text) ?? 0,
+        copias: int.tryParse(_copiasController.text) ?? 0,
         areaConocimiento: _selectedAreaConocimiento,
         estado: true,
         fechaRegistro: DateTime.now(),
@@ -188,7 +186,6 @@ class _AddBookDialogState extends State<AddBookDialog> {
     _isbnController.dispose();
     _edicionController.dispose();
     _copiasController.dispose();
-    _precioController.dispose();
     _estanteController.dispose();
     _almacenController.dispose();
 
@@ -406,21 +403,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
                                           return null;
                                         },
                                       ),
-                                      // PRECIO
-                                      CustomTextField(
-                                        controller: _precioController,
-                                        label: 'Precio',
-                                        isNumeric: true,
-                                        validator: (value) {
-                                          if (value == null || value.trim().isEmpty) {
-                                            return 'El precio es obligatorio';
-                                          }
-                                          if (double.tryParse(value) == null) {
-                                            return 'Debe ser un número válido';
-                                          }
-                                          return null;
-                                        },
-                                      ),
+                                      const SizedBox(height: 8),
                                       // ESTANTE
                                       CustomTextField(
                                         controller: _estanteController,

@@ -10,7 +10,7 @@ import '../../widgets/global/textfield.dart';
 
 // MODELO Y VIEWMODEL DE BOOK
 import '../../models/book_m.dart';
-import '../../viewmodels/acervo_vm.dart'; // VM adaptada para manejar acervo dentro de books
+import '../../viewmodels/acervo/acervo_vm.dart'; // VM adaptada para manejar acervo dentro de books
 
 class AddAcervoDialog extends StatefulWidget {
   final Function(Book) onAdd;
@@ -79,7 +79,6 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
         estante: 0, // acervo
         almacen: copias, // acervo
         areaConocimiento: _selectedAreaConocimiento,
-        precio: double.tryParse(_precioController.text) ?? 0.0,
         estado: false, // acervo
         fechaRegistro: DateTime.now(),
         registradoPor: FirebaseAuth.instance.currentUser?.uid ?? 'desconocido',

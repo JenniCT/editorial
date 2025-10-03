@@ -1,9 +1,21 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Dashboard extends StatelessWidget {
   const Dashboard({super.key});
 
-    @override
+  Future<int> _getCount(bool estado) async {
+    final aggregateQuery = await FirebaseFirestore.instance
+        .collection('books')
+        .where('estado', isEqualTo: estado)
+        .count()
+        .get();
+
+    return aggregateQuery.count ?? 0;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -19,30 +31,43 @@ class Dashboard extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 24,
-              mainAxisSpacing: 24,
-              children: const [
-                _DashboardCard(
-                  title: 'Libros registrados',
-                  value: '128',
-                  icon: Icons.book,
-                  color: Colors.indigo,
+            child: GridView(
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 300, // 🟢 ancho máximo de la tarjeta
+                mainAxisSpacing: 24,
+                crossAxisSpacing: 24,
+                childAspectRatio: 2, // relación aproximada ancho/alto
+              ),
+              children: [
+                FutureBuilder<int>(
+                  future: _getCount(true),
+                  builder: (context, snapshot) {
+                    return _DashboardCard(
+                      title: 'Libros registrados',
+                      value: snapshot.hasData ? snapshot.data.toString() : '...',
+                      icon: Icons.book,
+                      color: Colors.indigo,
+                    );
+                  },
                 ),
-                _DashboardCard(
-                  title: 'Donaciones',
-                  value: '42',
-                  icon: Icons.volunteer_activism,
-                  color: Colors.green,
+                FutureBuilder<int>(
+                  future: _getCount(false),
+                  builder: (context, snapshot) {
+                    return _DashboardCard(
+                      title: 'Acervo',
+                      value: snapshot.hasData ? snapshot.data.toString() : '...',
+                      icon: Icons.library_books,
+                      color: Colors.green,
+                    );
+                  },
                 ),
-                _DashboardCard(
+                const _DashboardCard(
                   title: 'Ventas',
                   value: '\$1,250',
                   icon: Icons.shopping_cart,
                   color: Colors.orange,
                 ),
-                _DashboardCard(
+                const _DashboardCard(
                   title: 'Usuarios activos',
                   value: '15',
                   icon: Icons.people,
@@ -72,40 +97,54 @@ class _DashboardCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: Colors.transparent,
-              child: Icon(icon, color: color),
+    return IntrinsicHeight(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(20.0),
+            decoration: BoxDecoration(
+              color: const Color.fromRGBO(0, 0, 0, 0.3),
+              borderRadius: BorderRadius.circular(12),
+              border:
+                  Border.all(color: const Color.fromRGBO(255, 255, 255, 0.2)),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.transparent,
+                  child: Icon(icon, color: color, size: 30),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min, // 🟢 ajusta al contenido
+                    children: [
+                      Text(
+                        value,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

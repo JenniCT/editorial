@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 // MODELO
 import '../../models/sale_m.dart';
 // VISTAMODELO
-import '../../viewmodels/sales_vm.dart';
+import '../../viewmodels/market/sales_vm.dart';
 // WIDGETS
-//import '../../widgets/global/search.dart';
 import '../../widgets/global/table.dart';
 
 class SalesPage extends StatefulWidget {
@@ -24,13 +23,24 @@ class _SalesPageState extends State<SalesPage> {
   final int _itemsPerPage = 10;
   bool _isSearching = false;
 
-  /*void _handleSearchResults(List<Sale> results) {
+  void _searchSales(String query) {
     setState(() {
-      _filteredSales = results;
-      _isSearching = results.isNotEmpty || _searchController.text.isNotEmpty;
+      if (query.isEmpty) {
+        _isSearching = false;
+        _filteredSales = [];
+      } else {
+        _isSearching = true;
+        _filteredSales = _allSales.where((sale) {
+          final lower = query.toLowerCase();
+          return sale.titulo.toLowerCase().contains(lower) ||
+              sale.autor.toLowerCase().contains(lower) ||
+              sale.userEmail.toLowerCase().contains(lower) ||
+              sale.lugar.toLowerCase().contains(lower);
+        }).toList();
+      }
       _currentPage = 0;
     });
-  }*/
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,18 +76,44 @@ class _SalesPageState extends State<SalesPage> {
             ),
             const SizedBox(height: 20),
 
+            // BARRA DE BÚSQUEDA
+            TextField(
+              controller: _searchController,
+              onChanged: _searchSales,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                hintText: 'Buscar ventas (título, autor, usuario, lugar)',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+            ),
+            const SizedBox(height: 20),
+
             // TABLA DE VENTAS
             StreamBuilder<List<Sale>>(
               stream: _viewModel.getSalesStream(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No hay ventas registradas'));
+                  return const Center(
+                    child: Text(
+                      'No hay ventas registradas',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  );
                 }
 
                 _allSales = snapshot.data!;
-                List<Sale> itemsToShow = _isSearching ? _filteredSales : _allSales;
+                List<Sale> itemsToShow =
+                    _isSearching ? _filteredSales : _allSales;
 
-                if (_isSearching && _filteredSales.isEmpty && _searchController.text.isNotEmpty) {
+                if (_isSearching &&
+                    _filteredSales.isEmpty &&
+                    _searchController.text.isNotEmpty) {
                   return const Center(
                     child: Text(
                       'No se encontraron ventas con ese criterio de búsqueda',
@@ -87,14 +123,14 @@ class _SalesPageState extends State<SalesPage> {
                 }
 
                 final startIndex = _currentPage * _itemsPerPage;
-                final endIndex = (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
+                final endIndex =
+                    (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
                 final salesPage = itemsToShow.sublist(startIndex, endIndex);
 
                 final columnWidths = <double>[
-                  180, // Título
-                  140, // Autor
-                  60,  // Cantidad
-                  80,  // Total
+                  250, // Título
+                  250, // Autor
+                  80, // Cantidad
                   150, // Fecha
                   150, // Usuario
                   120, // Lugar
@@ -104,21 +140,27 @@ class _SalesPageState extends State<SalesPage> {
                   children: [
                     CustomTable(
                       headers: [
-                        'Título','Autor','Cantidad','Total','Fecha','Usuario','Lugar'
+                        'Título',
+                        'Autor',
+                        'Cantidad',
+                        'Fecha',
+                        'Usuario',
+                        'Lugar'
                       ],
                       rows: salesPage.map((sale) {
                         return [
                           _buildText(sale.titulo),
                           _buildText(sale.autor),
                           _buildText(sale.cantidad.toString()),
-                          _buildText('\$${sale.total.toStringAsFixed(2)}'),
-                          _buildText('${sale.fecha.day}/${sale.fecha.month}/${sale.fecha.year}'),
+                          _buildText(
+                              '${sale.fecha.day}/${sale.fecha.month}/${sale.fecha.year}'),
                           _buildText(sale.userEmail),
                           _buildText(sale.lugar),
                         ];
                       }).toList(),
                       columnWidths: columnWidths,
                     ),
+
                     // PAGINACIÓN
                     if (itemsToShow.length > _itemsPerPage)
                       Padding(
@@ -132,7 +174,8 @@ class _SalesPageState extends State<SalesPage> {
                                   ? () => setState(() => _currentPage--)
                                   : null,
                             ),
-                            Text('${_currentPage + 1} / ${((itemsToShow.length - 1) / _itemsPerPage).ceil() + 1}'),
+                            Text(
+                                '${_currentPage + 1} / ${((itemsToShow.length - 1) / _itemsPerPage).ceil() + 1}'),
                             IconButton(
                               icon: const Icon(Icons.arrow_right),
                               onPressed: endIndex < itemsToShow.length
@@ -142,12 +185,14 @@ class _SalesPageState extends State<SalesPage> {
                           ],
                         ),
                       ),
+
                     if (_isSearching)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
                           'Mostrando ${itemsToShow.length} resultado(s) de búsqueda',
-                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12),
                         ),
                       ),
                   ],
@@ -160,29 +205,38 @@ class _SalesPageState extends State<SalesPage> {
     );
   }
 
-  Widget _buildOutlinedButton(IconData icon, String text, VoidCallback onPressed) => Container(
-    decoration: BoxDecoration(
-      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))],
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      label: Text(text),
-      style: OutlinedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.grey[700],
-        side: BorderSide.none,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-    ),
-  );
+  Widget _buildOutlinedButton(
+          IconData icon, String text, VoidCallback onPressed) =>
+      Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+          ],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon),
+          label: Text(text),
+          style: OutlinedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.grey[700],
+            side: BorderSide.none,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ),
+        ),
+      );
 
   Widget _buildText(String text) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 4),
-    child: Text(text, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white)),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Text(text,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white)),
+      );
 
   @override
   void dispose() {

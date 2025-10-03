@@ -21,8 +21,7 @@ class Book {
   final int copias;
   final String areaConocimiento;
   final String areaLower;
-  final double precio;
-  final bool estado; // 👈 con valor default
+  final bool estado;
   final DateTime fechaRegistro;
   final String registradoPor;
 
@@ -42,7 +41,6 @@ class Book {
     required this.estante,
     required this.almacen,
     required this.copias,
-    required this.precio,
     this.estado = true,
     required this.fechaRegistro,
     required this.registradoPor,
@@ -84,11 +82,8 @@ class Book {
       almacen: alm,
       copias: total,
       areaConocimiento: area,
-      precio: (map['precio'] is double)
-          ? map['precio']
-          : double.tryParse(map['precio'].toString()) ?? 0.0,
       estado: map['estado'] ?? true,
-      fechaRegistro: (map['fechaRegistro'] as Timestamp).toDate(),
+      fechaRegistro: (map['fechaRegistro'] as Timestamp?)?.toDate() ?? DateTime.now(),
       registradoPor: map['registradoPor'] ?? 'desconocido',
     );
   }
@@ -108,7 +103,6 @@ class Book {
       'almacen': almacen,
       'copias': copias,
       'areaConocimiento': areaConocimiento,
-      'precio': precio,
       'estado': estado,
       'fechaRegistro': Timestamp.fromDate(fechaRegistro),
       'registradoPor': registradoPor,
@@ -131,7 +125,6 @@ class Book {
     int? almacen,
     int? copias,
     String? areaConocimiento,
-    double? precio,
     bool? estado,
     DateTime? fechaRegistro,
     String? registradoPor,
@@ -152,7 +145,6 @@ class Book {
       almacen: almacen ?? this.almacen,
       copias: copias ?? this.copias,
       areaConocimiento: areaConocimiento ?? this.areaConocimiento,
-      precio: precio ?? this.precio,
       estado: estado ?? this.estado,
       fechaRegistro: fechaRegistro ?? this.fechaRegistro,
       registradoPor: registradoPor ?? this.registradoPor,

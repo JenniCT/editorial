@@ -7,7 +7,7 @@ import '../../widgets/login/password_reset.dart';
 import '../../widgets/login/card_background.dart'; 
 
 // VISTA-MODELO
-import '../../viewmodels/login_vm.dart';
+import '../../viewmodels/login/login_vm.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});

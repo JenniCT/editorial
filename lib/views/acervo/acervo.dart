@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 // MODELO
 import '../../models/book_m.dart';
 // VISTAMODELO
-import '../../viewmodels/acervo_vm.dart';
+import '../../viewmodels/acervo/acervo_vm.dart';
 // VISTAS
 import '../acervo/add_acervo.dart';
 import '../book/details_bk.dart';
@@ -248,7 +248,6 @@ class _AcervoPageState extends State<AcervoPage> {
                           _buildClickableCell(_buildText(book.isbn ?? '-'), book),
                           _buildClickableCell(_buildText(book.edicion.toString()), book),
                           _buildClickableCell(_buildText(book.copias.toString()), book),
-                          _buildClickableCell(_buildText('\$${book.precio.toStringAsFixed(2)}'), book),
                           _buildClickableCell(_buildText(book.areaConocimiento), book),
                         ];
                       }).toList(),
