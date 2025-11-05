@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:editorial/views/donation/add_done.dart';
 import 'package:flutter/material.dart';
 import '../../models/book_m.dart';
 //VISTAS
@@ -6,6 +7,7 @@ import 'qr_v.dart';
 import '../book/edit_bk.dart';
 import '../book/history_bk.dart';
 import '../market/sale.dart';
+import '../production_cost/production_cost.dart';
 
 class DetalleLibroPage extends StatefulWidget {
   final Book book;
@@ -173,8 +175,26 @@ class DetalleLibroPageState extends State<DetalleLibroPage> {
                 );
               },
             ),
-
-
+            _buildActionButton(
+              context, 
+              Icons.volunteer_activism_rounded,
+              'Donar',
+              color: const Color.fromRGBO(255, 20, 147, 0.6),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => DonateDialog(
+                  book: book,
+                  onDonated: (Book updatedBook) {
+                    setState(() {
+                      // Actualiza el libro actual con el Book devuelto
+                      book = updatedBook;
+                    });
+                  },
+                ),
+                );
+              },
+            ),
             _buildActionButton(
               context,
               Icons.remove_circle,
@@ -201,6 +221,14 @@ class DetalleLibroPageState extends State<DetalleLibroPage> {
               Icons.history,
               'Historial',
               color: const Color.fromRGBO(0, 0, 0, 0.6),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => HistorialPage(idBook: book.id!),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -382,7 +410,6 @@ class DetalleLibroPageState extends State<DetalleLibroPage> {
             );
           },
         ),
-    
         const SizedBox(height: 12),
         _buildActionButton(
           context,
@@ -406,6 +433,27 @@ class DetalleLibroPageState extends State<DetalleLibroPage> {
         ),
         const SizedBox(height: 12),
         _buildActionButton(
+          context, 
+          Icons.volunteer_activism_rounded,
+          'Donar',
+          color: const Color.fromRGBO(255, 20, 147, 0.6),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (_) => DonateDialog(
+              book: book,
+              onDonated: (Book updatedBook) {
+                setState(() {
+                  // Actualiza el libro actual con el Book devuelto
+                  book = updatedBook;
+                });
+              },
+            ),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildActionButton(
           context,
           Icons.remove_circle,
           'Dar de baja',
@@ -414,9 +462,17 @@ class DetalleLibroPageState extends State<DetalleLibroPage> {
         const SizedBox(height: 12),
         _buildActionButton(
           context,
-          Icons.download,
-          'Descargar',
+          Icons.attach_money,
+          'Costos',
           color: const Color.fromRGBO(0, 123, 255, 0.6),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CostosProduccionPage(idBook: book.id!),
+              ),
+            );
+          },
         ),
         const SizedBox(height: 12),
         _buildActionButton(
@@ -438,7 +494,7 @@ class DetalleLibroPageState extends State<DetalleLibroPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => HistorialView(idLibro: book.id!),
+                builder: (_) => HistorialPage(idBook: book.id!),
               ),
             );
           },

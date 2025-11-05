@@ -1,42 +1,43 @@
 import 'package:flutter/material.dart';
 
 // MODELO
-import '../../models/sale_m.dart';
+import '../../models/donation_m.dart';
 // VISTAMODELO
-import '../../viewmodels/market/sales_vm.dart';
+import '../../viewmodels/donation/donation_vm.dart';
 // WIDGETS
 import '../../widgets/global/table.dart';
 import '../../widgets/stock/hoverbutton.dart';
 
-class SalesPage extends StatefulWidget {
-  const SalesPage({super.key});
+class DonationsPage extends StatefulWidget {
+  const DonationsPage({super.key});
 
   @override
-  State<SalesPage> createState() => _SalesPageState();
+  State<DonationsPage> createState() => _DonationsPageState();
 }
 
-class _SalesPageState extends State<SalesPage> {
-  final SalesViewModel _viewModel = SalesViewModel();
+class _DonationsPageState extends State<DonationsPage> {
+  final DonationsViewModel _viewModel = DonationsViewModel();
   final TextEditingController _searchController = TextEditingController();
-  List<Sale> _filteredSales = [];
-  List<Sale> _allSales = [];
+  List<Donation> _filteredDonations = [];
+  List<Donation> _allDonations = [];
   int _currentPage = 0;
   final int _itemsPerPage = 10;
   bool _isSearching = false;
 
-  void _searchSales(String query) {
+  void _searchDonations(String query) {
     setState(() {
       if (query.isEmpty) {
         _isSearching = false;
-        _filteredSales = [];
+        _filteredDonations = [];
       } else {
         _isSearching = true;
-        _filteredSales = _allSales.where((sale) {
+        _filteredDonations = _allDonations.where((donation) {
           final lower = query.toLowerCase();
-          return sale.titulo.toLowerCase().contains(lower) ||
-              sale.autor.toLowerCase().contains(lower) ||
-              sale.userEmail.toLowerCase().contains(lower) ||
-              sale.lugar.toLowerCase().contains(lower);
+          return donation.titulo.toLowerCase().contains(lower) ||
+              donation.autor.toLowerCase().contains(lower) ||
+              donation.userEmail.toLowerCase().contains(lower) ||
+              donation.lugar.toLowerCase().contains(lower) ||
+              (donation.nota?.toLowerCase().contains(lower) ?? false);
         }).toList();
       }
       _currentPage = 0;
@@ -58,7 +59,7 @@ class _SalesPageState extends State<SalesPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Ventas',
+                  'Donaciones',
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 Flexible(
@@ -69,18 +70,19 @@ class _SalesPageState extends State<SalesPage> {
                     children: [
                       HoverButton(
                         icon: Icons.filter_list,
-                        text:  'Filtrar',
+                        text: 'Filtrar',
                         onPressed: () {},
-                        color: Colors.white,),
+                        color: Colors.white,
+                      ),
                       HoverButton(
-                        icon:  Icons.download,
-                        text:  'Exportar',
+                        icon: Icons.download,
+                        text: 'Exportar',
                         onPressed: () {},
                         color: Colors.white,
                       ),
                       HoverButton(
                         icon: Icons.upload,
-                        text:  'Importar',
+                        text: 'Importar',
                         onPressed: () {},
                         color: Colors.white,
                       ),
@@ -94,10 +96,10 @@ class _SalesPageState extends State<SalesPage> {
             // BARRA DE BÚSQUEDA
             TextField(
               controller: _searchController,
-              onChanged: _searchSales,
+              onChanged: _searchDonations,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
-                hintText: 'Buscar ventas (título, autor, usuario, lugar)',
+                hintText: 'Buscar donaciones (título, autor, usuario, lugar, nota)',
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
@@ -109,29 +111,29 @@ class _SalesPageState extends State<SalesPage> {
             ),
             const SizedBox(height: 20),
 
-            // TABLA DE VENTAS
-            StreamBuilder<List<Sale>>(
-              stream: _viewModel.getSalesStream(),
+            // TABLA DE DONACIONES
+            StreamBuilder<List<Donation>>(
+              stream: _viewModel.getDonationsStream(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
                     child: Text(
-                      'No hay ventas registradas',
+                      'No hay donaciones registradas',
                       style: TextStyle(color: Colors.white70),
                     ),
                   );
                 }
 
-                _allSales = snapshot.data!;
-                List<Sale> itemsToShow =
-                    _isSearching ? _filteredSales : _allSales;
+                _allDonations = snapshot.data!;
+                List<Donation> itemsToShow =
+                    _isSearching ? _filteredDonations : _allDonations;
 
                 if (_isSearching &&
-                    _filteredSales.isEmpty &&
+                    _filteredDonations.isEmpty &&
                     _searchController.text.isNotEmpty) {
                   return const Center(
                     child: Text(
-                      'No se encontraron ventas con ese criterio de búsqueda',
+                      'No se encontraron donaciones con ese criterio de búsqueda',
                       style: TextStyle(color: Colors.white70),
                     ),
                   );
@@ -140,15 +142,16 @@ class _SalesPageState extends State<SalesPage> {
                 final startIndex = _currentPage * _itemsPerPage;
                 final endIndex =
                     (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
-                final salesPage = itemsToShow.sublist(startIndex, endIndex);
+                final donationsPage = itemsToShow.sublist(startIndex, endIndex);
 
                 final columnWidths = <double>[
                   250, // Título
                   250, // Autor
-                  80, // Cantidad
+                  80,  // Cantidad
                   150, // Fecha
                   150, // Usuario
                   120, // Lugar
+                  150, // Nota
                 ];
 
                 return Column(
@@ -160,17 +163,19 @@ class _SalesPageState extends State<SalesPage> {
                         'Cantidad',
                         'Fecha',
                         'Usuario',
-                        'Lugar'
+                        'Lugar',
+                        'Nota'
                       ],
-                      rows: salesPage.map((sale) {
+                      rows: donationsPage.map((donation) {
                         return [
-                          _buildText(sale.titulo),
-                          _buildText(sale.autor),
-                          _buildText(sale.cantidad.toString()),
+                          _buildText(donation.titulo),
+                          _buildText(donation.autor),
+                          _buildText(donation.cantidad.toString()),
                           _buildText(
-                              '${sale.fecha.day}/${sale.fecha.month}/${sale.fecha.year}'),
-                          _buildText(sale.userEmail),
-                          _buildText(sale.lugar),
+                              '${donation.fecha.day}/${donation.fecha.month}/${donation.fecha.year}'),
+                          _buildText(donation.userEmail),
+                          _buildText(donation.lugar),
+                          _buildText(donation.nota ?? ''),
                         ];
                       }).toList(),
                       columnWidths: columnWidths,
@@ -219,7 +224,6 @@ class _SalesPageState extends State<SalesPage> {
       ),
     );
   }
-
 
   Widget _buildText(String text) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),

@@ -206,12 +206,12 @@ class BookViewModel {
       if (cambios.isNotEmpty) {
         final user = FirebaseAuth.instance.currentUser;
         final editor = user?.email ?? 'desconocido';
-        final fechaEdicion = DateTime.now();
+        //final fechaEdicion = DateTime.now();
 
         await _firestore.collection('history').add({
           'idBook': book.id,
           'editadoPor': editor,
-          'fechaEdicion': fechaEdicion,
+          'fechaEdicion': FieldValue.serverTimestamp(), 
           'cambios': cambios,
           'accion' : 'Modificado',
         });

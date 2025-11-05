@@ -9,6 +9,7 @@ import '../book/details_bk.dart';
 // WIDGETS
 import '../../widgets/global/search.dart';
 import '../../widgets/global/table.dart';
+import '../../widgets/stock/hoverbutton.dart';
 
 class AcervoPage extends StatefulWidget {
   final Function(Book) onAcervoSelected;
@@ -124,9 +125,23 @@ class _AcervoPageState extends State<AcervoPage> {
                     runSpacing: 8,
                     alignment: WrapAlignment.end,
                     children: [
-                      _buildOutlinedButton(Icons.filter_list, 'Filtrar', () {}),
-                      _buildOutlinedButton(Icons.download, 'Exportar', () {}),
-                      _buildOutlinedButton(Icons.upload, 'Importar', () {}),
+                      HoverButton(
+                        icon: Icons.filter_list,
+                        text:  'Filtrar',
+                        onPressed: () {},
+                        color: Colors.white,),
+                      HoverButton(
+                        icon:  Icons.download,
+                        text:  'Exportar',
+                        onPressed: () {},
+                        color: Colors.white,
+                      ),
+                      HoverButton(
+                        icon: Icons.upload,
+                        text:  'Importar',
+                        onPressed: () {},
+                        color: Colors.white,
+                      ),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.add),
                         label: const Text('Agregar libro'),
@@ -299,30 +314,6 @@ class _AcervoPageState extends State<AcervoPage> {
     );
   }
 
-  Widget _buildOutlinedButton(
-    IconData icon,
-    String text,
-    VoidCallback onPressed,
-  ) => Container(
-    decoration: BoxDecoration(
-      boxShadow: [
-        BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
-      ],
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      label: Text(text),
-      style: OutlinedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.grey[700],
-        side: BorderSide.none,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-    ),
-  );
 
   Widget _buildText(String text) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 4),

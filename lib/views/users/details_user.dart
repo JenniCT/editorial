@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user.dart';
 import '../../viewmodels/users/details_user_vm.dart';
 import '../../widgets/global/background.dart';
+import '../../widgets/global/table.dart';
 
 class DetailsUserPage extends StatefulWidget {
   final UserModel usuario;
@@ -23,9 +24,10 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
   late UserModel usuario;
   late DetalleUsuarioVM viewModel;
 
-  List<String> acciones = ["Ver", "Editar", "Eliminar"];
+  List<String> acciones = ["Ver", "Editar", "Eliminar", "Agregar"];
   List<String> module = [];
-  Map<String, Map<String, bool>> permisos = {}; // módulo -> acción -> estado
+  Map<String, Map<String, bool>> permisos = {}; 
+  bool loading = true;
 
   @override
   void initState() {
@@ -35,19 +37,17 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
     _cargarModulosYPermisos();
   }
 
-  /// Cargar módulos y permisos
   Future<void> _cargarModulosYPermisos() async {
-    // 1. Cargar módulos
+    setState(() => loading = true);
+
     final modulesSnapshot = await FirebaseFirestore.instance.collection('modules').get();
     final mods = modulesSnapshot.docs.map((d) => d['name'] as String).toList();
 
-    // 2. Inicializar permisos por módulo
     Map<String, Map<String, bool>> permisosTemp = {};
     for (var m in mods) {
       permisosTemp[m] = {for (var a in acciones) a: false};
     }
 
-    // 3. Cargar permisos del usuario
     final permisosSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(usuario.uid)
@@ -66,23 +66,7 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
     setState(() {
       module = mods;
       permisos = permisosTemp;
-    });
-  }
-
-  /// Actualizar permisos en Firestore
-  Future<void> _actualizarPermiso(String modulo, String accion, bool value) async {
-    setState(() {
-      permisos[modulo]![accion] = value;
-    });
-
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(usuario.uid)
-        .collection('permissions')
-        .doc(modulo)
-        .set({
-      'module': modulo,
-      'permissions': permisos[modulo],
+      loading = false;
     });
   }
 
@@ -95,8 +79,6 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 900;
-
     return Scaffold(
       backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
       appBar: AppBar(
@@ -109,18 +91,49 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
           const BackgroundCircles(),
           Padding(
             padding: const EdgeInsets.all(24.0),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDetallesUsuarioCard(),
-                  const SizedBox(height: 24),
-                  _buildAccionesUsuario(),
-                  const SizedBox(height: 24),
-                  _buildTablaPermisos(),
-                ],
-              ),
-            ),
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDetallesUsuarioCard(),
+                        const SizedBox(height: 24),
+                        _buildAccionesUsuario(),
+                        const SizedBox(height: 24),
+                        _buildTablaPermisos(),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.save),
+                            label: const Text("Guardar cambios"),
+                            onPressed: () async {
+                              final errores = viewModel.validarPermisosAvanzado(permisos);
+                              if (errores.values.any((e) => e != null)) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Corrige los permisos marcados en rojo")),
+                                );
+                                return;
+                              }
+
+                              await viewModel.guardarPermisos(permisos);
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Permisos guardados correctamente")),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
@@ -184,38 +197,49 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
   }
 
   Widget _buildTablaPermisos() {
-    return permisos.isEmpty
-        ? const Center(child: CircularProgressIndicator())
-        : Table(
-            border: TableBorder.all(color: Colors.white38),
-            columnWidths: {0: FlexColumnWidth(2), 1: FlexColumnWidth(), 2: FlexColumnWidth(), 3: FlexColumnWidth()},
-            children: [
-              // Header
-              TableRow(
-                decoration: const BoxDecoration(color: Color.fromRGBO(47, 65, 87, 0.9)),
-                children: [
-                  const Padding(padding: EdgeInsets.all(8.0), child: Text("Módulo", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                  ...acciones.map((a) => Padding(padding: const EdgeInsets.all(8.0), child: Text(a, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)))),
-                ],
-              ),
-              // Filas de módulos
-              ...module.map((mod) {
-                return TableRow(
-                  children: [
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text(mod, style: const TextStyle(color: Colors.white70))),
-                    ...acciones.map((accion) {
-                      final checked = permisos[mod]?[accion] ?? false;
-                      return Checkbox(
-                        value: checked,
-                        onChanged: (v) => _actualizarPermiso(mod, accion, v ?? false),
-                        fillColor: MaterialStateProperty.all(Colors.blueAccent),
-                      );
-                    }),
-                  ],
+    final errores = viewModel.validarPermisosAvanzado(permisos);
+
+    return CustomTable(
+      headers: ["Módulo", ...acciones],
+      rows: module.map((mod) {
+        final errorMsg = errores[mod];
+        return [
+          Tooltip(
+            message: errorMsg ?? '',
+            child: Container(
+              color: errorMsg != null ? const Color.fromRGBO(255, 82, 82, 0.2) : null,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Text(mod, style: const TextStyle(color: Colors.white)),
+            ),
+          ),
+          ...acciones.map((accion) {
+            final checked = permisos[mod]?[accion] ?? false;
+            final bloqueado = usuario.role == Role.guest && accion == "Eliminar";
+
+            return StatefulBuilder(
+              builder: (context, setStateCheckbox) {
+                return Tooltip(
+                  message: bloqueado ? "Acción no permitida para ${usuario.roleName}" : errorMsg ?? '',
+                  child: Checkbox(
+                    value: checked,
+                    onChanged: bloqueado
+                        ? null
+                        : (v) {
+                            setState(() {
+                              permisos[mod]![accion] = v ?? false;
+                            });
+                            setStateCheckbox(() {});
+                          },
+                    fillColor: MaterialStateProperty.all(bloqueado ? Colors.grey : Colors.blueAccent),
+                  ),
                 );
-              }),
-            ],
-          );
+              },
+            );
+          }).toList(),
+        ];
+      }).toList(),
+      columnWidths: [200, 80, 80, 80],
+    );
   }
 
   Widget _buildActionButton(IconData icon, String label, {Color? color, VoidCallback? onPressed}) {

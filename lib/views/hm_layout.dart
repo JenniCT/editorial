@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // WIDGETS
 import '../widgets/global/sidebar.dart';
@@ -14,7 +15,7 @@ import 'stock/stock.dart';
 import 'acervo/acervo.dart';
 import 'market/sales.dart';
 import 'users/users.dart';
-import 'setting/settings.dart';
+import 'donation/donation.dart';
 import 'book/details_bk.dart';
 
 class HomeLayout extends StatefulWidget {
@@ -31,20 +32,111 @@ class _HomeLayoutState extends State<HomeLayout> {
   int selectedIndex = 0;
   Book? selectedBook;
   bool showingDetail = false;
+  
+  // Mapa de permisos: nombreModulo -> tiene al menos un permiso activo
+  Map<String, bool> permisosModulos = {};
+  bool loadingPermisos = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarPermisos();
+  }
+
+  Future<void> _cargarPermisos() async {
+    setState(() => loadingPermisos = true);
+
+    // Dashboard y Log out siempre disponibles para todos
+    Map<String, bool> permisos = {
+      'Dashboard': true,
+      'Log out': true,
+    };
+
+    // Si es admin, tiene acceso a todo
+    if (widget.role == Role.adm) {
+      setState(() {
+        permisosModulos = {
+          'Dashboard': true,
+          'Inventario': true,
+          'Acervo': true,
+          'Ventas': true,
+          'Donaciones': true,
+          'Usuarios': true,
+          'Log out': true,
+        };
+        loadingPermisos = false;
+      });
+      return;
+    }
+
+    // Para otros roles, consultar Firestore
+    try {
+      final permisosSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.user.uid)
+          .collection('permissions')
+          .get();
+      
+      for (var doc in permisosSnapshot.docs) {
+        final data = doc.data();
+        final modulo = data['module'] as String? ?? '';
+        final perms = Map<String, bool>.from(data['permissions'] ?? {});
+        
+        // El módulo está habilitado si tiene al menos un permiso activo
+        final tienePermisoActivo = perms.values.any((v) => v == true);
+        permisos[modulo] = tienePermisoActivo;
+      }
+
+      setState(() {
+        permisosModulos = permisos;
+        loadingPermisos = false;
+        debugPrint('Permisos cargados: $permisos');
+      });
+    } catch (e) {
+      debugPrint('Error cargando permisos: $e');
+      setState(() {
+        loadingPermisos = false;
+      });
+    }
+  }
 
   void onItemSelected(int index) {
+    final label = labels[index];
+    
+    // Verificar si el módulo está habilitado
+    if (!_tieneAccesoModulo(label)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No tienes permisos para acceder a este módulo'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       selectedIndex = index;
     });
   }
 
+  bool _tieneAccesoModulo(String label) {
+    // Dashboard y Log out siempre están disponibles
+    if (label == 'Dashboard' || label == 'Log out') return true;
+    
+    // Admin tiene acceso a todo
+    if (widget.role == Role.adm) return true;
+    
+    // Verificar permisos del módulo
+    return permisosModulos[label] ?? false;
+  }
+
   final List<String> labels = [
     'Dashboard',
-    'Libros',
+    'Inventario',
     'Acervo',
     'Ventas',
+    'Donaciones',
     'Usuarios',
-    'Configuracion',
     'Log out',
   ];
 
@@ -82,23 +174,24 @@ class _HomeLayoutState extends State<HomeLayout> {
         return const Dashboard(key: ValueKey('Dashboard'));
       case 1:
         return InventarioPage(
-          key: const ValueKey('Libros'),
+          key: const ValueKey('Inventario'),
           onBookSelected: handleBookSelection,
         );
       case 2:
         return AcervoPage(
           key: const ValueKey('Acervo'),
-          onAcervoSelected: handleBookSelection, // devuelve Book
+          onAcervoSelected: handleBookSelection,
         );
       case 3:
         return const SalesPage(key: ValueKey('Ventas'));
       case 4:
+        return const DonationsPage(key: ValueKey('Donaciones'));
+      case 5:
         return UsersPage(
           key: const ValueKey('Usuarios'),
           onUsuarioSelected: handleUserSelection,
         );
-      case 5:
-        return const SettingsPage(key: ValueKey('Configuracion'));
+      
       default:
         return const Center(child: Text('Vista no encontrada'));
     }
@@ -106,6 +199,13 @@ class _HomeLayoutState extends State<HomeLayout> {
 
   @override
   Widget build(BuildContext context) {
+    if (loadingPermisos) {
+      return const Scaffold(
+        backgroundColor: Color.fromRGBO(199, 217, 229, 1),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
       body: Stack(
@@ -118,6 +218,8 @@ class _HomeLayoutState extends State<HomeLayout> {
                 onItemSelected: onItemSelected,
                 userEmail: widget.user.email,
                 userRole: widget.user.roleName,
+                permisosModulos: permisosModulos,
+                labels: labels,
               ),
               Expanded(
                 child: AnimatedSwitcher(

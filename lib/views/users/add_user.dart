@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../models/user.dart';
 // VIEWMODEL
 import '../../viewmodels/users/add_user_vm.dart';
+//WIDGETS
+import '../../widgets/global/textfield.dart';
 
 class AddUserDialog extends StatefulWidget {
   const AddUserDialog({super.key});
@@ -108,34 +110,26 @@ class _AddUserDialogState extends State<AddUserDialog> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
+                  CustomTextField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: "Nombre",
-                      border: OutlineInputBorder(),
-                    ),
+                    label: "Nombre completo",
                     validator: (v) =>
                         v == null || v.isEmpty ? "Requerido" : null,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  CustomTextField(
                     controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: "Correo electrónico",
-                      border: OutlineInputBorder(),
-                    ),
+                    label: "Correo electrónico",
+                    keyboardType: TextInputType.emailAddress,
                     validator: (v) => v == null || !v.contains('@')
                         ? "Correo inválido"
                         : null,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  CustomTextField(
                     controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: "Contraseña",
-                      border: OutlineInputBorder(),
-                    ),
+                    label: "Contraseña",
+                    isPassword: true,
                     validator: (v) => v == null || v.length < 6
                         ? "Mínimo 6 caracteres"
                         : null,
@@ -145,8 +139,26 @@ class _AddUserDialogState extends State<AddUserDialog> {
                     value: _selectedRole,
                     decoration: const InputDecoration(
                       labelText: "Rol",
-                      border: OutlineInputBorder(),
+                      labelStyle: TextStyle(color: Colors.white),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white70),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        //borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.deepPurpleAccent),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        //borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.redAccent),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        //borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.redAccent),
+                      ),
                     ),
+                    dropdownColor: const Color.fromRGBO(19, 38, 87, 1),
+                    style: const TextStyle(color: Colors.white),
+                    isExpanded: true,
                     items: Role.values
                         .where((r) => r != Role.adm)
                         .map(
@@ -186,6 +198,12 @@ class _AddUserDialogState extends State<AddUserDialog> {
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color.fromRGBO(240, 91, 84, 1),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 4,
                         ),
                         onPressed: () => Navigator.of(context).pop(),
                         child: const Text("Cancelar"),
@@ -194,6 +212,12 @@ class _AddUserDialogState extends State<AddUserDialog> {
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.deepPurpleAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 4,
                         ),
                         onPressed: _saveUser,
                         child: const Text("Guardar"),
@@ -216,7 +240,7 @@ Future<void> showAddUserDialog(BuildContext context) async {
     barrierDismissible: true,
     barrierLabel: "Agregar usuario",
     transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (_, __, ___) => const SizedBox(),
+    pageBuilder: (_, _, _) => const SizedBox(),
     transitionBuilder: (context, animation, _, child) {
       final curved = CurvedAnimation(
         parent: animation,

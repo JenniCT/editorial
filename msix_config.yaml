@@ -1,0 +1,14 @@
+display_name: Inkventory
+publisher_display_name: TejChiapan
+identity_name: com.tejchiapan.inkventory
+msix_version: 1.0.0.0
+logo_path: assets/inkventory.ico
+
+# Aquí va tu certificado
+certificate_path: C:/Users/cleme/MiCert.pfx
+certificate_password: i27bg2hhV_
+
+install_certificate: true
+
+app_executable: Inkventory.exe
+capabilities: internetClient

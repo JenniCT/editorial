@@ -1,24 +1,36 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Historial {
-  final String idLibro;
+  final String accion;
+  final Map<String, dynamic> cambios;
   final String editadoPor;
   final DateTime fechaEdicion;
-  final Map<String, dynamic> cambios;
+  final String idBook;
 
   Historial({
-    required this.idLibro,
+    required this.accion,
+    required this.cambios,
     required this.editadoPor,
     required this.fechaEdicion,
-    required this.cambios,
+    required this.idBook,
   });
 
-  factory Historial.fromMap(Map<String, dynamic> map) {
+  factory Historial.fromMap(Map<String, dynamic> data) {
     return Historial(
-      idLibro: map['idLibro'],
-      editadoPor: map['editadoPor'],
-      fechaEdicion: (map['fechaEdicion'] as Timestamp).toDate(),
-      cambios: Map<String, dynamic>.from(map['cambios']),
+      accion: data['accion'] ?? '',
+      cambios: Map<String, dynamic>.from(data['cambios'] ?? {}),
+      editadoPor: data['editadoPor'] ?? '',
+      fechaEdicion: (data['fechaEdicion'] as Timestamp).toDate(), // 🔥 importante
+      idBook: data['idBook'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'accion': accion,
+      'cambios': cambios,
+      'editadoPor': editadoPor,
+      'fechaEdicion': fechaEdicion, // Firestore lo guarda como Timestamp
+      'idBook': idBook,
+    };
   }
 }

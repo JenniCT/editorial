@@ -6,12 +6,16 @@ class Sidebar extends StatefulWidget {
   final Function(int) onItemSelected;
   final String userEmail;
   final String userRole;
+  final Map<String, bool> permisosModulos;
+  final List<String> labels;
 
   const Sidebar({
     required this.selectedIndex,
     required this.onItemSelected,
     required this.userEmail,
     required this.userRole,
+    required this.permisosModulos,
+    required this.labels,
     super.key,
   });
 
@@ -28,16 +32,24 @@ class _SidebarState extends State<Sidebar> {
     });
   }
 
+  bool _tieneAcceso(String label) {
+    // Dashboard y Log out siempre disponibles
+    if (label == 'Dashboard' || label == 'Log out') return true;
+    
+    // Verificar permisos
+    return widget.permisosModulos[label] ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = [
       _SidebarItem(icon: Icons.dashboard, label: 'Dashboard'),
-      _SidebarItem(icon: Icons.book_rounded, label: 'Libros'),
+      _SidebarItem(icon: Icons.book_rounded, label: 'Inventario'),
       _SidebarItem(icon: Icons.archive_rounded, label: 'Acervo'),
       _SidebarItem(icon: Icons.shopping_cart, label: 'Ventas'),
+      _SidebarItem(icon: Icons.volunteer_activism_rounded, label: 'Donaciones'),
       _SidebarItem(icon: Icons.people_alt_rounded, label: 'Usuarios'),
-      _SidebarItem(icon: Icons.settings, label: 'Configuración'),
-      _SidebarItem(icon: Icons.logout, label: 'Cerrar sesión'),
+      _SidebarItem(icon: Icons.logout, label: 'Log out'),
     ];
 
     return AnimatedContainer(
@@ -131,55 +143,68 @@ class _SidebarState extends State<Sidebar> {
                     itemBuilder: (context, index) {
                       final item = items[index];
                       final isSelected = index == widget.selectedIndex;
+                      final tieneAcceso = _tieneAcceso(item.label);
 
-                      return MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: () => widget.onItemSelected(index),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 6,
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isExpanded ? 12 : 0,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color.fromRGBO(255, 255, 255, 0.15)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: isExpanded
-                                  ? MainAxisAlignment.start
-                                  : MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  item.icon,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors.white70,
-                                ),
-                                if (isExpanded) const SizedBox(width: 12),
-                                if (isExpanded)
-                                  Expanded(
-                                    child: Text(
-                                      item.label,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                      return Tooltip(
+                        message: tieneAcceso ? item.label : 'Sin permisos para ${item.label}',
+                        child: MouseRegion(
+                          cursor: tieneAcceso ? SystemMouseCursors.click : SystemMouseCursors.forbidden,
+                          child: GestureDetector(
+                            onTap: tieneAcceso ? () => widget.onItemSelected(index) : null,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 6,
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isExpanded ? 12 : 0,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color.fromRGBO(255, 255, 255, 0.15)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Opacity(
+                                opacity: tieneAcceso ? 1.0 : 0.4,
+                                child: Row(
+                                  mainAxisAlignment: isExpanded
+                                      ? MainAxisAlignment.start
+                                      : MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      item.icon,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.white70,
                                     ),
-                                  ),
-                              ],
+                                    if (isExpanded) const SizedBox(width: 12),
+                                    if (isExpanded)
+                                      Expanded(
+                                        child: Text(
+                                          item.label,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            fontSize: 14,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    if (isExpanded && !tieneAcceso)
+                                      const Icon(
+                                        Icons.lock_outline,
+                                        color: Colors.white70,
+                                        size: 16,
+                                      ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),

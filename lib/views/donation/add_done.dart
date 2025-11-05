@@ -4,72 +4,76 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // MODELOS
 import '../../models/book_m.dart';
-import '../../models/sale_m.dart';
+import '../../models/donation_m.dart';
 // VIEWMODEL
-import '../../viewmodels/market/sales_vm.dart';
+import '../../viewmodels/donation/donation_vm.dart';
 // WIDGETS
 import '../../widgets/global/textfield.dart';
 
-class SellDialog extends StatefulWidget {
+class DonateDialog extends StatefulWidget {
   final Book book;
-  final Function(Book) onSold;
+  final Function(Book) onDonated;
 
-  const SellDialog({required this.book, required this.onSold, super.key});
+  const DonateDialog({required this.book, required this.onDonated, super.key});
 
   @override
-  State<SellDialog> createState() => _SellDialogState();
+  State<DonateDialog> createState() => _DonateDialogState();
 }
 
-class _SellDialogState extends State<SellDialog> {
+class _DonateDialogState extends State<DonateDialog> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _cantidadController =
       TextEditingController(text: '1');
   final TextEditingController _lugarController = TextEditingController();
+  final TextEditingController _notaController = TextEditingController();
 
-  late final SalesViewModel _salesVM;
-  double total = 0; // Total por defecto 0
+  late final DonationsViewModel _donationsVM;
 
   @override
   void initState() {
     super.initState();
-    _salesVM = SalesViewModel();
+    _donationsVM = DonationsViewModel();
   }
 
-  Future<void> _saveSale() async {
+  Future<void> _saveDonation() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final cantidadFinal = int.tryParse(_cantidadController.text) ?? 1;
-    if (cantidadFinal <= 0 || cantidadFinal > widget.book.copias) return;
+    final cantidad = int.tryParse(_cantidadController.text) ?? 1;
+    if (cantidad <= 0 || cantidad > widget.book.copias) return;
 
     final lugar = _lugarController.text.trim();
     if (lugar.isEmpty) return;
 
+    final nota = _notaController.text.trim();
+
     final user = FirebaseAuth.instance.currentUser;
 
-    final sale = Sale(
+    final donation = Donation(
       bookId: widget.book.id!,
       titulo: widget.book.titulo,
       autor: widget.book.autor,
-      cantidad: cantidadFinal,
+      cantidad: cantidad,
       fecha: DateTime.now(),
       userId: user?.uid ?? 'anonimo',
       userEmail: user?.email ?? 'anonimo',
       lugar: lugar,
+      nota: nota,
     );
 
     try {
-      await _salesVM.addSale(sale);
+      await _donationsVM.addDonation(donation);
 
+      // Opcional: actualizar copias del libro
       final updatedBook = widget.book.copyWith(
-        copias: widget.book.copias - cantidadFinal,
+        copias: widget.book.copias - cantidad,
       );
 
-      widget.onSold(updatedBook);
+      widget.onDonated(updatedBook);
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al registrar venta: $e")),
+          SnackBar(content: Text("Error al registrar donación: $e")),
         );
       }
     }
@@ -99,7 +103,7 @@ class _SellDialogState extends State<SellDialog> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    "Registrar venta",
+                    "Registrar donación",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -118,7 +122,7 @@ class _SellDialogState extends State<SellDialog> {
                   CustomTextField(
                     controller: _cantidadController,
                     keyboardType: TextInputType.number,
-                    label: "Cantidad a vender (máx. ${widget.book.copias})",
+                    label: "Cantidad a donar (máx. ${widget.book.copias})",
                     validator: (v) {
                       final val = int.tryParse(v ?? "");
                       if (val == null || val <= 0) return "Cantidad inválida";
@@ -129,17 +133,13 @@ class _SellDialogState extends State<SellDialog> {
                   const SizedBox(height: 12),
                   CustomTextField(
                     controller: _lugarController,
-                    label: "Lugar de la venta",
+                    label: "Lugar de la donación",
                     validator: (v) => v == null || v.isEmpty ? "Requerido" : null,
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    "Total: \$${total.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  CustomTextField(
+                    controller: _notaController,
+                    label: "Nota (opcional)",
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -161,7 +161,7 @@ class _SellDialogState extends State<SellDialog> {
                       const SizedBox(width: 12),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurpleAccent,
+                          backgroundColor: Colors.greenAccent.shade700,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -169,7 +169,7 @@ class _SellDialogState extends State<SellDialog> {
                           ),
                           elevation: 4,
                         ),
-                        onPressed: _saveSale,
+                        onPressed: _saveDonation,
                         child: const Text("Registrar"),
                       ),
                     ],
@@ -184,12 +184,12 @@ class _SellDialogState extends State<SellDialog> {
   }
 }
 
-Future<void> showSellDialog(
-    BuildContext context, Book book, Function(Book) onSold) async {
+Future<void> showDonateDialog(
+    BuildContext context, Book book, Function(Book) onDonated) async {
   showGeneralDialog(
     context: context,
     barrierDismissible: true,
-    barrierLabel: "Registrar venta",
+    barrierLabel: "Registrar donación",
     transitionDuration: const Duration(milliseconds: 300),
     pageBuilder: (_, _,_) => const SizedBox.shrink(),
     transitionBuilder: (context, animation, _, child) {
@@ -199,7 +199,7 @@ Future<void> showSellDialog(
       );
       return ScaleTransition(
         scale: curved,
-        child: SellDialog(book: book, onSold: onSold),
+        child: DonateDialog(book: book, onDonated: onDonated),
       );
     },
   );
