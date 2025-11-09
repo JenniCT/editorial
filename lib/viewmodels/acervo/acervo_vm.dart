@@ -28,7 +28,7 @@ class AcervoViewModel {
           });
         }
 
-        return CustomDialog(
+        return CustomToast(
           title: title,
           message: message,
           color: color,

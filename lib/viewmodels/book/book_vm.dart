@@ -41,7 +41,7 @@ class BookViewModel {
             if (context.mounted) Navigator.of(context).pop();
           });
         }
-        return CustomDialog(
+        return CustomToast(
           title: title,
           message: message,
           color: color,

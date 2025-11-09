@@ -79,6 +79,7 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
       appBar: AppBar(
@@ -88,7 +89,7 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
       ),
       body: Stack(
         children: [
-          Background(),
+          Background(isDarkMode: isDarkMode,),
           Padding(
             padding: const EdgeInsets.all(24.0),
             child: loading

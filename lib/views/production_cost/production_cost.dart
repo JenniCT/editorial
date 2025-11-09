@@ -87,7 +87,7 @@ class _CostosProduccionPageState extends State<CostosProduccionPage> {
       ),
       body: Stack(
         children: [
-          Background(),
+          Background(isDarkMode: Theme.of(context).brightness == Brightness.dark),
           Column(
             children: [
               // BARRA FIJA DE BÚSQUEDA

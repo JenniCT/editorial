@@ -1,91 +1,35 @@
 import 'package:flutter/material.dart';
 
 class Background extends StatelessWidget {
-  const Background({super.key});
+  final bool isDarkMode;
+  final bool showEmptyStateIllustration;
+
+  const Background({
+    required this.isDarkMode,
+    this.showEmptyStateIllustration = false,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Fondo plano según modo
+    final Color mainBackground = isDarkMode ? Color(0xFF0E1726) :  Color(0xFF13203B);
+
     return Stack(
       children: [
-        // Fondo azul nocturno uniforme
-        Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF011E33),
-          ),
-        ),
+        // Fondo principal plano de toda la pantalla
+        Container(color: mainBackground),
 
-        // Capa muy sutil de ruido
-        Opacity(
-          opacity: 0.015, // 1.5 %
-          child: Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/noise.png'),
-                repeat: ImageRepeat.repeat,
-              ),
+        // Ilustración institucional discreta para estados vacíos
+        if (showEmptyStateIllustration)
+          Center(
+            child: Icon(
+              Icons.inventory_2_outlined,
+              size: 120,
+              color: Color.fromRGBO(2, 91, 157, 0.08),
             ),
           ),
-        ),
-
-        // Halo radial en la parte izquierda (zona ilustrativa)
-        Positioned.fill(
-          child: IgnorePointer(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(-0.82, -0.82), // 18 % desde la esquina superior izquierda
-                  radius: 1.2,
-                  colors: [
-                    Color.fromRGBO(1, 30, 51, 0.06),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // Huellas como textura (10–12 % y escala 40–90 px)
-        _buildFootprint(80, 120, 90, 0.12),
-        _buildFootprint(260, 140, 40, 0.10),
-        _buildFootprint(420, 110, 70, 0.12),
-        _buildFootprint(600, 150, 50, 0.10),
-        _buildFootprint(780, 180, 90, 0.12),
-
-        // Sello de garra en esquina inferior derecha, dorado 12 %
-        Positioned(
-          bottom: 40,
-          right: 40,
-          child: Opacity(
-            opacity: 0.12,
-            child: ColorFiltered(
-              colorFilter: const ColorFilter.mode(
-                Color(0xFFAC8A1F),
-                BlendMode.srcATop,
-              ),
-              child: Image.asset(
-                'assets/images/garra.png',
-                height: 130,
-              ),
-            ),
-          ),
-        ),
       ],
-    );
-  }
-
-  // Widget utilitario para repetir huellas pequeñas
-  Widget _buildFootprint(double top, double left, double size, double opacity) {
-    return Positioned(
-      top: top,
-      left: left,
-      child: Opacity(
-        opacity: opacity,
-        child: Image.asset(
-          'assets/images/garra.png', // usa huella pequeña
-          height: size,
-        ),
-      ),
     );
   }
 }

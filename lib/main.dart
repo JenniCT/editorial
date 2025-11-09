@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 //=========================== CONFIGURACIÓN ===========================//
 import 'firebase_options.dart';
-import 'core/theme/app_theme.dart';
 
 //=========================== VISTAS PRINCIPALES ===========================//
 import 'views/login/login_v.dart';

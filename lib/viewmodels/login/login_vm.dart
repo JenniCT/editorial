@@ -123,7 +123,7 @@ class LoginVM with ChangeNotifier {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => HomeLayout(user: userModel, role: role),
+              builder: (_) => HomeLayout(user: userModel, role: role, ),
             ),
           );
         }
@@ -221,7 +221,7 @@ class LoginVM with ChangeNotifier {
 
     showDialog(
       context: context,
-      builder: (context) => CustomDialog(
+      builder: (context) => CustomToast(
         title: title,
         message: message,
         color: color,

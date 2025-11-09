@@ -1,94 +1,172 @@
-import 'dart:ui';
+//=========================== IMPORTACIONES PRINCIPALES ===========================//
+// IMPORTACION DE FLUTTER PARA UI Y NAVEGACION
 import 'package:flutter/material.dart';
-import '../../viewmodels/login/login_vm.dart';
-import '../global/dialog.dart';
 
+// IMPORTACION DE VISTA-MODELO LOGIN PARA ACCESO A FUNCIONES DE AUTENTICACION
+import '../../viewmodels/login/login_vm.dart';
+
+// IMPORTACION DE DIALOGOS Y BOTONES PERSONALIZADOS
+import '../global/dialog.dart';
+import '../../widgets/login/button.dart'; // BOTON ESTILIZADO PARA ACCIONES
+
+//=========================== FUNCION DIALOGO RECUPERAR CONTRASEÑA ===========================//
+// FUNCION RESPONSABLE DE MOSTRAR UN DIALOGO CLARO Y EMOCIONALMENTE GUIADO
 Future<void> showPasswordResetDialog(BuildContext context, LoginVM viewModel) async {
+  // CONTROLADOR DE TEXTO PARA INGRESO DE CORREO
   final TextEditingController resetController = TextEditingController();
 
   return showDialog(
     context: context,
+    barrierDismissible: true, // PERMITE CERRAR AL HACER CLICK FUERA DEL DIALOGO
     builder: (dialogContext) {
       return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: Colors.transparent,
-        child: SizedBox(
-          width: 400,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), 
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(0, 0, 0, 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color.fromRGBO(10, 10, 10, 0.102)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Recuperar Contraseña',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: resetController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Correo electrónico',
-                        labelStyle: TextStyle(color: Colors.white70),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white54),
-                        ),
-                        focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white),
-                        ),
+        backgroundColor: Colors.transparent, // FONDO TRANSPARENTE PARA ENFOQUE EN CARD
+        insetPadding: const EdgeInsets.all(24),
+        child: LayoutBuilder(builder: (context, constraints) {
+          // AJUSTE DE ANCHO MAXIMO PARA RESPONSIVE
+          double maxWidth = constraints.maxWidth > 500 ? 500 : constraints.maxWidth * 0.9;
+          return Center(
+            child: Stack(
+              children: [
+                //=========================== CONTENEDOR PRINCIPAL ===========================//
+                Container(
+                  width: maxWidth,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(255, 255, 255, 0.95), // FONDO SUAVE, LEVE TRANSPARENCIA
+                    borderRadius: BorderRadius.circular(20), // BORDES SUAVES PARA EXPERIENCIA AMIGABLE
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color.fromRGBO(0, 0, 0, 0.1), // SOMBRA LEVE PARA PROFUNDIDAD
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final navigator = Navigator.of(dialogContext);
-
-                        final message = await viewModel.sendPasswordResetEmail(
-                          resetController.text.trim(),
-                        );
-
-                        if (navigator.canPop()) navigator.pop();
-
-                        showDialog(
-                          context: context,
-                          builder: (_) => CustomDialog(
-                            title: "Correo enviado",
-                            message: message,
-                            color: Colors.green,
-                            icon: Icons.check_circle,
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        //=========================== ICONO/LOGO ===========================//
+                        SizedBox(
+                          width: constraints.maxWidth <= 767 ? 80 : 120, // ADAPTA TAMAÑO EN MOVILES
+                          child: Image.asset('assets/images/garra.png'),
+                        ),
+                        const SizedBox(height: 16),
+                        //=========================== TITULO ===========================//
+                        const Text(
+                          'Recuperar contraseña',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 28,
+                            color: Color(0xFF1E2A45),
                           ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(26, 61, 99, 1),
-                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                        shadowColor: const Color.fromRGBO(26, 61, 99, 0.4),
-                        elevation: 10,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      label: const Text(
-                        "Enviar",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
+                        const SizedBox(height: 12),
+                        //=========================== TEXTO EXPLICATIVO ===========================//
+                        const Text(
+                          'Ingresa el correo asociado a tu cuenta para recibir el enlace de recuperación',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
+                            color: Color(0xFF352E35),
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 28),
+                        //=========================== INPUT EMAIL ===========================//
+                        TextField(
+                          controller: resetController,
+                          keyboardType: TextInputType.emailAddress,
+                          style: const TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 14,
+                            color: Color(0xFF1E1E1E),
+                          ),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color(0xFFF9FAFB),
+                            hintText: 'Correo electrónico',
+                            hintStyle: const TextStyle(
+                              color: Color(0xFF352E35),
+                              fontFamily: 'Roboto',
+                            ),
+                            prefixIcon: const Icon(Icons.email, color: Color(0xFF51617A)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: Color(0xFFC5D0E0), width: 1.5),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: Color(0xFF3056D3), width: 2),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
+                            ),
+                            disabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        //=========================== BOTON ENVIAR ===========================//
+                        LoginButton(
+                          text: 'Enviar enlace',
+                          onTap: () async {
+                            final navigator = Navigator.of(dialogContext);
+
+                            // ENVIO DE CORREO DE RECUPERACION
+                            final message = await viewModel.sendPasswordResetEmail(
+                              resetController.text.trim(),
+                            );
+
+                            // CIERRA DIALOGO SI ES POSIBLE
+                            if (navigator.canPop()) navigator.pop();
+
+                            // MUESTRA TOAST CON MENSAJE DE RESULTADO
+                            CustomToast(
+                              title: message.contains('error') ? 'Error' : 'Correo enviado',
+                              message: message,
+                              color: message.contains('error') ? Colors.red : Colors.green,
+                              icon: message.contains('error') ? Icons.error : Icons.check_circle,
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        //=========================== IMAGEN ADICIONAL PARA MOVILES ===========================//
+                        if (constraints.maxWidth <= 767)
+                          SizedBox(
+                            height: 120,
+                            child: Image.asset('assets/ocelote.png'),
+                          ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                //=========================== BOTON CERRAR ===========================//
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Color(0xFF51617A), size: 28),
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(); // CIERRA EL DIALOGO
+                    },
+                    tooltip: 'Cerrar',
+                    autofocus: true,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ),
+          );
+        }),
       );
     },
   );

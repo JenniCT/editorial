@@ -36,10 +36,10 @@ class DynamicColors {
   //=========================== COLORES DE FONDO Y SUPERFICIE ===========================//
 
   static Color background(bool isDarkMode) =>
-      isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+      isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFb8cae0);
 
   static Color surface(bool isDarkMode) =>
-      isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFFFFFFF);
+      isDarkMode ? const Color(0xFF28344e) : const Color(0xFFa4bad2);
 
   static Color border(bool isDarkMode) =>
       isDarkMode ? const Color(0xFF334155) : const Color(0xFFCBD5E1);

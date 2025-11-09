@@ -3,8 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // WIDGETS
 import '../widgets/global/sidebar.dart';
-import '../widgets/global/background.dart';
-
 // MODELO
 import '../models/book_m.dart';
 import '../models/user.dart';
@@ -32,27 +30,25 @@ class _HomeLayoutState extends State<HomeLayout> {
   int selectedIndex = 0;
   Book? selectedBook;
   bool showingDetail = false;
-  
-  // Mapa de permisos: nombreModulo -> tiene al menos un permiso activo
+
   Map<String, bool> permisosModulos = {};
   bool loadingPermisos = true;
+
+  // Nuevo estado para el modo oscuro
+  bool isDarkMode = false;
 
   @override
   void initState() {
     super.initState();
     _cargarPermisos();
+    // Inicializamos según el tema del sistema
+    isDarkMode =
+        WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
   }
 
   Future<void> _cargarPermisos() async {
     setState(() => loadingPermisos = true);
-
-    // Dashboard y Log out siempre disponibles para todos
-    Map<String, bool> permisos = {
-      'Dashboard': true,
-      'Log out': true,
-    };
-
-    // Si es admin, tiene acceso a todo
+    Map<String, bool> permisos = {'Dashboard': true, 'Log out': true};
     if (widget.role == Role.adm) {
       setState(() {
         permisosModulos = {
@@ -68,42 +64,39 @@ class _HomeLayoutState extends State<HomeLayout> {
       });
       return;
     }
-
-    // Para otros roles, consultar Firestore
     try {
       final permisosSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(widget.user.uid)
           .collection('permissions')
           .get();
-      
+
       for (var doc in permisosSnapshot.docs) {
         final data = doc.data();
         final modulo = data['module'] as String? ?? '';
         final perms = Map<String, bool>.from(data['permissions'] ?? {});
-        
-        // El módulo está habilitado si tiene al menos un permiso activo
-        final tienePermisoActivo = perms.values.any((v) => v == true);
-        permisos[modulo] = tienePermisoActivo;
+        permisos[modulo] = perms.values.any((v) => v == true);
       }
 
       setState(() {
         permisosModulos = permisos;
         loadingPermisos = false;
-        debugPrint('Permisos cargados: $permisos');
       });
     } catch (e) {
-      debugPrint('Error cargando permisos: $e');
       setState(() {
         loadingPermisos = false;
       });
     }
   }
 
+  void toggleDarkMode() {
+    setState(() {
+      isDarkMode = !isDarkMode;
+    });
+  }
+
   void onItemSelected(int index) {
     final label = labels[index];
-    
-    // Verificar si el módulo está habilitado
     if (!_tieneAccesoModulo(label)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -113,20 +106,14 @@ class _HomeLayoutState extends State<HomeLayout> {
       );
       return;
     }
-
     setState(() {
       selectedIndex = index;
     });
   }
 
   bool _tieneAccesoModulo(String label) {
-    // Dashboard y Log out siempre están disponibles
     if (label == 'Dashboard' || label == 'Log out') return true;
-    
-    // Admin tiene acceso a todo
     if (widget.role == Role.adm) return true;
-    
-    // Verificar permisos del módulo
     return permisosModulos[label] ?? false;
   }
 
@@ -147,9 +134,7 @@ class _HomeLayoutState extends State<HomeLayout> {
     });
   }
 
-  void handleUserSelection(UserModel user) {
-    // Aquí puedes manejar la acción al seleccionar un usuario
-  }
+  void handleUserSelection(UserModel user) {}
 
   Widget getView(int index) {
     if (showingDetail && selectedBook != null) {
@@ -191,7 +176,6 @@ class _HomeLayoutState extends State<HomeLayout> {
           key: const ValueKey('Usuarios'),
           onUsuarioSelected: handleUserSelection,
         );
-      
       default:
         return const Center(child: Text('Vista no encontrada'));
     }
@@ -200,47 +184,41 @@ class _HomeLayoutState extends State<HomeLayout> {
   @override
   Widget build(BuildContext context) {
     if (loadingPermisos) {
-      return const Scaffold(
-        backgroundColor: Color.fromRGBO(199, 217, 229, 1),
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
-      body: Stack(
+      body: Row(
         children: [
-          Background(),
-          Row(
-            children: [
-              Sidebar(
-                selectedIndex: selectedIndex,
-                onItemSelected: onItemSelected,
-                userEmail: widget.user.email,
-                userRole: widget.user.roleName,
-                permisosModulos: permisosModulos,
-                labels: labels,
-              ),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0.1, 0),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: child,
-                    ),
+          Sidebar(
+            selectedIndex: selectedIndex,
+            onItemSelected: onItemSelected,
+            userEmail: widget.user.email,
+            userRole: widget.user.roleName,
+            permisosModulos: permisosModulos,
+          ),
+          Expanded(
+            child: Container(
+              color: const Color(0xFFF2F3F5), 
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.1, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
                   ),
-                  child: getView(selectedIndex),
                 ),
+                child: getView(selectedIndex),
               ),
-            ],
+            ),
           ),
         ],
       ),
     );
+
   }
 }
