@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "59196752924",
+    "project_id": "tomouno-8a1fc",
+    "storage_bucket": "tomouno-8a1fc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:59196752924:android:5baae69ba6c0f1c5784bd9",
+        "android_client_info": {
+          "package_name": "com.example.editorial"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3Rj_crsHFAgE7iMW_ljMP_B7dp6BOsUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

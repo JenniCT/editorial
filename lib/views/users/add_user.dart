@@ -141,7 +141,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
                       labelText: "Rol",
                       labelStyle: TextStyle(color: Colors.white),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.white70),
+                        borderSide: BorderSide(color: Colors.white70),
                       ),
                       focusedBorder: OutlineInputBorder(
                         //borderRadius: BorderRadius.circular(8),

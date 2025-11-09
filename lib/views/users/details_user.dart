@@ -88,7 +88,7 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
       ),
       body: Stack(
         children: [
-          const BackgroundCircles(),
+          Background(),
           Padding(
             padding: const EdgeInsets.all(24.0),
             child: loading
@@ -235,7 +235,7 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
                 );
               },
             );
-          }).toList(),
+          }),
         ];
       }).toList(),
       columnWidths: [200, 80, 80, 80],
@@ -247,7 +247,7 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
       width: 160,
       height: 48,
       decoration: BoxDecoration(
-        color: (color ?? Colors.white).withOpacity(0.6),
+        color: (color ?? Colors.white).withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.4)),
       ),

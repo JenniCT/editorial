@@ -1,35 +1,67 @@
+//=========================== IMPORTACIONES PRINCIPALES ===========================//
+import 'dart:ui'; // Requerido para PointerDeviceKind
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-//import 'package:cloud_firestore/cloud_firestore.dart';
-import 'firestore/config/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+//=========================== CONFIGURACIÓN ===========================//
+import 'firebase_options.dart';
+import 'core/theme/app_theme.dart';
+
+//=========================== VISTAS PRINCIPALES ===========================//
 import 'views/login/login_v.dart';
 
-void main() async {
+//=========================== PUNTO DE ENTRADA ===========================//
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  //await FirebaseFirestore.instance.clearPersistence();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Inicializar Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  
+  // Inicializar Supabase
   await Supabase.initialize(
     url: 'https://jfgzsnvzbeoajpvhotjk.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZ3pzbnZ6YmVvYWpwdmhvdGprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTQzMzMsImV4cCI6MjA3Mzg3MDMzM30.F-azIB8-6KaWtO72dRi8TivuOfIAWzb9s1dxlhjOcRU',
-
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZ3pzbnZ6YmVvYWpwdmhvdGprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTQzMzMsImV4cCI6MjA3Mzg3MDMzM30.F-azIB8-6KaWtO72dRi8TivuOfIAWzb9s1dxlhjOcRU',
   );
-  runApp(const MyApp());
+
+  runApp(const InkventoryApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+//=========================== APLICACIÓN PRINCIPAL ===========================//
+
+class InkventoryApp extends StatelessWidget {
+  const InkventoryApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Inventario App',
+      title: 'Inkventory',
       debugShowCheckedModeBanner: false,
+
+
+      //=========================== NAVEGACIÓN PRINCIPAL ===========================//
       initialRoute: '/login',
-      routes: {'/login': (context) => Login()},
+      routes: {
+        '/login': (context) => const Login(),
+        // futuras rutas:
+        // '/dashboard': (context) => const DashboardView(),
+        // '/inventario': (context) => const InventoryView(),
+        // '/usuarios': (context) => const UsersView(),
+      },
+
+      //=========================== SOPORTE PARA WEB ===========================//
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: {
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.touch,
+          PointerDeviceKind.trackpad,
+          PointerDeviceKind.stylus,
+        },
+      ),
     );
   }
 }

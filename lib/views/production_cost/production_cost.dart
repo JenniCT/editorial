@@ -87,7 +87,7 @@ class _CostosProduccionPageState extends State<CostosProduccionPage> {
       ),
       body: Stack(
         children: [
-          const BackgroundCircles(),
+          Background(),
           Column(
             children: [
               // BARRA FIJA DE BÚSQUEDA

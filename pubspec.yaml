@@ -60,6 +60,8 @@ dependencies:
   supabase_flutter: ^2.0.0    #CLIENTE PARA SUPABASE, ALTERNATIVA A FIREBASE
   msix: ^3.16.12
 
+  flutter_animate: ^4.2.0    # ANIMACIONES SENCILLAS Y EFECTOS VISUALES
+
 
 # DEPENDENCIAS DE DESARROLLO
 dev_dependencies:
@@ -74,11 +76,24 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/ocelote.png
-    - assets/siresu.png
-    - assets/unach.png
-    - assets/manita.png
-    - assets/sinportada.png
-    - assets/icono.png
+    - assets/images/ocelote.png
+    - assets/images/siresu.png
+    - assets/images/unach.png
+    - assets/images/sinportada.png
+    - assets/images/icono.png
+    - assets/images/garra.png
     - assets/inkventory.ico
 
+  # FUENTES PERSONALIZADAS UTILIZADAS EN LA APP
+  fonts:
+  
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Black.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf
+        - asset: assets/fonts/Roboto-Italic.ttf
+        - asset: assets/fonts/Roboto-Light.ttf
+        - asset: assets/fonts/Roboto-Medium.ttf
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-SemiBold.ttf
+        - asset: assets/fonts/Roboto-Thin.ttf

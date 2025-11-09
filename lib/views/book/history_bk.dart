@@ -63,7 +63,7 @@ class _HistorialPageState extends State<HistorialPage> {
       backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
       body: Stack(  
         children: [
-          const BackgroundCircles(),
+          Background(),
           SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Column(

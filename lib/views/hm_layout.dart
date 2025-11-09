@@ -210,7 +210,7 @@ class _HomeLayoutState extends State<HomeLayout> {
       backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
       body: Stack(
         children: [
-          const BackgroundCircles(),
+          Background(),
           Row(
             children: [
               Sidebar(
