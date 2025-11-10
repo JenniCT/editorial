@@ -10,6 +10,7 @@ class Donation {
   final String userEmail;
   final String lugar;
   final String? nota;
+  bool selected;
 
   Donation({
     this.id,
@@ -22,6 +23,7 @@ class Donation {
     required this.userEmail,
     required this.lugar,
     this.nota,
+    this.selected = false,
   });
 
   // Convertir a Map para Firestore

@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
-// MODELO
+//=========================== MODELOS ===========================//
 import '../../models/book_m.dart';
 
-// VISTAMODELO
+//=========================== VISTAMODELO ===========================//
 import '../../viewmodels/acervo/acervo_vm.dart';
 
-// VISTAS SECUNDARIAS
+//=========================== VISTAS SECUNDARIAS ===========================//
 import '../book/details_bk.dart';
 import '../acervo/add_acervo.dart';
-
-// WIDGETS
-import '../../widgets/modules/page_header.dart';
-import '../../widgets/modules/header_button.dart';
-
-// SUBCOMPONENTES
-import 'acervo_table.dart';
 import '../import/import.dart';
 import '../export/export.dart';
 
+//=========================== WIDGETS REUTILIZABLES ===========================//
+import '../../widgets/modules/page_header.dart';
+import '../../widgets/modules/header_button.dart';
+
+//=========================== SUBCOMPONENTES ===========================//
+import 'acervo_table.dart';
+
+//=========================== WIDGET PRINCIPAL DE LA PÁGINA DE ACERVO ===========================//
 class AcervoPage extends StatefulWidget {
   final Function(Book) onAcervoSelected;
 
@@ -29,13 +30,15 @@ class AcervoPage extends StatefulWidget {
   State<AcervoPage> createState() => _AcervoPageState();
 }
 
+//=========================== ESTADO DE LA PÁGINA ===========================//
 class _AcervoPageState extends State<AcervoPage> {
   final AcervoViewModel _viewModel = AcervoViewModel();
   final TextEditingController _searchController = TextEditingController();
 
-  Book? _selectedBook;
-  bool _showingDetail = false;
+  Book? _selectedBook; // LIBRO SELECCIONADO ACTUAL
+  bool _showingDetail = false; // INDICA SI SE MUESTRA LA PÁGINA DE DETALLE
 
+  //=========================== MÉTODO DE SELECCIÓN DE LIBRO ===========================//
   void _handleBookSelection(Book book) {
     setState(() {
       _selectedBook = book;
@@ -43,9 +46,10 @@ class _AcervoPageState extends State<AcervoPage> {
     });
   }
 
+  //=========================== BUILD PRINCIPAL ===========================//
   @override
   Widget build(BuildContext context) {
-    // MOSTRAR DETALLE
+    //=========================== VISTA DE DETALLE ===========================//
     if (_showingDetail && _selectedBook != null) {
       return DetalleLibroPage(
         book: _selectedBook!,
@@ -54,6 +58,7 @@ class _AcervoPageState extends State<AcervoPage> {
       );
     }
 
+    //=========================== VISTA PRINCIPAL DE ACERVO ===========================//
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
@@ -61,7 +66,7 @@ class _AcervoPageState extends State<AcervoPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // CABECERA CON ACCIONES
+            //=========================== CABECERA DE PÁGINA ===========================//
             PageHeader(
               title: 'Acervo',
               buttons: [
@@ -71,7 +76,6 @@ class _AcervoPageState extends State<AcervoPage> {
                   onPressed: () {},
                   type: ActionType.secondary,
                 ),
-                // BOTÓN PARA EXPORTAR CSV
                 HeaderButton(
                   icon: CupertinoIcons.arrow_down_circle,
                   text: 'Exportar',
@@ -81,7 +85,6 @@ class _AcervoPageState extends State<AcervoPage> {
                   ),
                   type: ActionType.secondary,
                 ),
-                // BOTÓN PARA IMPORTAR CSV
                 HeaderButton(
                   icon: CupertinoIcons.arrow_up_circle,
                   text: 'Importar',
@@ -91,7 +94,6 @@ class _AcervoPageState extends State<AcervoPage> {
                   ),
                   type: ActionType.secondary,
                 ),
-                // BOTÓN PRINCIPAL PARA AGREGAR NUEVO LIBRO
                 HeaderButton(
                   icon: CupertinoIcons.add_circled_solid,
                   text: 'Agregar acervo',
@@ -105,18 +107,24 @@ class _AcervoPageState extends State<AcervoPage> {
             ),
             const SizedBox(height: 20),
 
-            // TABLA DE ACERVO
+            //=========================== TABLA DE ACERVO ===========================//
             Expanded(
               child: AcervoTable(
                 viewModel: _viewModel,
                 searchController: _searchController,
                 onBookSelected: _handleBookSelection,
-
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  //=========================== DISPOSICIÓN DE RECURSOS ===========================//
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }

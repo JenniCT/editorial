@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
-// MODELO
-import '../../models/donation_m.dart';
-// VISTAMODELO
+//=========================== VIEWMODEL ===========================//
 import '../../viewmodels/donation/donation_vm.dart';
-// WIDGETS
-import '../../widgets/table/table.dart';
-import '../../widgets/stock/hoverbutton.dart';
 
+//=========================== WIDGETS REUTILIZABLES ===========================//
+import '../../widgets/modules/page_header.dart';
+import '../../widgets/modules/header_button.dart';
+
+//=========================== SUBCOMPONENTES ===========================//
+import 'donation_table.dart';
+import '../import/import.dart';
+import '../export/export.dart';
+
+//=========================== WIDGET PRINCIPAL DE DONACIONES ===========================//
 class DonationsPage extends StatefulWidget {
   const DonationsPage({super.key});
 
@@ -15,209 +21,67 @@ class DonationsPage extends StatefulWidget {
   State<DonationsPage> createState() => _DonationsPageState();
 }
 
+//=========================== ESTADO DE LA PÁGINA ===========================//
 class _DonationsPageState extends State<DonationsPage> {
   final DonationsViewModel _viewModel = DonationsViewModel();
   final TextEditingController _searchController = TextEditingController();
-  List<Donation> _filteredDonations = [];
-  List<Donation> _allDonations = [];
-  int _currentPage = 0;
-  final int _itemsPerPage = 10;
-  bool _isSearching = false;
 
-  void _searchDonations(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _isSearching = false;
-        _filteredDonations = [];
-      } else {
-        _isSearching = true;
-        _filteredDonations = _allDonations.where((donation) {
-          final lower = query.toLowerCase();
-          return donation.titulo.toLowerCase().contains(lower) ||
-              donation.autor.toLowerCase().contains(lower) ||
-              donation.userEmail.toLowerCase().contains(lower) ||
-              donation.lugar.toLowerCase().contains(lower) ||
-              (donation.nota?.toLowerCase().contains(lower) ?? false);
-        }).toList();
-      }
-      _currentPage = 0;
-    });
-  }
-
+  //=========================== BUILD PRINCIPAL ===========================//
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.04),
-
-            // TÍTULO Y BOTONES
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Donaciones',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            //=========================== CABECERA DE PÁGINA ===========================//
+            PageHeader(
+              title: 'Donaciones',
+              buttons: [
+                HeaderButton(
+                  icon: CupertinoIcons.qrcode_viewfinder,
+                  text: 'Generar QRs',
+                  onPressed: () {},
+                  type: ActionType.secondary,
                 ),
-                Flexible(
-                  child: Wrap(
-                    spacing: 12,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.end,
-                    children: [
-                      HoverButton(
-                        icon: Icons.filter_list,
-                        text: 'Filtrar',
-                        onPressed: () {},
-                        color: Colors.white,
-                      ),
-                      HoverButton(
-                        icon: Icons.download,
-                        text: 'Exportar',
-                        onPressed: () {},
-                        color: Colors.white,
-                      ),
-                      HoverButton(
-                        icon: Icons.upload,
-                        text: 'Importar',
-                        onPressed: () {},
-                        color: Colors.white,
-                      ),
-                    ],
+                HeaderButton(
+                  icon: CupertinoIcons.arrow_down_circle,
+                  text: 'Exportar',
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) => const ExportadorCSV(),
                   ),
+                  type: ActionType.secondary,
+                ),
+                HeaderButton(
+                  icon: CupertinoIcons.arrow_up_circle,
+                  text: 'Importar',
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) => const ImportadorCSV(),
+                  ),
+                  type: ActionType.secondary,
+                ),
+                HeaderButton(
+                  icon: CupertinoIcons.add_circled_solid,
+                  text: 'Agregar donacion',
+                  onPressed: () {
+                    // Aquí puedes abrir un diálogo para agregar nueva donación
+                  },
+                  type: ActionType.primary,
                 ),
               ],
             ),
             const SizedBox(height: 20),
 
-            // BARRA DE BÚSQUEDA
-            TextField(
-              controller: _searchController,
-              onChanged: _searchDonations,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: 'Buscar donaciones (título, autor, usuario, lugar, nota)',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            //=========================== TABLA DE DONACIONES ===========================//
+            Expanded(
+              child: DonationsTable(
+                viewModel: _viewModel,
+                searchController: _searchController,
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // TABLA DE DONACIONES
-            StreamBuilder<List<Donation>>(
-              stream: _viewModel.getDonationsStream(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No hay donaciones registradas',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  );
-                }
-
-                _allDonations = snapshot.data!;
-                List<Donation> itemsToShow =
-                    _isSearching ? _filteredDonations : _allDonations;
-
-                if (_isSearching &&
-                    _filteredDonations.isEmpty &&
-                    _searchController.text.isNotEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No se encontraron donaciones con ese criterio de búsqueda',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  );
-                }
-
-                final startIndex = _currentPage * _itemsPerPage;
-                final endIndex =
-                    (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
-                final donationsPage = itemsToShow.sublist(startIndex, endIndex);
-
-                final columnWidths = <double>[
-                  250, // Título
-                  250, // Autor
-                  80,  // Cantidad
-                  150, // Fecha
-                  150, // Usuario
-                  120, // Lugar
-                  150, // Nota
-                ];
-
-                return Column(
-                  children: [
-                    CustomTable(
-                      headers: [
-                        'Título',
-                        'Autor',
-                        'Cantidad',
-                        'Fecha',
-                        'Usuario',
-                        'Lugar',
-                        'Nota'
-                      ],
-                      rows: donationsPage.map((donation) {
-                        return [
-                          _buildText(donation.titulo),
-                          _buildText(donation.autor),
-                          _buildText(donation.cantidad.toString()),
-                          _buildText(
-                              '${donation.fecha.day}/${donation.fecha.month}/${donation.fecha.year}'),
-                          _buildText(donation.userEmail),
-                          _buildText(donation.lugar),
-                          _buildText(donation.nota ?? ''),
-                        ];
-                      }).toList(),
-                      columnWidths: columnWidths,
-                    ),
-
-                    // PAGINACIÓN
-                    if (itemsToShow.length > _itemsPerPage)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_left),
-                              onPressed: _currentPage > 0
-                                  ? () => setState(() => _currentPage--)
-                                  : null,
-                            ),
-                            Text(
-                                '${_currentPage + 1} / ${((itemsToShow.length - 1) / _itemsPerPage).ceil() + 1}'),
-                            IconButton(
-                              icon: const Icon(Icons.arrow_right),
-                              onPressed: endIndex < itemsToShow.length
-                                  ? () => setState(() => _currentPage++)
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    if (_isSearching)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          'Mostrando ${itemsToShow.length} resultado(s) de búsqueda',
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12),
-                        ),
-                      ),
-                  ],
-                );
-              },
             ),
           ],
         ),
@@ -225,13 +89,7 @@ class _DonationsPageState extends State<DonationsPage> {
     );
   }
 
-  Widget _buildText(String text) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Text(text,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white)),
-      );
-
+  //=========================== DISPOSICIÓN DE RECURSOS ===========================//
   @override
   void dispose() {
     _searchController.dispose();

@@ -12,6 +12,7 @@ class UserModel {
   final DateTime? expiresAt;
   final Role role;
   final bool status;
+  bool selected = false;
 
   UserModel({
     required this.uid,
@@ -23,6 +24,7 @@ class UserModel {
     this.expiresAt,
     required this.role,
     required this.status,
+    this.selected = false,
   });
 
   /// Crear desde Firestore

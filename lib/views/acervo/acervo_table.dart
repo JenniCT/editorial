@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../viewmodels/acervo/acervo_vm.dart';
 import '../../models/book_m.dart';
-
-//=========================== IMPORTACIÓN DE WIDGETS ===========================//
-// IMPORTA COMPONENTES REUTILIZABLES DE UI, COMO TABLAS, BUSQUEDAS Y BOTONES
 import '../../widgets/global/search.dart';
 import '../../widgets/global/table.dart';
 import '../../widgets/table/pagination.dart';
@@ -28,14 +25,13 @@ class AcervoTable extends StatefulWidget {
 
 class _AcervoTableState extends State<AcervoTable> {
   List<Book> _filteredBooks = [];
-  List<Book> _allBooks = [];
+  final List<Book> _allBooks = [];
   int _currentPage = 0;
   final int _itemsPerPage = 10;
   bool _isSearching = false;
   bool _selectAll = false;
   int _selectedCount = 0;
 
-  // Actualiza contador de seleccionados (solo se llama dentro de setState)
   void _updateSelectedCount() {
     _selectedCount = _allBooks.where((b) => b.selected).length;
     _selectAll = _allBooks.isNotEmpty && _allBooks.every((b) => b.selected);
@@ -114,9 +110,9 @@ class _AcervoTableState extends State<AcervoTable> {
                   book.editorialLower.contains(query) ||
                   (book.coleccion ?? '').toLowerCase().contains(query) ||
                   (book.isbn ?? '').toLowerCase().contains(query) ||
-                  book.estante.toString().contains(query) ||
-                  book.almacen.toString().contains(query) ||
-                  book.copias.toString().contains(query) ||
+                  (book.estante.toString()).contains(query) ||
+                  (book.almacen.toString()).contains(query) ||
+                  (book.copias.toString()).contains(query) ||
                   book.areaLower.contains(query),
             ),
           ),
@@ -131,12 +127,13 @@ class _AcervoTableState extends State<AcervoTable> {
     return StreamBuilder<List<Book>>(
       stream: widget.viewModel.getAcervosStream(),
       builder: (context, snapshot) {
-        _allBooks = snapshot.data ?? [];
-
-        // Mantener selección previa
-        final previousSelections = {for (var b in _allBooks.where((b) => b.selected)) b.id: true};
-        for (var book in _allBooks) {
-          if (previousSelections.containsKey(book.id)) book.selected = true;
+        if (snapshot.hasData) {
+          // Agregar solo libros nuevos, mantener los existentes para no perder selección
+          for (var newBook in snapshot.data!) {
+            if (!_allBooks.any((b) => b.id == newBook.id)) {
+              _allBooks.add(newBook);
+            }
+          }
         }
 
         List<Book> booksToShow = _isSearching ? _filteredBooks : _allBooks;
@@ -151,10 +148,11 @@ class _AcervoTableState extends State<AcervoTable> {
           );
         }
 
-        // Evitar out of range en paginación
         final startIndex = (_currentPage * _itemsPerPage).clamp(0, booksToShow.length);
         final endIndex = ((startIndex + _itemsPerPage)).clamp(0, booksToShow.length);
         final booksPage = booksToShow.sublist(startIndex, endIndex);
+
+        _updateSelectedCount();
 
         return SingleChildScrollView(
           scrollDirection: Axis.vertical,
@@ -173,7 +171,6 @@ class _AcervoTableState extends State<AcervoTable> {
                 headers: _buildHeaders(true),
                 rows: booksPage.map((book) {
                   return [
-                    // Checkbox
                     IconButton(
                       icon: Icon(
                         book.selected ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
@@ -186,7 +183,6 @@ class _AcervoTableState extends State<AcervoTable> {
                         });
                       },
                     ),
-                    // Portada
                     _buildClickableCell(
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
@@ -204,7 +200,7 @@ class _AcervoTableState extends State<AcervoTable> {
                     ),
                     _buildClickableCell(_buildText(book.titulo), book),
                     _buildClickableCell(_buildText(book.autor), book),
-                    _buildClickableCell(_buildText(book.copias.toString()), book),
+                    _buildClickableCell(_buildText((book.copias).toString()), book),
                     _buildClickableCell(_buildText(book.areaConocimiento), book),
                   ];
                 }).toList(),
@@ -215,8 +211,10 @@ class _AcervoTableState extends State<AcervoTable> {
               if (_isSearching)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text('Mostrando ${booksToShow.length} resultado(s)',
-                      style: const TextStyle(color: Color(0xFF1C2532), fontSize: 16, fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'Mostrando ${booksToShow.length} resultado(s)',
+                    style: const TextStyle(color: Color(0xFF1C2532), fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                 ),
               if (booksToShow.length > _itemsPerPage)
                 PaginationWidget(
