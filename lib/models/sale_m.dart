@@ -8,6 +8,8 @@ class Sale {
   final String userId;
   final String userEmail;
   final String lugar;
+  final double total;
+  bool selected;
 
   Sale({
     this.id,
@@ -19,6 +21,8 @@ class Sale {
     required this.userId,
     required this.userEmail,
     required this.lugar,
+    required this.total,
+    this.selected = false,
   });
 
   Sale copyWith({
@@ -31,6 +35,8 @@ class Sale {
     String? userId,
     String? userEmail,
     String? lugar,
+    double? total,
+    bool? selected,
   }) {
     return Sale(
       id: id ?? this.id,
@@ -42,6 +48,8 @@ class Sale {
       userId: userId ?? this.userId,
       userEmail: userEmail ?? this.userEmail,
       lugar: lugar ?? this.lugar,
+      total: total ?? this.total,
+      selected: selected ?? this.selected,
     );
   }
 
@@ -55,6 +63,7 @@ class Sale {
       'userId': userId,
       'userEmail': userEmail,
       'lugar': lugar,
+      'total': total,
     };
   }
 
@@ -69,6 +78,7 @@ class Sale {
       userId: map['userId'] ?? '',
       userEmail: map['userEmail'] ?? '',
       lugar: map['lugar'] ?? 'Desconocido',
+      total: (map['total'] ?? 0.0).toDouble(),
     );
   }
 }

@@ -55,6 +55,7 @@ class _SellDialogState extends State<SellDialog> {
       userId: user?.uid ?? 'anonimo',
       userEmail: user?.email ?? 'anonimo',
       lugar: lugar,
+      total: total,
     );
 
     try {

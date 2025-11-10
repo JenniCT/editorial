@@ -11,7 +11,7 @@ import '../models/user.dart';
 import 'dashboard/dashboard.dart';
 import 'stock/stock.dart';
 import 'acervo/acervo.dart';
-import 'market/sales.dart';
+import 'sales/sales.dart';
 import 'users/users.dart';
 import 'donation/donation.dart';
 import 'book/details_bk.dart';

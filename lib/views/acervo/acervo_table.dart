@@ -9,6 +9,7 @@ import '../../widgets/global/table.dart';
 import '../../widgets/table/pagination.dart';
 import '../../widgets/modules/action_button.dart';
 import '../../widgets/modules/header_button.dart';
+
 class AcervoTable extends StatefulWidget {
   final AcervoViewModel viewModel;
   final TextEditingController searchController;
@@ -34,16 +35,12 @@ class _AcervoTableState extends State<AcervoTable> {
   bool _selectAll = false;
   int _selectedCount = 0;
 
-  // Actualiza el contador de elementos seleccionados
+  // Actualiza contador de seleccionados (solo se llama dentro de setState)
   void _updateSelectedCount() {
-    if (mounted) {
-      setState(() {
-        _selectedCount = _allBooks.where((b) => b.selected).length;
-      });
-    }
+    _selectedCount = _allBooks.where((b) => b.selected).length;
+    _selectAll = _allBooks.isNotEmpty && _allBooks.every((b) => b.selected);
   }
 
-  // Maneja resultados de búsqueda
   void _handleSearchResults(List<Book> results) {
     setState(() {
       _filteredBooks = results;
@@ -52,7 +49,6 @@ class _AcervoTableState extends State<AcervoTable> {
     });
   }
 
-  // Celda clickable
   Widget _buildClickableCell(Widget child, Book book) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -63,7 +59,6 @@ class _AcervoTableState extends State<AcervoTable> {
     );
   }
 
-  // Texto de celda
   Widget _buildText(String text) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Text(
@@ -72,6 +67,33 @@ class _AcervoTableState extends State<AcervoTable> {
           style: const TextStyle(color: Colors.white),
         ),
       );
+
+  List<Widget> _buildHeaders(bool enableSelectAll) {
+    return [
+      IconButton(
+        icon: Icon(
+          _selectAll ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
+          color: Colors.white,
+        ),
+        onPressed: enableSelectAll
+            ? () {
+                setState(() {
+                  _selectAll = !_selectAll;
+                  for (var book in _allBooks) {
+                    book.selected = _selectAll;
+                  }
+                  _updateSelectedCount();
+                });
+              }
+            : null,
+      ),
+      const Text('Portada', style: TextStyle(color: Colors.white)),
+      const Text('Título', style: TextStyle(color: Colors.white)),
+      const Text('Autor', style: TextStyle(color: Colors.white)),
+      const Text('Stock', style: TextStyle(color: Colors.white)),
+      const Text('Área de conocimiento', style: TextStyle(color: Colors.white)),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,19 +121,9 @@ class _AcervoTableState extends State<AcervoTable> {
             ),
           ),
           const SizedBox(width: 12),
-          ActionButton(
-            icon: Icons.filter_list,
-            text: 'Filtrar',
-            type: ActionType.secondary,
-            onPressed: () {},
-          ),
+          ActionButton(icon: Icons.filter_list, text: 'Filtrar', type: ActionType.secondary, onPressed: () {}),
           const SizedBox(width: 12),
-          ActionButton(
-            icon: Icons.sort,
-            text: 'Ordenar',
-            type: ActionType.secondary,
-            onPressed: () {},
-          ),
+          ActionButton(icon: Icons.sort, text: 'Ordenar', type: ActionType.secondary, onPressed: () {}),
         ],
       );
     }
@@ -119,30 +131,17 @@ class _AcervoTableState extends State<AcervoTable> {
     return StreamBuilder<List<Book>>(
       stream: widget.viewModel.getAcervosStream(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return CustomTable(
-            headers: _buildHeaders(false),
-            rows: const [],
-            width: 1200,
-            columnWidths: columnWidths,
-            topWidget: buildTopWidget(),
-          );
-        }
+        _allBooks = snapshot.data ?? [];
 
         // Mantener selección previa
         final previousSelections = {for (var b in _allBooks.where((b) => b.selected)) b.id: true};
-
-        _allBooks = snapshot.data ?? [];
-
         for (var book in _allBooks) {
-          if (previousSelections.containsKey(book.id)) {
-            book.selected = true;
-          }
+          if (previousSelections.containsKey(book.id)) book.selected = true;
         }
 
         List<Book> booksToShow = _isSearching ? _filteredBooks : _allBooks;
 
-        if (_allBooks.isEmpty || (_isSearching && booksToShow.isEmpty)) {
+        if (booksToShow.isEmpty) {
           return CustomTable(
             headers: _buildHeaders(false),
             rows: const [],
@@ -152,15 +151,10 @@ class _AcervoTableState extends State<AcervoTable> {
           );
         }
 
-        final startIndex = _currentPage * _itemsPerPage;
-        final endIndex = (startIndex + _itemsPerPage).clamp(0, booksToShow.length);
+        // Evitar out of range en paginación
+        final startIndex = (_currentPage * _itemsPerPage).clamp(0, booksToShow.length);
+        final endIndex = ((startIndex + _itemsPerPage)).clamp(0, booksToShow.length);
         final booksPage = booksToShow.sublist(startIndex, endIndex);
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _updateSelectedCount();
-        });
-
-        _selectAll = booksPage.isNotEmpty && booksPage.every((b) => b.selected == true);
 
         return SingleChildScrollView(
           scrollDirection: Axis.vertical,
@@ -172,11 +166,7 @@ class _AcervoTableState extends State<AcervoTable> {
                   padding: const EdgeInsets.only(top: 8, left: 8),
                   child: Text(
                     '$_selectedCount elemento(s) seleccionados',
-                    style: const TextStyle(
-                        color: Color(0xFF1C2532),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Roboto'),
+                    style: const TextStyle(color: Color(0xFF1C2532), fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ),
               CustomTable(
@@ -184,21 +174,17 @@ class _AcervoTableState extends State<AcervoTable> {
                 rows: booksPage.map((book) {
                   return [
                     // Checkbox
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: IconButton(
-                        key: ValueKey(book.selected),
-                        icon: Icon(
-                          book.selected ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
-                          color: book.selected ? const Color(0xFF1C2532) : Colors.white,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            book.selected = !book.selected;
-                          });
-                          _updateSelectedCount();
-                        },
+                    IconButton(
+                      icon: Icon(
+                        book.selected ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
+                        color: book.selected ? const Color(0xFF1C2532) : Colors.white,
                       ),
+                      onPressed: () {
+                        setState(() {
+                          book.selected = !book.selected;
+                          _updateSelectedCount();
+                        });
+                      },
                     ),
                     // Portada
                     _buildClickableCell(
@@ -210,14 +196,12 @@ class _AcervoTableState extends State<AcervoTable> {
                                 height: 100,
                                 width: 100,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) =>
-                                    Image.asset('assets/images/sinportada.png'),
+                                errorBuilder: (_, _, _) => Image.asset('assets/images/sinportada.png'),
                               )
                             : Image.asset('assets/images/sinportada.png'),
                       ),
                       book,
                     ),
-                    // Texto
                     _buildClickableCell(_buildText(book.titulo), book),
                     _buildClickableCell(_buildText(book.autor), book),
                     _buildClickableCell(_buildText(book.copias.toString()), book),
@@ -231,14 +215,8 @@ class _AcervoTableState extends State<AcervoTable> {
               if (_isSearching)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Mostrando ${booksToShow.length} resultado(s)',
-                    style: const TextStyle(
-                        color: Color(0xFF1C2532),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Roboto'),
-                  ),
+                  child: Text('Mostrando ${booksToShow.length} resultado(s)',
+                      style: const TextStyle(color: Color(0xFF1C2532), fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
               if (booksToShow.length > _itemsPerPage)
                 PaginationWidget(
@@ -256,31 +234,5 @@ class _AcervoTableState extends State<AcervoTable> {
         );
       },
     );
-  }
-
-  // Encabezados
-  List<Widget> _buildHeaders(bool enableSelectAll) {
-    return [
-      IconButton(
-        icon: Icon(_selectAll ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
-            color:Colors.white,),
-        onPressed: enableSelectAll
-            ? () {
-                setState(() {
-                  _selectAll = !_selectAll;
-                  for (var book in _allBooks) {
-                    book.selected = _selectAll;
-                  }
-                });
-                _updateSelectedCount();
-              }
-            : null,
-      ),
-      const Text('Portada', style: TextStyle(color: Colors.white)),
-      const Text('Título', style: TextStyle(color: Colors.white)),
-      const Text('Autor', style: TextStyle(color: Colors.white)),
-      const Text('Stock', style: TextStyle(color: Colors.white)),
-      const Text('Área de conocimiento', style: TextStyle(color: Colors.white)),
-    ];
   }
 }

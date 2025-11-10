@@ -6,7 +6,7 @@ import '../../models/book_m.dart';
 import 'qr_v.dart';
 import '../book/edit_bk.dart';
 import '../book/history_bk.dart';
-import '../market/sale.dart';
+import '../sales/add_sale.dart';
 import '../production_cost/production_cost.dart';
 
 class DetalleLibroPage extends StatefulWidget {

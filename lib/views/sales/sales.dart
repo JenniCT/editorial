@@ -1,59 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
-// MODELO
-import '../../models/book_m.dart';
-
 // VISTAMODELO
-import '../../viewmodels/acervo/acervo_vm.dart';
-
-// VISTAS SECUNDARIAS
-import '../book/details_bk.dart';
-import '../acervo/add_acervo.dart';
+import '../../viewmodels/market/sales_vm.dart';
 
 // WIDGETS
 import '../../widgets/modules/page_header.dart';
 import '../../widgets/modules/header_button.dart';
 
 // SUBCOMPONENTES
-import 'acervo_table.dart';
+import 'sales_table.dart';
 import '../import/import.dart';
 import '../export/export.dart';
 
-class AcervoPage extends StatefulWidget {
-  final Function(Book) onAcervoSelected;
-
-  const AcervoPage({required this.onAcervoSelected, super.key});
+class SalesPage extends StatefulWidget {
+  const SalesPage({super.key});
 
   @override
-  State<AcervoPage> createState() => _AcervoPageState();
+  State<SalesPage> createState() => _SalesPageState();
 }
 
-class _AcervoPageState extends State<AcervoPage> {
-  final AcervoViewModel _viewModel = AcervoViewModel();
+class _SalesPageState extends State<SalesPage> {
+  final SalesViewModel _viewModel = SalesViewModel();
   final TextEditingController _searchController = TextEditingController();
-
-  Book? _selectedBook;
-  bool _showingDetail = false;
-
-  void _handleBookSelection(Book book) {
-    setState(() {
-      _selectedBook = book;
-      _showingDetail = true;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    // MOSTRAR DETALLE
-    if (_showingDetail && _selectedBook != null) {
-      return DetalleLibroPage(
-        book: _selectedBook!,
-        onBack: () => setState(() => _showingDetail = false),
-        key: const ValueKey('DetalleLibro'),
-      );
-    }
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
@@ -63,7 +35,7 @@ class _AcervoPageState extends State<AcervoPage> {
           children: [
             // CABECERA CON ACCIONES
             PageHeader(
-              title: 'Acervo',
+              title: 'Ventas',
               buttons: [
                 HeaderButton(
                   icon: CupertinoIcons.qrcode,
@@ -71,7 +43,6 @@ class _AcervoPageState extends State<AcervoPage> {
                   onPressed: () {},
                   type: ActionType.secondary,
                 ),
-                // BOTÓN PARA EXPORTAR CSV
                 HeaderButton(
                   icon: CupertinoIcons.arrow_down_circle,
                   text: 'Exportar',
@@ -81,7 +52,6 @@ class _AcervoPageState extends State<AcervoPage> {
                   ),
                   type: ActionType.secondary,
                 ),
-                // BOTÓN PARA IMPORTAR CSV
                 HeaderButton(
                   icon: CupertinoIcons.arrow_up_circle,
                   text: 'Importar',
@@ -91,32 +61,32 @@ class _AcervoPageState extends State<AcervoPage> {
                   ),
                   type: ActionType.secondary,
                 ),
-                // BOTÓN PRINCIPAL PARA AGREGAR NUEVO LIBRO
                 HeaderButton(
                   icon: CupertinoIcons.add_circled_solid,
-                  text: 'Agregar acervo',
-                  onPressed: () => showAddAcervoDialog(
-                    context,
-                    (newBook) => _viewModel.addAcervo(newBook, context),
-                  ),
+                  text: 'Agregar ventas',
+                  onPressed: () {},
                   type: ActionType.primary,
                 ),
               ],
             ),
             const SizedBox(height: 20),
 
-            // TABLA DE ACERVO
+            // TABLA DE VENTAS
             Expanded(
-              child: AcervoTable(
+              child: SalesTable(
                 viewModel: _viewModel,
                 searchController: _searchController,
-                onBookSelected: _handleBookSelection,
-
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }
