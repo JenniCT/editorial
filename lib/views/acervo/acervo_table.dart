@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart'; 
+import 'package:flutter/material.dart';
+import '../../viewmodels/acervo/acervo_vm.dart';
 import '../../models/book_m.dart';
-import '../../viewmodels/book/book_vm.dart';
 
 //=========================== IMPORTACIÓN DE WIDGETS ===========================//
 // IMPORTA COMPONENTES REUTILIZABLES DE UI, COMO TABLAS, BUSQUEDAS Y BOTONES
@@ -9,15 +9,12 @@ import '../../widgets/global/table.dart';
 import '../../widgets/table/pagination.dart';
 import '../../widgets/modules/action_button.dart';
 import '../../widgets/modules/header_button.dart';
-
-//=========================== WIDGET PRINCIPAL DE INVENTARIO ===========================//
-// ESTE WIDGET MUESTRA LA LISTA DE LIBROS CON FILTROS, SELECCIÓN Y PAGINACIÓN
-class InventarioTable extends StatefulWidget {
-  final BookViewModel viewModel;
+class AcervoTable extends StatefulWidget {
+  final AcervoViewModel viewModel;
   final TextEditingController searchController;
   final Function(Book) onBookSelected;
 
-  const InventarioTable({
+  const AcervoTable({
     required this.viewModel,
     required this.searchController,
     required this.onBookSelected,
@@ -25,22 +22,19 @@ class InventarioTable extends StatefulWidget {
   });
 
   @override
-  State<InventarioTable> createState() => _InventarioTableState();
+  State<AcervoTable> createState() => _AcervoTableState();
 }
 
-//=========================== ESTADO DEL WIDGET ===========================//
-// MANTIENE EL ESTADO DE LA TABLA, SELECCIONES, BÚSQUEDA Y PAGINACIÓN
-class _InventarioTableState extends State<InventarioTable> {
+class _AcervoTableState extends State<AcervoTable> {
   List<Book> _filteredBooks = [];
   List<Book> _allBooks = [];
   int _currentPage = 0;
-  final int _booksPerPage = 10;
+  final int _itemsPerPage = 10;
   bool _isSearching = false;
   bool _selectAll = false;
   int _selectedCount = 0;
 
-  //=========================== MÉTODO DE ACTUALIZACIÓN DE SELECCIÓN ===========================//
-  // ACTUALIZA EL CONTADOR DE LIBROS SELECCIONADOS PARA MOSTRARLO EN LA INTERFAZ
+  // Actualiza el contador de elementos seleccionados
   void _updateSelectedCount() {
     if (mounted) {
       setState(() {
@@ -49,19 +43,16 @@ class _InventarioTableState extends State<InventarioTable> {
     }
   }
 
-  //=========================== MÉTODO DE FILTRADO ===========================//
-  // ACTUALIZA LA LISTA DE LIBROS FILTRADOS CUANDO EL USUARIO BUSCA
+  // Maneja resultados de búsqueda
   void _handleSearchResults(List<Book> results) {
     setState(() {
       _filteredBooks = results;
-      _isSearching =
-          results.isNotEmpty || widget.searchController.text.isNotEmpty;
+      _isSearching = results.isNotEmpty || widget.searchController.text.isNotEmpty;
       _currentPage = 0;
     });
   }
 
-  //=========================== CELDA CLICKABLE ===========================//
-  // ENVUELVE UN WIDGET PARA QUE RESPONDA A CLICS Y CAMBIE EL ESTADO SELECCIONADO
+  // Celda clickable
   Widget _buildClickableCell(Widget child, Book book) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -72,8 +63,7 @@ class _InventarioTableState extends State<InventarioTable> {
     );
   }
 
-  //=========================== TEXTOS EN CELDAS ===========================//
-  // PADDING Y COLOR PARA TEXTO, ASEGURA LEGIBILIDAD Y CONSISTENCIA VISUAL
+  // Texto de celda
   Widget _buildText(String text) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Text(
@@ -87,8 +77,6 @@ class _InventarioTableState extends State<InventarioTable> {
   Widget build(BuildContext context) {
     final columnWidths = <double>[50, 100, 320, 320, 90, 320];
 
-    //=========================== WIDGET SUPERIOR ===========================//
-    // FILTROS, BUSCADOR Y ACCIONES DEL USUARIO PARA INTERACCIÓN RÁPIDA
     Widget buildTopWidget() {
       return Row(
         children: [
@@ -128,13 +116,10 @@ class _InventarioTableState extends State<InventarioTable> {
       );
     }
 
-    //=========================== STREAM DE LIBROS ===========================//
-    // ESCUCHA CAMBIOS EN LA LISTA DE LIBROS Y ACTUALIZA LA TABLA EN TIEMPO REAL
     return StreamBuilder<List<Book>>(
-      stream: widget.viewModel.getBooksStream(),
+      stream: widget.viewModel.getAcervosStream(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          // MUESTRA TABLA VACÍA MIENTRAS SE CARGAN LOS DATOS
           return CustomTable(
             headers: _buildHeaders(false),
             rows: const [],
@@ -144,11 +129,8 @@ class _InventarioTableState extends State<InventarioTable> {
           );
         }
 
-        //=========================== MANTENER SELECCIONES ===========================//
-        // SI EL USUARIO HABÍA SELECCIONADO LIBROS, CONSERVA SU ESTADO
-        final previousSelections = {
-          for (var b in _allBooks.where((b) => b.selected)) b.id: true,
-        };
+        // Mantener selección previa
+        final previousSelections = {for (var b in _allBooks.where((b) => b.selected)) b.id: true};
 
         _allBooks = snapshot.data ?? [];
 
@@ -161,7 +143,6 @@ class _InventarioTableState extends State<InventarioTable> {
         List<Book> booksToShow = _isSearching ? _filteredBooks : _allBooks;
 
         if (_allBooks.isEmpty || (_isSearching && booksToShow.isEmpty)) {
-          // MUESTRA TABLA VACÍA SI NO HAY RESULTADOS
           return CustomTable(
             headers: _buildHeaders(false),
             rows: const [],
@@ -171,28 +152,21 @@ class _InventarioTableState extends State<InventarioTable> {
           );
         }
 
-        //=========================== PAGINACIÓN ===========================//
-        // LIMITA LA CANTIDAD DE LIBROS VISIBLES POR PÁGINA
-        final startIndex = _currentPage * _booksPerPage;
-        final endIndex =
-            (startIndex + _booksPerPage).clamp(0, booksToShow.length);
-        final books = booksToShow.sublist(startIndex, endIndex);
+        final startIndex = _currentPage * _itemsPerPage;
+        final endIndex = (startIndex + _itemsPerPage).clamp(0, booksToShow.length);
+        final booksPage = booksToShow.sublist(startIndex, endIndex);
 
-        // ACTUALIZA EL CONTADOR DE SELECCIÓN DESPUÉS DEL BUILD
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _updateSelectedCount();
         });
 
-        // ACTUALIZA ESTADO DE "SELECCIONAR TODOs"
-        _selectAll = books.isNotEmpty && books.every((b) => b.selected == true);
+        _selectAll = booksPage.isNotEmpty && booksPage.every((b) => b.selected == true);
 
-        //=========================== RENDERIZADO DE LA TABLA ===========================//
         return SingleChildScrollView(
           scrollDirection: Axis.vertical,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              //=========================== CONTADOR DE ELEMENTOS SELECCIONADOS ===========================//
               if (_selectedCount > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 8, left: 8),
@@ -205,25 +179,18 @@ class _InventarioTableState extends State<InventarioTable> {
                         fontFamily: 'Roboto'),
                   ),
                 ),
-
-              //=========================== TABLA DE LIBROS ===========================//
-              // COLOR DE TEXTO BLANCO PARA CONTRASTE, FILAS CLICKABLES PARA INTERACCIÓN
               CustomTable(
                 headers: _buildHeaders(true),
-                rows: books.map((book) {
+                rows: booksPage.map((book) {
                   return [
-                    // ICONO DE SELECCIÓN INDIVIDUAL
+                    // Checkbox
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 200),
                       child: IconButton(
                         key: ValueKey(book.selected),
                         icon: Icon(
-                          book.selected
-                              ? Icons.check_box_outlined
-                              : Icons.check_box_outline_blank_outlined,
-                          color: book.selected
-                              ? Color(0xFF1C2532) // COLOR VERDE/NEUTRO PARA SELECCIONADO
-                              : Colors.white, // COLOR BLANCO PARA NO SELECCIONADO
+                          book.selected ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
+                          color: book.selected ? const Color(0xFF1C2532) : Colors.white,
                         ),
                         onPressed: () {
                           setState(() {
@@ -233,13 +200,11 @@ class _InventarioTableState extends State<InventarioTable> {
                         },
                       ),
                     ),
-
-                    // IMAGEN DEL LIBRO CON REDONDEO Y PLACEHOLDER
+                    // Portada
                     _buildClickableCell(
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: (book.imagenUrl != null &&
-                                book.imagenUrl!.startsWith('http'))
+                        child: (book.imagenUrl != null && book.imagenUrl!.startsWith('http'))
                             ? Image.network(
                                 book.imagenUrl!,
                                 height: 100,
@@ -252,21 +217,17 @@ class _InventarioTableState extends State<InventarioTable> {
                       ),
                       book,
                     ),
-
-                    // TEXTO CLICKABLE EN CADA COLUMNA
+                    // Texto
                     _buildClickableCell(_buildText(book.titulo), book),
                     _buildClickableCell(_buildText(book.autor), book),
                     _buildClickableCell(_buildText(book.copias.toString()), book),
-                    _buildClickableCell(
-                        _buildText(book.areaConocimiento), book),
+                    _buildClickableCell(_buildText(book.areaConocimiento), book),
                   ];
                 }).toList(),
                 columnWidths: columnWidths,
                 width: 1200,
                 topWidget: buildTopWidget(),
               ),
-
-              //=========================== INDICADOR DE RESULTADOS DE BÚSQUEDA ===========================//
               if (_isSearching)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
@@ -279,13 +240,11 @@ class _InventarioTableState extends State<InventarioTable> {
                         fontFamily: 'Roboto'),
                   ),
                 ),
-
-              //=========================== PAGINACIÓN ===========================//
-              if (booksToShow.length > _booksPerPage)
+              if (booksToShow.length > _itemsPerPage)
                 PaginationWidget(
                   currentPage: _currentPage,
                   totalItems: booksToShow.length,
-                  itemsPerPage: _booksPerPage,
+                  itemsPerPage: _itemsPerPage,
                   onPageChanged: (page) {
                     setState(() {
                       _currentPage = page;
@@ -299,22 +258,16 @@ class _InventarioTableState extends State<InventarioTable> {
     );
   }
 
-  //=========================== HEADER DE TABLA ===========================//
-  // INCLUYE ICONO "SELECCIONAR TODOS" Y NOMBRES DE COLUMNAS
+  // Encabezados
   List<Widget> _buildHeaders(bool enableSelectAll) {
     return [
       IconButton(
-        icon: Icon(
-          _selectAll
-              ? Icons.check_box_outlined
-              : Icons.check_box_outline_blank_outlined,
-          color: Colors.white,
-        ),
+        icon: Icon(_selectAll ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
+            color:Colors.white,),
         onPressed: enableSelectAll
             ? () {
                 setState(() {
                   _selectAll = !_selectAll;
-
                   for (var book in _allBooks) {
                     book.selected = _selectAll;
                   }
