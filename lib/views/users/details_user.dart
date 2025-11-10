@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user.dart';
 import '../../viewmodels/users/details_user_vm.dart';
-import '../../widgets/global/background.dart';
-import '../../widgets/global/table.dart';
+import '../../widgets/table/table.dart';
 
 class DetailsUserPage extends StatefulWidget {
   final UserModel usuario;
@@ -79,9 +78,8 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: const Text('Detalles del Usuario', style: TextStyle(fontSize: 24)),
@@ -89,7 +87,6 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
       ),
       body: Stack(
         children: [
-          Background(isDarkMode: isDarkMode,),
           Padding(
             padding: const EdgeInsets.all(24.0),
             child: loading

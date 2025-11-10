@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../viewmodels/book/book_vm.dart';
 import '../../models/history_bk.dart';
-import '../../widgets/global/table.dart';
-import '../../widgets/global/background.dart';
+import '../../widgets/table/table.dart';
 
 class HistorialPage extends StatefulWidget {
   final String idBook; 
@@ -47,6 +46,7 @@ class _HistorialPageState extends State<HistorialPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
@@ -60,10 +60,8 @@ class _HistorialPageState extends State<HistorialPage> {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 25),
         ),
       ),
-      backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
       body: Stack(  
         children: [
-          Background(isDarkMode: Theme.of(context).brightness == Brightness.dark),
           SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Column(

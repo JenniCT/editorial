@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/production_cost.dart';
 import '../../viewmodels/prodution_cost/production_cost_vm.dart';
-import '../../widgets/global/table.dart';
-import '../../widgets/global/background.dart';
+import '../../widgets/table/table.dart';
 import 'add_production_cost.dart';
 
 class CostosProduccionPage extends StatefulWidget {
@@ -67,8 +66,9 @@ class _CostosProduccionPageState extends State<CostosProduccionPage> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
         elevation: 0,
@@ -87,7 +87,6 @@ class _CostosProduccionPageState extends State<CostosProduccionPage> {
       ),
       body: Stack(
         children: [
-          Background(isDarkMode: Theme.of(context).brightness == Brightness.dark),
           Column(
             children: [
               // BARRA FIJA DE BÚSQUEDA

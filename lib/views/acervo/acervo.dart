@@ -8,7 +8,7 @@ import '../acervo/add_acervo.dart';
 import '../book/details_bk.dart';
 // WIDGETS
 import '../../widgets/global/search.dart';
-import '../../widgets/global/table.dart';
+import '../../widgets/table/table.dart';
 import '../../widgets/stock/hoverbutton.dart';
 
 class AcervoPage extends StatefulWidget {

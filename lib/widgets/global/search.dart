@@ -54,54 +54,58 @@ class _SearchState<T> extends State<Search<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 12,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 16),
-          Expanded(
-            child: TextField(
-              controller: widget.controller,
-              textAlignVertical: TextAlignVertical.center,
-              textInputAction: TextInputAction.search,
-              keyboardType: TextInputType.text,
-              cursorColor: const Color.fromRGBO(47, 65, 87, 1),
-              decoration: InputDecoration(
-                hintText: 'Buscar...',
-                hintStyle: TextStyle(color: Colors.grey[600]),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+    return SizedBox(
+      width: 200, // ancho fijo del buscador, ajusta según necesites
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 12,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 16),
+            Expanded(
+              child: TextField(
+                controller: widget.controller,
+                textAlignVertical: TextAlignVertical.center,
+                textInputAction: TextInputAction.search,
+                keyboardType: TextInputType.text,
+                cursorColor: const Color.fromRGBO(47, 65, 87, 1),
+                decoration: InputDecoration(
+                  hintText: 'Buscar...',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: _loading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(
-                    Icons.search,
-                    color: Colors.grey[600],
-                    semanticLabel: 'Buscar',
-                  ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: _loading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      Icons.search,
+                      color: Colors.grey[600],
+                      semanticLabel: 'Buscar',
+                    ),
+            ),
+          ],
+        ),
       ),
     );
-  }
+}
+
 }

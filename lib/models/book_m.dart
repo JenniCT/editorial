@@ -24,6 +24,7 @@ class Book {
   final bool estado;
   final DateTime fechaRegistro;
   final String registradoPor;
+  bool selected = false;
 
   Book({
     this.id,
@@ -44,10 +45,11 @@ class Book {
     this.estado = true,
     required this.fechaRegistro,
     required this.registradoPor,
-  })  : tituloLower = titulo.toLowerCase(),
-        autorLower = autor.toLowerCase(),
-        editorialLower = editorial.toLowerCase(),
-        areaLower = areaConocimiento.toLowerCase();
+    this.selected = false,
+  }) : tituloLower = titulo.toLowerCase(),
+      autorLower = autor.toLowerCase(),
+      editorialLower = editorial.toLowerCase(),
+      areaLower = areaConocimiento.toLowerCase();
 
   factory Book.fromMap(Map<String, dynamic> map, String documentId) {
     int est = map['estante'] ?? 0;
@@ -83,7 +85,8 @@ class Book {
       copias: total,
       areaConocimiento: area,
       estado: map['estado'] ?? true,
-      fechaRegistro: (map['fechaRegistro'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      fechaRegistro:
+          (map['fechaRegistro'] as Timestamp?)?.toDate() ?? DateTime.now(),
       registradoPor: map['registradoPor'] ?? 'desconocido',
     );
   }
@@ -106,6 +109,7 @@ class Book {
       'estado': estado,
       'fechaRegistro': Timestamp.fromDate(fechaRegistro),
       'registradoPor': registradoPor,
+      
     };
   }
 
@@ -128,6 +132,7 @@ class Book {
     bool? estado,
     DateTime? fechaRegistro,
     String? registradoPor,
+    bool? selected,
   }) {
     return Book(
       id: id ?? this.id,
@@ -148,6 +153,7 @@ class Book {
       estado: estado ?? this.estado,
       fechaRegistro: fechaRegistro ?? this.fechaRegistro,
       registradoPor: registradoPor ?? this.registradoPor,
+      selected: selected ?? this.selected,
     );
   }
 

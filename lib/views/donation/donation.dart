@@ -5,7 +5,7 @@ import '../../models/donation_m.dart';
 // VISTAMODELO
 import '../../viewmodels/donation/donation_vm.dart';
 // WIDGETS
-import '../../widgets/global/table.dart';
+import '../../widgets/table/table.dart';
 import '../../widgets/stock/hoverbutton.dart';
 
 class DonationsPage extends StatefulWidget {

@@ -10,7 +10,7 @@ import '../users/add_user.dart';
 import 'details_user.dart';
 // WIDGETS
 import '../../widgets/global/search.dart';
-import '../../widgets/global/table.dart';
+import '../../widgets/table/table.dart';
 import '../../widgets/stock/hoverbutton.dart';
 
 class UsersPage extends StatefulWidget {

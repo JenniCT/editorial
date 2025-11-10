@@ -1,20 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
-// MODELO
+//=========================== MODELOS ===========================//
+// MODELOS DE DATOS QUE REPRESENTAN LIBROS
 import '../../models/book_m.dart';
-// VISTAMODELO
+
+//=========================== VISTAMODELO ===========================//
+// VISTAMODELO QUE GESTIONA EL ESTADO Y LÓGICA DE NEGOCIO DE LOS LIBROS
 import '../../viewmodels/book/book_vm.dart';
-// VISTAS
-import 'import.dart';
-import 'export.dart';
+
+//=========================== VISTAS SECUNDARIAS ===========================//
+// PÁGINAS DE DETALLE, IMPORTACIÓN, EXPORTACIÓN Y ADICIÓN DE LIBROS
 import 'add_bk.dart';
 import '../book/details_bk.dart';
-// WIDGETS
-import '../../widgets/global/search.dart';
-import '../../widgets/global/table.dart';
-import '../../widgets/stock/hoverbutton.dart';
-import '../../widgets/stock/elevatedbutton.dart';
+import '../import/import.dart';
+import '../export/export.dart';
 
+//=========================== WIDGETS REUTILIZABLES ===========================//
+// CABECERAS, BOTONES Y ELEMENTOS DE INTERFAZ PARA CONSISTENCIA VISUAL
+import '../../widgets/modules/page_header.dart';
+import '../../widgets/modules/header_button.dart';
+
+//=========================== SUBCOMPONENTES ===========================//
+// TABLA DE INVENTARIO REUTILIZABLE
+import 'stock_table.dart';
+
+//=========================== WIDGET PRINCIPAL DE LA PÁGINA DE INVENTARIO ===========================//
+// MUESTRA LA LISTA COMPLETA DE LIBROS, ACCIONES Y DETALLE INDIVIDUAL
 class InventarioPage extends StatefulWidget {
   final Function(Book) onBookSelected;
 
@@ -24,33 +36,17 @@ class InventarioPage extends StatefulWidget {
   State<InventarioPage> createState() => _InventarioPageState();
 }
 
+//=========================== ESTADO DE LA PÁGINA ===========================//
+// CONTROLA SELECCIÓN DE LIBROS, VISUALIZACIÓN DE DETALLES Y BÚSQUEDA
 class _InventarioPageState extends State<InventarioPage> {
   final BookViewModel _viewModel = BookViewModel();
   final TextEditingController _searchController = TextEditingController();
-  List<Book> _filteredBooks = [];
-  List<Book> _allBooks = [];
-  int _currentPage = 0;
-  final int _booksPerPage = 10;
-  bool _isSearching = false;
 
-  // VARIABLE PARA EL LIBRO SELCCIONADO Y ESTADO DE DETALLE
-  Book? _selectedBook;
-  bool _showingDetail = false;
+  Book? _selectedBook; // LIBRO SELECCIONADO ACTUAL
+  bool _showingDetail = false; // INDICA SI SE MUESTRA LA PÁGINA DE DETALLE
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  void _handleSearchResults(List<Book> results) {
-    setState(() {
-      _filteredBooks = results;
-      _isSearching = results.isNotEmpty || _searchController.text.isNotEmpty;
-      _currentPage = 0;
-    });
-  }
-
-  // MÉTODO PARA SELECCIONAR UN LIBRO
+  //=========================== MÉTODO DE SELECCIÓN DE LIBRO ===========================//
+  // ACTUALIZA EL ESTADO PARA MOSTRAR DETALLE DEL LIBRO SELECCIONADO
   void _handleBookSelection(Book book) {
     setState(() {
       _selectedBook = book;
@@ -58,24 +54,12 @@ class _InventarioPageState extends State<InventarioPage> {
     });
   }
 
-  // MÉTODO PARA CREAR UNA CELDA CLICKEABLE EN LA TABLA
-  Widget _buildClickableCell(Widget child, Book book) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => _handleBookSelection(book),
-        child: SizedBox(
-          width: double.infinity,
-          height: double.infinity,
-          child: child,
-        ),
-      ),
-    );
-  }
-
+  //=========================== BUILD PRINCIPAL ===========================//
+  // DECIDE SI MOSTRAR DETALLE O LISTA DE INVENTARIO
   @override
   Widget build(BuildContext context) {
-    //MOSTRAR DETALLE DEL LIBRO SI SE SELECCIONA
+    //=========================== VISTA DE DETALLE ===========================//
+    // SI HAY UN LIBRO SELECCIONADO, SE MUESTRA SU DETALLE
     if (_showingDetail && _selectedBook != null) {
       return DetalleLibroPage(
         book: _selectedBook!,
@@ -84,257 +68,69 @@ class _InventarioPageState extends State<InventarioPage> {
       );
     }
 
+    //=========================== VISTA PRINCIPAL DE INVENTARIO ===========================//
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(199, 217, 229, 1),
+      backgroundColor: Colors.transparent, // FONDO TRANSPARENTE PARA ESTILO ADAPTIVO
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24.0), // ESPACIADO GENERAL PARA LEGIBILIDAD
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔍 BARRA FIJA DE BÚSQUEDA
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Search<Book>(
-                    controller: _searchController,
-                    allItems: _allBooks,
-                    onResults: _handleSearchResults,
-                    filter: (book, query) {
-                      return book.tituloLower.contains(query) ||
-                          book.autorLower.contains(query) ||
-                          (book.subtitulo ?? '').toLowerCase().contains(query) ||
-                          book.editorialLower.contains(query) ||
-                          (book.coleccion ?? '').toLowerCase().contains(query) ||
-                          (book.isbn ?? '').toLowerCase().contains(query) ||
-                          book.estante.toString().contains(query) ||
-                          book.almacen.toString().contains(query) ||
-                          book.copias.toString().contains(query) ||
-                          book.areaLower.contains(query);
-                    },
+            //=========================== CABECERA DE PÁGINA ===========================//
+            // MUESTRA TÍTULO Y ACCIONES RÁPIDAS DEL USUARIO
+            PageHeader(
+              title: 'Libros',
+              buttons: [
+                // BOTÓN PARA GENERAR CÓDIGOS QR
+                HeaderButton(
+                  icon: CupertinoIcons.qrcode,
+                  text: 'Generar Qrs',
+                  onPressed: () {},
+                  type: ActionType.secondary,
+                ),
+                // BOTÓN PARA EXPORTAR CSV
+                HeaderButton(
+                  icon: CupertinoIcons.arrow_down_circle,
+                  text: 'Exportar',
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) => const ExportadorCSV(),
                   ),
+                  type: ActionType.secondary,
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // 🧾 TÍTULO Y BOTONES (también fijos)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Libros',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                Flexible(
-                  child: Wrap(
-                    spacing: 12,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.end,
-                    children: [
-                      HoverButton(
-                          icon: Icons.filter_list,
-                          text: 'Filtrar',
-                          onPressed: () {},
-                          color: Colors.white),
-                      HoverButton(
-                        icon: Icons.download,
-                        text: 'Exportar',
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (_) => const ExportadorCSV(),
-                          );
-                        },
-                        color: Colors.white,
-                      ),
-                      HoverButton(
-                        icon: Icons.upload,
-                        text: 'Importar',
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (_) => const ImportadorCSV(),
-                          );
-                        },
-                        color: Colors.white,
-                      ),
-                      IntrinsicWidth(
-                        child: IntrinsicHeight(
-                          child: ElevatedHoverButton(
-                            icon: Icons.add,
-                            text: 'Agregar libro',
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AddBookDialog(
-                                  onAdd: (newBook) =>
-                                      _viewModel.addBook(newBook, context),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      )
-                    ],
+                // BOTÓN PARA IMPORTAR CSV
+                HeaderButton(
+                  icon: CupertinoIcons.arrow_up_circle,
+                  text: 'Importar',
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) => const ImportadorCSV(),
                   ),
+                  type: ActionType.secondary,
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // 📚 TABLA SCROLLEABLE
-            Expanded(
-              child: StreamBuilder<List<Book>>(
-                stream: _viewModel.getBooksStream(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('No hay libros disponibles'));
-                  }
-
-                  _allBooks = snapshot.data!;
-                  List<Book> booksToShow =
-                      _isSearching ? _filteredBooks : _allBooks;
-
-                  if (_isSearching &&
-                      _filteredBooks.isEmpty &&
-                      _searchController.text.isNotEmpty) {
-                    return const Center(
-                      child: Text(
-                        'No se encontraron libros con ese criterio de búsqueda',
-                        style: TextStyle(color: Color.fromRGBO(0, 0, 0, 0.702)),
-                      ),
-                    );
-                  }
-
-                  // PAGINACIÓN
-                  final startIndex = _currentPage * _booksPerPage;
-                  final endIndex =
-                      (startIndex + _booksPerPage).clamp(0, booksToShow.length);
-                  final books = booksToShow.sublist(startIndex, endIndex);
-
-                  final columnWidths = <double>[
-                    80, 180, 150, 140, 120, 120, 60, 120, 60, 60, 80, 80, 150
-                  ];
-
-                  return SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        CustomTable(
-                          headers: [
-                            'Portada',
-                            'Título',
-                            'Subtítulo',
-                            'Autor',
-                            'Editorial',
-                            'Colección',
-                            'Año',
-                            'ISBN',
-                            'Edición',
-                            'Copias',
-                            'Estante',
-                            'Almacén',
-                            'Área de conocimiento'
-                          ],
-                          rows: books.map((book) {
-                            return [
-                              _buildClickableCell(
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: (book.imagenUrl != null &&
-                                          book.imagenUrl!.startsWith('http'))
-                                      ? Image.network(
-                                          book.imagenUrl!,
-                                          height: 100,
-                                          width: 80,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _,_) =>
-                                              Image.asset(
-                                            'assets/sinportada.png',
-                                            height: 100,
-                                            width: 80,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        )
-                                      : Image.asset(
-                                          'assets/sinportada.png',
-                                          height: 100,
-                                          width: 80,
-                                          fit: BoxFit.cover,
-                                        ),
-                                ),
-                                book,
-                              ),
-                              _buildClickableCell(
-                                  _buildText(book.titulo), book),
-                              _buildClickableCell(
-                                  _buildText(book.subtitulo ?? '-'), book),
-                              _buildClickableCell(_buildText(book.autor), book),
-                              _buildClickableCell(
-                                  _buildText(book.editorial), book),
-                              _buildClickableCell(
-                                  _buildText(book.coleccion ?? '-'), book),
-                              _buildClickableCell(
-                                  _buildText(book.anio.toString()), book),
-                              _buildClickableCell(
-                                  _buildText(book.isbn ?? '-'), book),
-                              _buildClickableCell(
-                                  _buildText(book.edicion.toString()), book),
-                              _buildClickableCell(
-                                  _buildText(book.copias.toString()), book),
-                              _buildClickableCell(
-                                  _buildText(book.estante.toString()), book),
-                              _buildClickableCell(
-                                  _buildText(book.almacen.toString()), book),
-                              _buildClickableCell(
-                                  _buildText(book.areaConocimiento), book),
-                            ];
-                          }).toList(),
-                          columnWidths: columnWidths,
-                        ),
-                        if (_isSearching)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              'Mostrando ${booksToShow.length} resultado(s) de búsqueda',
-                              style: const TextStyle(
-                                color: Color.fromARGB(179, 0, 0, 0),
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        if (booksToShow.length > _booksPerPage)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_left),
-                                  onPressed: _currentPage > 0
-                                      ? () {
-                                          setState(() => _currentPage--);
-                                        }
-                                      : null,
-                                ),
-                                Text(
-                                  '${_currentPage + 1} / ${((booksToShow.length - 1) / _booksPerPage).ceil() + 1}',
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_right),
-                                  onPressed: endIndex < booksToShow.length
-                                      ? () {
-                                          setState(() => _currentPage++);
-                                        }
-                                      : null,
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
+                // BOTÓN PRINCIPAL PARA AGREGAR NUEVO LIBRO
+                HeaderButton(
+                  icon: CupertinoIcons.add_circled_solid,
+                  text: 'Agregar libro',
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (context) => AddBookDialog(
+                      onAdd: (newBook) => _viewModel.addBook(newBook, context),
                     ),
-                  );
-                },
+                  ),
+                  type: ActionType.primary,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            //=========================== TABLA DE INVENTARIO ===========================//
+            // MUESTRA LA LISTA DE LIBROS CON BÚSQUEDA, SELECCIÓN Y PAGINACIÓN
+            Expanded(
+              child: InventarioTable(
+                viewModel: _viewModel,
+                searchController: _searchController,
+                onBookSelected: _handleBookSelection,
               ),
             ),
           ],
@@ -343,14 +139,8 @@ class _InventarioPageState extends State<InventarioPage> {
     );
   }
 
-  //WIDGET PARA MOSTRAR TEXTO EN LA TABLA
-  Widget _buildText(String text) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Text(text,
-            overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white)),
-      );
-
+  //=========================== DISPOSICIÓN DE RECURSOS ===========================//
+  // LIMPIA CONTROLADORES AL DESTRUIR EL WIDGET
   @override
   void dispose() {
     _searchController.dispose();

@@ -255,6 +255,16 @@ class BookViewModel {
     }
   }
 
+  Future<void> deleteBook(String id) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('books')
+          .doc(id)
+          .delete();
+    } catch (e) {
+      debugPrint("Error eliminando libro: $e");
+    }
+  }
 
   /// STREAM SOLO DE LIBROS DISPONIBLES (estado == true)
   Stream<List<Book>> getBooksStream() {
