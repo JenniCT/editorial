@@ -10,8 +10,8 @@ import '../../widgets/modules/header_button.dart';
 
 //=========================== SUBCOMPONENTES ===========================//
 import 'donation_table.dart';
-import '../import/import.dart';
-import '../export/export.dart';
+import '../basic/import/import.dart';
+import '../basic/export/export.dart';
 
 //=========================== WIDGET PRINCIPAL DE DONACIONES ===========================//
 class DonationsPage extends StatefulWidget {

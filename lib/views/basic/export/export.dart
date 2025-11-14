@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../viewmodels/stock/export_vm.dart';
+import '../../../viewmodels/stock/export_vm.dart';
 
 class ExportadorCSV extends StatefulWidget {
   const ExportadorCSV({super.key});

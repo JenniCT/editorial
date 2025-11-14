@@ -10,8 +10,8 @@ import '../../viewmodels/acervo/acervo_vm.dart';
 //=========================== VISTAS SECUNDARIAS ===========================//
 import '../book/details_bk.dart';
 import '../acervo/add_acervo.dart';
-import '../import/import.dart';
-import '../export/export.dart';
+import '../basic/import/import.dart';
+import '../basic/export/export.dart';
 
 //=========================== WIDGETS REUTILIZABLES ===========================//
 import '../../widgets/modules/page_header.dart';

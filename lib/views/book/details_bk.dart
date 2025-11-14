@@ -3,7 +3,7 @@ import 'package:editorial/views/donation/add_done.dart';
 import 'package:flutter/material.dart';
 import '../../models/book_m.dart';
 //VISTAS
-import 'qr_v.dart';
+import '../basic/qr/qr_v.dart';
 import '../book/edit_bk.dart';
 import '../book/history_bk.dart';
 import '../sales/add_sale.dart';

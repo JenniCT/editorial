@@ -28,7 +28,7 @@ class _ActionButtonState extends State<ActionButton> {
     final isPrimary = widget.type == ActionType.primary;
     final isDanger = widget.type == ActionType.danger;
 
-    // 🎨 Colores base
+      //  Colores base
     final Color bgColor = isPrimary
         ? const Color(0xFF1C2532)
         : isDanger

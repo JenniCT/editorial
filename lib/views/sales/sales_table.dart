@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../viewmodels/market/sales_vm.dart';
 import '../../models/sale_m.dart';
 import '../../widgets/global/search.dart';
-import '../../widgets/global/table.dart';
+import '../../widgets/modules/table.dart';
 import '../../widgets/table/pagination.dart';
 import '../../widgets/modules/action_button.dart';
 import '../../widgets/modules/header_button.dart';

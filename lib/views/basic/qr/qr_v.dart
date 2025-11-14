@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../../models/book_m.dart'; 
-import '../../viewmodels/book/save_qr.dart';
+import '../../../models/book_m.dart'; 
+import '../../../viewmodels/book/save_qr.dart';
 
 final GlobalKey qrKey = GlobalKey();
 

@@ -219,6 +219,5 @@ class _HomeLayoutState extends State<HomeLayout> {
         ],
       ),
     );
-
   }
 }

@@ -309,4 +309,88 @@ class BookViewModel {
         .map((snapshot) =>
             snapshot.docs.map((doc) => Historial.fromMap(doc.data())).toList());
   }
+
+  // ============================================================
+  // =============== EXPORTACIÓN Y CACHE LOCAL ==================
+  // ============================================================
+
+    /// Caché local de libros activos (estado == true)
+    List<Book> _cachedBooks = [];
+
+    /// Devuelve el número de libros activos en caché
+    int get booksCount => _cachedBooks.length;
+
+    /// Refresca la caché con los libros activos desde Firestore
+    Future<void> refreshCache() async {
+      try {
+        final snapshot = await _firestore
+            .collection('books')
+            .where('estado', isEqualTo: true) // 🔹 solo libros activos
+            .orderBy('titulo', descending: false)
+            .get();
+
+        _cachedBooks = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return Book(
+            id: doc.id,
+            titulo: data['titulo'] ?? '',
+            autor: data['autor'] ?? '',
+            subtitulo: data['subtitulo'] ?? '',
+            editorial: data['editorial'] ?? '',
+            coleccion: data['coleccion'] ?? '',
+            anio: data['anio'] ?? 0,
+            isbn: data['isbn'] ?? '',
+            edicion: data['edicion'] ?? 0,
+            copias: data['copias'] ?? 0,
+            imagenUrl: data['imagenUrl'] ?? 'assets/sinportada.png',
+            estado: data['estado'] ?? true,
+            fechaRegistro: (data['fechaRegistro'] is Timestamp)
+                ? (data['fechaRegistro'] as Timestamp).toDate()
+                : DateTime.now(),
+            estante: data['estante'] ?? 0,
+            almacen: data['almacen'] ?? 0,
+            areaConocimiento: data['areaConocimiento'] ?? '',
+            registradoPor: data['registradoPor'] ?? 'desconocido',
+          );
+        }).toList();
+      } catch (e, s) {
+        debugPrint("❌ Error al refrescar caché de libros: $e");
+        debugPrintStack(stackTrace: s);
+      }
+    }
+
+    /// Devuelve todos los libros activos como lista de mapas (para exportar)
+    Future<List<Map<String, dynamic>>> getAllBooksAsMap() async {
+      if (_cachedBooks.isEmpty) await refreshCache();
+
+      final activos = _cachedBooks.where((b) => b.estado == true).toList();
+
+      return activos.map((book) => _bookToMap(book)).toList();
+    }
+
+    /// Devuelve los libros seleccionados (recibidos desde la tabla)
+    Future<List<Map<String, dynamic>>> getSelectedBooksAsMap(
+        List<Book> selectedBooks) async {
+      if (selectedBooks.isEmpty) return [];
+      final activos = selectedBooks.where((b) => b.estado == true).toList();
+      return activos.map((b) => _bookToMap(b)).toList();
+    }
+
+    /// Convierte un libro a mapa legible y seguro para Excel
+    Map<String, dynamic> _bookToMap(Book book) {
+      return {
+        'Título': book.titulo,
+        'Autor': book.autor,
+        'Editorial': book.editorial,
+        'Colección': book.coleccion,
+        'Año': book.anio,
+        'ISBN': book.isbn,
+        'Copias': book.copias,
+        'Área de conocimiento': book.areaConocimiento,
+        'Registrado por': book.registradoPor,
+        'Estado': book.estado ? 'Activo' : 'Inactivo',
+        'Fecha de registro': book.fechaRegistro.toString(),
+      };
+    }
+
 }

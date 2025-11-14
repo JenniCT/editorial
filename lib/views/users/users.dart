@@ -7,8 +7,8 @@ import '../../models/user.dart';
 //=========================== VISTAS SECUNDARIAS ===========================//
 import '../users/add_user.dart';
 import 'details_user.dart';
-import '../import/import.dart';
-import '../export/export.dart';
+import '../basic/import/import.dart';
+import '../basic/export/export.dart';
 
 //=========================== WIDGETS REUTILIZABLES ===========================//
 import '../../widgets/modules/page_header.dart';

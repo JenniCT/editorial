@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../viewmodels/stock/import_vm.dart';
+import '../../../viewmodels/stock/import_vm.dart';
 
 class ImportadorCSV extends StatefulWidget {
   const ImportadorCSV({super.key});

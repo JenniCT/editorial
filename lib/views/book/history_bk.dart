@@ -3,6 +3,7 @@ import '../../viewmodels/book/book_vm.dart';
 import '../../models/history_bk.dart';
 import '../../widgets/table/table.dart';
 
+
 class HistorialPage extends StatefulWidget {
   final String idBook; 
   const HistorialPage({super.key, required this.idBook});

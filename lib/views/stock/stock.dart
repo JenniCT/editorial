@@ -2,31 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
 //=========================== MODELOS ===========================//
-// MODELOS DE DATOS QUE REPRESENTAN LIBROS
 import '../../models/book_m.dart';
 
-//=========================== VISTAMODELO ===========================//
-// VISTAMODELO QUE GESTIONA EL ESTADO Y LÓGICA DE NEGOCIO DE LOS LIBROS
+//=========================== VISTAMODELOS ===========================//
 import '../../viewmodels/book/book_vm.dart';
+import '../../viewmodels/basic/export_vm.dart';
 
 //=========================== VISTAS SECUNDARIAS ===========================//
-// PÁGINAS DE DETALLE, IMPORTACIÓN, EXPORTACIÓN Y ADICIÓN DE LIBROS
 import 'add_bk.dart';
 import '../book/details_bk.dart';
-import '../import/import.dart';
-import '../export/export.dart';
+import '../basic/import/import.dart';
+import '../basic/export/download_dialog.dart';
 
-//=========================== WIDGETS REUTILIZABLES ===========================//
-// CABECERAS, BOTONES Y ELEMENTOS DE INTERFAZ PARA CONSISTENCIA VISUAL
+//=========================== WIDGETS ===========================//
 import '../../widgets/modules/page_header.dart';
 import '../../widgets/modules/header_button.dart';
 
-//=========================== SUBCOMPONENTES ===========================//
-// TABLA DE INVENTARIO REUTILIZABLE
+//=========================== TABLA DE INVENTARIO ===========================//
 import 'stock_table.dart';
 
-//=========================== WIDGET PRINCIPAL DE LA PÁGINA DE INVENTARIO ===========================//
-// MUESTRA LA LISTA COMPLETA DE LIBROS, ACCIONES Y DETALLE INDIVIDUAL
+//===============================================================//
+//                      INVENTARIO PAGE
+//===============================================================//
 class InventarioPage extends StatefulWidget {
   final Function(Book) onBookSelected;
 
@@ -36,17 +33,20 @@ class InventarioPage extends StatefulWidget {
   State<InventarioPage> createState() => _InventarioPageState();
 }
 
-//=========================== ESTADO DE LA PÁGINA ===========================//
-// CONTROLA SELECCIÓN DE LIBROS, VISUALIZACIÓN DE DETALLES Y BÚSQUEDA
 class _InventarioPageState extends State<InventarioPage> {
   final BookViewModel _viewModel = BookViewModel();
   final TextEditingController _searchController = TextEditingController();
+  final ExportViewModel _exportVM = ExportViewModel();
 
-  Book? _selectedBook; // LIBRO SELECCIONADO ACTUAL
-  bool _showingDetail = false; // INDICA SI SE MUESTRA LA PÁGINA DE DETALLE
+  // clave para acceder al estado de la tabla
+  final GlobalKey<InventarioTableState> _tableKey = GlobalKey<InventarioTableState>();
 
-  //=========================== MÉTODO DE SELECCIÓN DE LIBRO ===========================//
-  // ACTUALIZA EL ESTADO PARA MOSTRAR DETALLE DEL LIBRO SELECCIONADO
+
+  Book? _selectedBook;
+  bool _showingDetail = false;
+  int selectedBooksCount = 0;
+
+  //=========================== SELECCIÓN ===========================//
   void _handleBookSelection(Book book) {
     setState(() {
       _selectedBook = book;
@@ -54,12 +54,8 @@ class _InventarioPageState extends State<InventarioPage> {
     });
   }
 
-  //=========================== BUILD PRINCIPAL ===========================//
-  // DECIDE SI MOSTRAR DETALLE O LISTA DE INVENTARIO
   @override
   Widget build(BuildContext context) {
-    //=========================== VISTA DE DETALLE ===========================//
-    // SI HAY UN LIBRO SELECCIONADO, SE MUESTRA SU DETALLE
     if (_showingDetail && _selectedBook != null) {
       return DetalleLibroPage(
         book: _selectedBook!,
@@ -68,37 +64,71 @@ class _InventarioPageState extends State<InventarioPage> {
       );
     }
 
-    //=========================== VISTA PRINCIPAL DE INVENTARIO ===========================//
+    final int totalBooksCount = _viewModel.booksCount;
+
     return Scaffold(
-      backgroundColor: Colors.transparent, // FONDO TRANSPARENTE PARA ESTILO ADAPTIVO
+      backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0), // ESPACIADO GENERAL PARA LEGIBILIDAD
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            //=========================== CABECERA DE PÁGINA ===========================//
-            // MUESTRA TÍTULO Y ACCIONES RÁPIDAS DEL USUARIO
             PageHeader(
               title: 'Libros',
               buttons: [
-                // BOTÓN PARA GENERAR CÓDIGOS QR
                 HeaderButton(
                   icon: CupertinoIcons.qrcode,
                   text: 'Generar Qrs',
                   onPressed: () {},
                   type: ActionType.secondary,
                 ),
-                // BOTÓN PARA EXPORTAR CSV
+                // ================== EXPORTAR ================== //
                 HeaderButton(
                   icon: CupertinoIcons.arrow_down_circle,
                   text: 'Exportar',
-                  onPressed: () => showDialog(
-                    context: context,
-                    builder: (_) => const ExportadorCSV(),
-                  ),
+                  onPressed: () async {
+                    final option = await mostrarDialogoDescarga(
+                      context,
+                      totalItems: totalBooksCount,
+                      selectedItems: selectedBooksCount,
+                      entityName: 'libros',
+                    );
+
+                    if (option == null) return;
+
+                    if (option == 'all') {
+                      // 🔹 Exportar solo libros activos
+                      final allBooks = await _viewModel.getAllBooksAsMap();
+                      await _exportVM.exportToExcel(
+                        data: allBooks,
+                        fileName: 'libros_activos',
+                        context: context,
+                      );
+
+
+                    } else if (option == 'selected') {
+                      // 🔹 Exportar seleccionados desde la tabla
+                      final selectedBooks = _tableKey.currentState?.selectedBooks ?? [];
+
+                      if (selectedBooks.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No hay libros seleccionados para exportar')),
+                        );
+                        return;
+                      }
+
+                      final selectedData = await _viewModel.getSelectedBooksAsMap(selectedBooks);
+
+                      await _exportVM.exportToExcel(
+                        data: selectedData,
+                        fileName: 'libros_seleccionados',
+                        context: context,
+                      );
+                    }
+                  },
                   type: ActionType.secondary,
                 ),
-                // BOTÓN PARA IMPORTAR CSV
+                // ================== IMPORTAR ================== //
                 HeaderButton(
                   icon: CupertinoIcons.arrow_up_circle,
                   text: 'Importar',
@@ -108,7 +138,7 @@ class _InventarioPageState extends State<InventarioPage> {
                   ),
                   type: ActionType.secondary,
                 ),
-                // BOTÓN PRINCIPAL PARA AGREGAR NUEVO LIBRO
+                // ================== AGREGAR ================== //
                 HeaderButton(
                   icon: CupertinoIcons.add_circled_solid,
                   text: 'Agregar libro',
@@ -124,13 +154,16 @@ class _InventarioPageState extends State<InventarioPage> {
             ),
             const SizedBox(height: 20),
 
-            //=========================== TABLA DE INVENTARIO ===========================//
-            // MUESTRA LA LISTA DE LIBROS CON BÚSQUEDA, SELECCIÓN Y PAGINACIÓN
+            // ================== TABLA ================== //
             Expanded(
               child: InventarioTable(
+                key: _tableKey,
                 viewModel: _viewModel,
                 searchController: _searchController,
                 onBookSelected: _handleBookSelection,
+                onSelectionChanged: (count) {
+                  setState(() => selectedBooksCount = count);
+                },
               ),
             ),
           ],
@@ -139,8 +172,6 @@ class _InventarioPageState extends State<InventarioPage> {
     );
   }
 
-  //=========================== DISPOSICIÓN DE RECURSOS ===========================//
-  // LIMPIA CONTROLADORES AL DESTRUIR EL WIDGET
   @override
   void dispose() {
     _searchController.dispose();
