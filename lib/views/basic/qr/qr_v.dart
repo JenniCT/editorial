@@ -35,7 +35,9 @@ void showBookQrDialog(BuildContext context, Book book) {
                     child: QrImageView(
                       data: book.bookToQrData(book),
                       version: QrVersions.auto,
-                      foregroundColor: const Color.fromRGBO(47, 65, 87, 1),
+                      eyeStyle: const QrEyeStyle(
+                        color:Color.fromRGBO(47, 65, 87, 1),
+                      ),
                       backgroundColor: Colors.white,
                     ),
                   ),
@@ -57,6 +59,7 @@ void showBookQrDialog(BuildContext context, Book book) {
           child: const Text('Guardar'),
           onPressed: () async {
             await saveQrImage(qrKey, book.titulo); 
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
 ),

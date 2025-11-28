@@ -8,10 +8,15 @@ class AddProductionCostDialog extends StatefulWidget {
   final String bookId;
   final Function(CostosProduccion) onAdd;
 
-  const AddProductionCostDialog({required this.bookId, required this.onAdd, super.key});
+  const AddProductionCostDialog({
+    required this.bookId,
+    required this.onAdd,
+    super.key,
+  });
 
   @override
-  State<AddProductionCostDialog> createState() => _AddProductionCostDialogState();
+  State<AddProductionCostDialog> createState() =>
+      _AddProductionCostDialogState();
 }
 
 class _AddProductionCostDialogState extends State<AddProductionCostDialog> {
@@ -25,7 +30,8 @@ class _AddProductionCostDialogState extends State<AddProductionCostDialog> {
   final TextEditingController _materialController = TextEditingController();
   final TextEditingController _copyrightFeeController = TextEditingController();
   final TextEditingController _isbnFeeController = TextEditingController();
-  final TextEditingController _electricityServiceController = TextEditingController();
+  final TextEditingController _electricityServiceController =
+      TextEditingController();
   final TextEditingController _extraCost1Controller = TextEditingController();
   final TextEditingController _extraCost2Controller = TextEditingController();
   final TextEditingController _extraCost3Controller = TextEditingController();
@@ -33,7 +39,6 @@ class _AddProductionCostDialogState extends State<AddProductionCostDialog> {
   Future<void> _saveCost() async {
     if (_formKey.currentState!.validate()) {
       final cost = CostosProduccion(
-
         id: '',
         idBook: widget.bookId,
         papelBon: double.tryParse(_bondPaperController.text) ?? 0,
@@ -52,6 +57,7 @@ class _AddProductionCostDialogState extends State<AddProductionCostDialog> {
 
       await _viewModel.agregarCosto(cost);
       widget.onAdd(cost);
+      if (!mounted) return;
       Navigator.of(context).pop();
     }
   }
@@ -89,23 +95,67 @@ class _AddProductionCostDialogState extends State<AddProductionCostDialog> {
             children: [
               const Text(
                 'Agregar costos de producción',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 16),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      CustomTextField(controller: _bondPaperController, label: 'PAPEL BOND', isNumeric: true),
-                      CustomTextField(controller: _coatedPaperController, label: 'COUCHER', isNumeric: true),
-                      CustomTextField(controller: _laborController, label: 'MANO DE OBRA', isNumeric: true),
-                      CustomTextField(controller: _materialController, label: 'MATERIAL', isNumeric: true),
-                      CustomTextField(controller: _copyrightFeeController, label: 'DERECHOS DE AUTOR', isNumeric: true),
-                      CustomTextField(controller: _isbnFeeController, label: 'ISBN', isNumeric: true),
-                      CustomTextField(controller: _electricityServiceController, label: 'SERVICIOS', isNumeric: true),
-                      CustomTextField(controller: _extraCost1Controller, label: 'COSTO 1', isNumeric: true),
-                      CustomTextField(controller: _extraCost2Controller, label: 'COSTO 2', isNumeric: true),
-                      CustomTextField(controller: _extraCost3Controller, label: 'COSTO 3', isNumeric: true),
+                      CustomTextField(
+                        controller: _bondPaperController,
+                        label: 'PAPEL BOND',
+                        isNumeric: true,
+                      ),
+                      CustomTextField(
+                        controller: _coatedPaperController,
+                        label: 'COUCHER',
+                        isNumeric: true,
+                      ),
+                      CustomTextField(
+                        controller: _laborController,
+                        label: 'MANO DE OBRA',
+                        isNumeric: true,
+                      ),
+                      CustomTextField(
+                        controller: _materialController,
+                        label: 'MATERIAL',
+                        isNumeric: true,
+                      ),
+                      CustomTextField(
+                        controller: _copyrightFeeController,
+                        label: 'DERECHOS DE AUTOR',
+                        isNumeric: true,
+                      ),
+                      CustomTextField(
+                        controller: _isbnFeeController,
+                        label: 'ISBN',
+                        isNumeric: true,
+                      ),
+                      CustomTextField(
+                        controller: _electricityServiceController,
+                        label: 'SERVICIOS',
+                        isNumeric: true,
+                      ),
+                      CustomTextField(
+                        controller: _extraCost1Controller,
+                        label: 'COSTO 1',
+                        isNumeric: true,
+                      ),
+                      CustomTextField(
+                        controller: _extraCost2Controller,
+                        label: 'COSTO 2',
+                        isNumeric: true,
+                      ),
+                      CustomTextField(
+                        controller: _extraCost3Controller,
+                        label: 'COSTO 3',
+                        isNumeric: true,
+                      ),
                     ],
                   ),
                 ),
@@ -116,13 +166,17 @@ class _AddProductionCostDialogState extends State<AddProductionCostDialog> {
                 children: [
                   ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                    ),
                     child: const Text('Cancelar'),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(
                     onPressed: _saveCost,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.greenAccent,
+                    ),
                     child: const Text('Agregar'),
                   ),
                 ],
@@ -135,7 +189,11 @@ class _AddProductionCostDialogState extends State<AddProductionCostDialog> {
   }
 }
 
-void showAddProductionCostDialog(BuildContext context, String bookId, Function(CostosProduccion) onAdd) {
+void showAddProductionCostDialog(
+  BuildContext context,
+  String bookId,
+  Function(CostosProduccion) onAdd,
+) {
   showDialog(
     context: context,
     builder: (_) => AddProductionCostDialog(bookId: bookId, onAdd: onAdd),

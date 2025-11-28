@@ -42,8 +42,6 @@ class _HomeLayoutState extends State<HomeLayout> {
     super.initState();
     _cargarPermisos();
     // Inicializamos según el tema del sistema
-    isDarkMode =
-        WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
   }
 
   Future<void> _cargarPermisos() async {

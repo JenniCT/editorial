@@ -136,7 +136,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<Role>(
-                    value: _selectedRole,
+                    initialValue: _selectedRole,
                     decoration: const InputDecoration(
                       labelText: "Rol",
                       labelStyle: TextStyle(color: Colors.white),

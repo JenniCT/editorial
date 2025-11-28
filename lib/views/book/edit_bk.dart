@@ -222,7 +222,7 @@ class _EditBookDialogState extends State<EditBookDialog> {
                                               SizedBox(
                                                 width: double.infinity,
                                                 child: DropdownButtonFormField<String>(
-                                                  value: _selectedAreaConocimiento,
+                                                  initialValue: _selectedAreaConocimiento,
                                                   decoration: InputDecoration(
                                                     labelText:
                                                         'Área de conocimiento',

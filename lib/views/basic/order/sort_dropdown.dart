@@ -6,11 +6,11 @@ class SortDropdown extends StatelessWidget {
   final Function(String) onChanged;
 
   const SortDropdown({
-    Key? key,
+    super.key,
     required this.selectedOption,
     required this.options,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +18,7 @@ class SortDropdown extends StatelessWidget {
       value: selectedOption,
       icon: const Icon(Icons.arrow_drop_down),
       items: options.map((String option) {
-        return DropdownMenuItem<String>(
-          value: option,
-          child: Text(option),
-        );
+        return DropdownMenuItem<String>(value: option, child: Text(option));
       }).toList(),
       onChanged: (value) {
         if (value != null) {

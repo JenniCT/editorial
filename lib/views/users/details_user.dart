@@ -116,7 +116,7 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
                               }
 
                               await viewModel.guardarPermisos(permisos);
-
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text("Permisos guardados correctamente")),
                               );
@@ -228,7 +228,7 @@ class _DetailsUserPageState extends State<DetailsUserPage> {
                             });
                             setStateCheckbox(() {});
                           },
-                    fillColor: MaterialStateProperty.all(bloqueado ? Colors.grey : Colors.blueAccent),
+                    fillColor: WidgetStateProperty.all(bloqueado ? Colors.grey : Colors.blueAccent),
                   ),
                 );
               },

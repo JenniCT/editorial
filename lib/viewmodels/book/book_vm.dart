@@ -1,3 +1,5 @@
+//=========================== IMPORTACIONES PRINCIPALES ===========================//
+// ESTAS IMPORTACIONES PERMITEN MANEJAR ARCHIVOS, UI, FIREBASE, SUPABASE Y DATOS
 import 'dart:io'; 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,21 +11,29 @@ import '../../widgets/global/dialog.dart';
 import '../../models/book_m.dart';
 import '../../models/history_bk.dart';
 
-/// --- FUNCION PARA LIMPIAR NOMBRES DE ARCHIVOS ---
+
+//=========================== LIMPIADOR DE NOMBRES DE ARCHIVO ===========================//
+// ESTA FUNCIÓN ASEGURA QUE LOS ARCHIVOS SUBIDOS TENGAN NOMBRES SEGUROS
 String safeFileName(String original) {
-  // Quita acentos
+  // QUITAR ACENTOS DEL NOMBRE ORIGINAL
   String name = removeDiacritics(original);
-  // Reemplaza espacios por guiones bajos
+  // REEMPLAZAR ESPACIOS POR GUIONES BAJOS
   name = name.replaceAll(RegExp(r'\s+'), '_');
-  // Reemplaza cualquier caracter inválido
+  // ELIMINAR CARACTERES NO PERMITIDOS
   name = name.replaceAll(RegExp(r'[^a-zA-Z0-9_.-]'), '');
   return name;
 }
 
+
 class BookViewModel {
+  //=========================== INSTANCIAS DE FIRESTORE Y SUPABASE ===========================//
+  // SE DECLARAN CLIENTES COMPARTIDOS PARA OPERACIONES EN LA NUBE
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final supabase = Supabase.instance.client;
 
+
+  //=========================== MOSTRAR DIALOGOS / TOASTS ===========================//
+  // ESTA FUNCIÓN CENTRALIZA LA VISUALIZACIÓN DE NOTIFICACIONES PERSONALIZADAS
   void _mostrarDialogo(
     BuildContext context, {
     required String title,
@@ -36,6 +46,7 @@ class BookViewModel {
       context: context,
       barrierDismissible: true,
       builder: (_) {
+        // AUTO-CIERRE OPCIONAL DEL MENSAJE
         if (autoCerrar) {
           Future.delayed(const Duration(milliseconds: 300), () {
             if (context.mounted) Navigator.of(context).pop();
@@ -51,32 +62,40 @@ class BookViewModel {
     );
   }
 
-  /// GENERA UN ID TEMPORAL PARA VERIFICAR DUPLICADOS
+
+  //=========================== GENERADOR DE ID TEMPORAL ===========================//
+  // ESTA FUNCIÓN CREA UN ID ÚNICO PARA DETECTAR REGISTROS DUPLICADOS
   String generarIdTemporal(Book book) {
     final titulo = removeDiacritics(book.titulo.trim().toLowerCase());
     final autor = removeDiacritics(book.autor.trim().toLowerCase());
     final anio = book.anio.toString();
     final base = '$titulo$autor$anio';
+
     return base
         .replaceAll(RegExp(r'\s+'), '_')
         .replaceAll(RegExp(r'[^a-z0-9_]+'), '');
   }
 
-  /// AGREGA UN LIBRO SI NO EXISTE PREVIAMENTE
+
+  //=========================== AGREGAR LIBRO ===========================//
+  // AGREGA UN NUEVO LIBRO A FIRESTORE SOLO SI NO EXISTE UN DUPLICADO
   Future<void> addBook(Book book, BuildContext context) async {
     try {
+      // GENERAR ID ÚNICO PARA VALIDAR DUPLICADOS
       final tempId = generarIdTemporal(book);
+
       final existing = await _firestore
           .collection('books')
           .where('idTemp', isEqualTo: tempId)
           .get();
 
+      // VALIDAR DUPLICADOS
       if (existing.docs.isNotEmpty) {
         if (context.mounted) {
           _mostrarDialogo(
             context,
-            title: 'Registro duplicado',
-            message: 'Ya existe un libro con ese título, autor y año.',
+            title: 'REGISTRO DUPLICADO',
+            message: 'YA EXISTE UN LIBRO CON ESE TÍTULO, AUTOR Y AÑO.',
             color: Colors.orangeAccent,
             icon: Icons.warning_amber_rounded,
             autoCerrar: false,
@@ -85,30 +104,38 @@ class BookViewModel {
         return;
       }
 
-      // SUBIR IMAGEN A SUPABASE SI EXISTE
+      //=========================== SUBIR IMAGEN A SUPABASE ===========================//
+      // SI EL LIBRO INCLUYE UNA IMAGEN, AQUÍ SE PROCESA LA CARGA
       String? uploadedUrl = book.imagenUrl;
+
       if (book.imagenFile != null) {
         try {
-          // Solo el nombre seguro del archivo
+          // GENERAR NOMBRE SEGURO DE ARCHIVO
           final originalName = book.imagenFile!.path.split(RegExp(r'[\\/]+')).last;
           final safeName = safeFileName(originalName);
           final fileName = '${DateTime.now().millisecondsSinceEpoch}_$safeName';
 
+          // SUBIR ARCHIVO A SUPABASE
           await supabase.storage.from('book_images').upload(
                 fileName,
                 File(book.imagenFile!.path),
               );
+
           uploadedUrl = supabase.storage.from('book_images').getPublicUrl(fileName);
         } catch (e) {
-          debugPrint("Error subiendo imagen a Supabase: $e");
+          debugPrint("ERROR SUBIENDO IMAGEN A SUPABASE: $e");
         }
       }
 
+      // CAPTURA DE USUARIO QUE REGISTRA EL LIBRO
       final user = FirebaseAuth.instance.currentUser;
       final registrador = user?.email ?? 'desconocido';
       final fecha = DateTime.now();
 
+      // CALCULAR ESTADO (SOLO DISPONIBLE SI TIENE 3+ COPIAS)
       final bool estado = (book.copias >= 3);
+
+      // CREAR DOCUMENTO NUEVO EN FIRESTORE
       final docRef = _firestore.collection('books').doc();
 
       final bookToSave = book.copyWith(
@@ -118,6 +145,7 @@ class BookViewModel {
         estado: estado,
       );
 
+      // GUARDAR DATOS COMPLETOS EN FIRESTORE
       await docRef.set({
         ...bookToSave.toMap(),
         'idBook': docRef.id,
@@ -130,22 +158,23 @@ class BookViewModel {
       if (context.mounted) {
         _mostrarDialogo(
           context,
-          title: '¡Registro exitoso!',
-          message: 'El libro ha sido guardado correctamente.',
+          title: '¡REGISTRO EXITOSO!',
+          message: 'EL LIBRO SE HA GUARDADO CORRECTAMENTE.',
           color: Colors.green,
           icon: Icons.check_circle_outline,
         );
       }
     } catch (e, stackTrace) {
-      debugPrint('Error al subir imagen o guardar libro: $e');
+      debugPrint('ERROR AL SUBIR IMAGEN O GUARDAR LIBRO: $e');
       debugPrintStack(stackTrace: stackTrace);
+
       if (context.mounted) {
         Future.delayed(const Duration(milliseconds: 200), () {
           if (context.mounted) {
             _mostrarDialogo(
               context,
-              title: 'Error',
-              message: 'No se pudo registrar el libro. Intenta nuevamente.',
+              title: 'ERROR',
+              message: 'NO SE PUDO REGISTRAR EL LIBRO. INTENTA NUEVAMENTE.',
               color: Colors.redAccent,
               icon: Icons.error_outline,
             );
@@ -155,16 +184,18 @@ class BookViewModel {
     }
   }
 
-  /// EDITAR LIBRO EXISTENTE
+
+  //=========================== EDITAR LIBRO EXISTENTE ===========================//
+  // PERMITE MODIFICAR DATOS DE UN LIBRO Y REGISTRAR HISTORIAL DE CAMBIOS
   Future<void> editBook(Book book, BuildContext context) async {
     try {
-      if (book.id == null) throw Exception("El libro no tiene ID para editar.");
+      if (book.id == null) throw Exception("EL LIBRO NO TIENE ID PARA EDITAR.");
 
-      // SUBIR IMAGEN A SUPABASE SI EXISTE
+      // SUBIR NUEVA IMAGEN SI SE MODIFICÓ
       String? uploadedUrl = book.imagenUrl;
+
       if (book.imagenFile != null) {
         try {
-          // Solo el nombre seguro del archivo
           final originalName = book.imagenFile!.path.split(RegExp(r'[\\/]+')).last;
           final safeName = safeFileName(originalName);
           final fileName = '${DateTime.now().millisecondsSinceEpoch}_$safeName';
@@ -173,13 +204,14 @@ class BookViewModel {
                 fileName,
                 File(book.imagenFile!.path),
               );
+
           uploadedUrl = supabase.storage.from('book_images').getPublicUrl(fileName);
         } catch (e) {
-          debugPrint("Error subiendo imagen a Supabase: $e");
+          debugPrint("ERROR SUBIENDO IMAGEN A SUPABASE: $e");
         }
       }
 
-
+      // RECALCULAR ESTADO DEL LIBRO
       final bool estado = (book.copias >= 3);
 
       final updatedBook = book.copyWith(
@@ -189,84 +221,78 @@ class BookViewModel {
 
       final nuevo = updatedBook.toMap();
 
-      // OBTENER DATOS ANTERIORES
+      // OBTENER DATOS ANTERIORES PARA DETECTAR CAMBIOS
       final docSnapshot = await _firestore.collection('books').doc(book.id).get();
       final datosAnteriores = docSnapshot.data();
 
-      // DETECTAR CAMBIOS
       final cambios = <String, dynamic>{};
+
+      // COMPARAR CAMPO POR CAMPO
       datosAnteriores?.forEach((key, valorAnterior) {
         final valorNuevo = nuevo[key];
         if (valorNuevo != null && valorNuevo != valorAnterior) {
           cambios[key] = '$valorAnterior → $valorNuevo';
         }
       });
-    
-      // HISTORIAL CON CAMBIOS
+
+      // REGISTRAR CAMBIOS EN HISTORIAL
       if (cambios.isNotEmpty) {
         final user = FirebaseAuth.instance.currentUser;
         final editor = user?.email ?? 'desconocido';
-        //final fechaEdicion = DateTime.now();
 
         await _firestore.collection('history').add({
           'idBook': book.id,
           'editadoPor': editor,
-          'fechaEdicion': FieldValue.serverTimestamp(), 
+          'fechaEdicion': FieldValue.serverTimestamp(),
           'cambios': cambios,
-          'accion' : 'Modificado',
+          'accion': 'Modificado',
         });
       }
-      
+
+      // ACTUALIZAR LIBRO EN FIRESTORE
       await _firestore.collection('books').doc(book.id).update(updatedBook.toMap());
 
       if (context.mounted) {
         Future.delayed(const Duration(milliseconds: 100), () {
-          if (context.mounted) {
-            _mostrarDialogo(
-              context,
-              title: '¡Edición exitosa!',
-              message: 'El libro ha sido actualizado correctamente.',
-              color: Colors.green,
-              icon: Icons.check_circle_outline,
-            );
-          }
+          _mostrarDialogo(
+            context,
+            title: '¡EDICIÓN EXITOSA!',
+            message: 'EL LIBRO SE HA ACTUALIZADO CORRECTAMENTE.',
+            color: Colors.green,
+            icon: Icons.check_circle_outline,
+          );
         });
       }
-
-      
-
-
     } catch (e, stackTrace) {
-      debugPrint('Error al editar libro: $e');
+      debugPrint('ERROR AL EDITAR LIBRO: $e');
       debugPrintStack(stackTrace: stackTrace);
+
       if (context.mounted) {
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (context.mounted) {
-            _mostrarDialogo(
-              context,
-              title: 'Error',
-              message: 'No se pudo actualizar el libro. Intenta nuevamente.',
-              color: Colors.redAccent,
-              icon: Icons.error_outline,
-            );
-          }
-        });
+        _mostrarDialogo(
+          context,
+          title: 'ERROR',
+          message: 'NO SE PUDO ACTUALIZAR EL LIBRO.',
+          color: Colors.redAccent,
+          icon: Icons.error_outline,
+        );
       }
     }
   }
 
+
+  //=========================== ELIMINAR LIBRO ===========================//
+  // PERMITE BORRAR UN LIBRO DEFINITIVAMENTE DE FIRESTORE
   Future<void> deleteBook(String id) async {
     try {
-      await FirebaseFirestore.instance
-          .collection('books')
-          .doc(id)
-          .delete();
+      await _firestore.collection('books').doc(id).delete();
     } catch (e) {
-      debugPrint("Error eliminando libro: $e");
+      debugPrint("ERROR ELIMINANDO LIBRO: $e");
     }
   }
 
-  /// STREAM SOLO DE LIBROS DISPONIBLES (estado == true)
+
+  //=========================== STREAM DE LIBROS ACTIVOS ===========================//
+  // DEVUELVE LOS LIBROS DISPONIBLES (ESTADO == TRUE) EN TIEMPO REAL
   Stream<List<Book>> getBooksStream() {
     return _firestore
         .collection('books')
@@ -299,7 +325,9 @@ class BookViewModel {
     });
   }
 
-  /// HISTORIAL POR LIBRO
+
+  //=========================== STREAM DE HISTORIAL ===========================//
+  // DEVUELVE EL HISTORIAL DE CAMBIOS DE CADA LIBRO
   Stream<List<Historial>> getHistorialPorLibro(String idLibro) {
     return _firestore
         .collection('history')
@@ -310,87 +338,84 @@ class BookViewModel {
             snapshot.docs.map((doc) => Historial.fromMap(doc.data())).toList());
   }
 
-  // ============================================================
-  // =============== EXPORTACIÓN Y CACHE LOCAL ==================
-  // ============================================================
 
-    /// Caché local de libros activos (estado == true)
-    List<Book> _cachedBooks = [];
+  //=========================== CACHE LOCAL Y EXPORTACIÓN ===========================//
 
-    /// Devuelve el número de libros activos en caché
-    int get booksCount => _cachedBooks.length;
+  // LISTA LOCAL QUE ALMACENA LIBROS ACTIVOS
+  List<Book> _cachedBooks = [];
 
-    /// Refresca la caché con los libros activos desde Firestore
-    Future<void> refreshCache() async {
-      try {
-        final snapshot = await _firestore
-            .collection('books')
-            .where('estado', isEqualTo: true) // 🔹 solo libros activos
-            .orderBy('titulo', descending: false)
-            .get();
+  // DEVUELVE CUÁNTOS LIBROS ACTIVOS HAY EN CACHÉ
+  int get booksCount => _cachedBooks.length;
 
-        _cachedBooks = snapshot.docs.map((doc) {
-          final data = doc.data();
-          return Book(
-            id: doc.id,
-            titulo: data['titulo'] ?? '',
-            autor: data['autor'] ?? '',
-            subtitulo: data['subtitulo'] ?? '',
-            editorial: data['editorial'] ?? '',
-            coleccion: data['coleccion'] ?? '',
-            anio: data['anio'] ?? 0,
-            isbn: data['isbn'] ?? '',
-            edicion: data['edicion'] ?? 0,
-            copias: data['copias'] ?? 0,
-            imagenUrl: data['imagenUrl'] ?? 'assets/sinportada.png',
-            estado: data['estado'] ?? true,
-            fechaRegistro: (data['fechaRegistro'] is Timestamp)
-                ? (data['fechaRegistro'] as Timestamp).toDate()
-                : DateTime.now(),
-            estante: data['estante'] ?? 0,
-            almacen: data['almacen'] ?? 0,
-            areaConocimiento: data['areaConocimiento'] ?? '',
-            registradoPor: data['registradoPor'] ?? 'desconocido',
-          );
-        }).toList();
-      } catch (e, s) {
-        debugPrint("❌ Error al refrescar caché de libros: $e");
-        debugPrintStack(stackTrace: s);
-      }
+  // REFRESCA LA CACHÉ CONSULTANDO FIRESTORE
+  Future<void> refreshCache() async {
+    try {
+      final snapshot = await _firestore
+          .collection('books')
+          .where('estado', isEqualTo: true)
+          .orderBy('titulo', descending: false)
+          .get();
+
+      _cachedBooks = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return Book(
+          id: doc.id,
+          titulo: data['titulo'] ?? '',
+          autor: data['autor'] ?? '',
+          subtitulo: data['subtitulo'] ?? '',
+          editorial: data['editorial'] ?? '',
+          coleccion: data['coleccion'] ?? '',
+          anio: data['anio'] ?? 0,
+          isbn: data['isbn'] ?? '',
+          edicion: data['edicion'] ?? 0,
+          copias: data['copias'] ?? 0,
+          imagenUrl: data['imagenUrl'] ?? 'assets/sinportada.png',
+          estado: data['estado'] ?? true,
+          fechaRegistro: (data['fechaRegistro'] is Timestamp)
+              ? (data['fechaRegistro'] as Timestamp).toDate()
+              : DateTime.now(),
+          estante: data['estante'] ?? 0,
+          almacen: data['almacen'] ?? 0,
+          areaConocimiento: data['areaConocimiento'] ?? '',
+          registradoPor: data['registradoPor'] ?? 'desconocido',
+        );
+      }).toList();
+    } catch (e, s) {
+      debugPrint("ERROR AL REFRESCAR CACHÉ DE LIBROS: $e");
+      debugPrintStack(stackTrace: s);
     }
+  }
 
-    /// Devuelve todos los libros activos como lista de mapas (para exportar)
-    Future<List<Map<String, dynamic>>> getAllBooksAsMap() async {
-      if (_cachedBooks.isEmpty) await refreshCache();
+  // CONVIERTE TODOS LOS LIBROS ACTIVOS A UNA LISTA DE MAPAS PARA EXPORTAR
+  Future<List<Map<String, dynamic>>> getAllBooksAsMap() async {
+    if (_cachedBooks.isEmpty) await refreshCache();
 
-      final activos = _cachedBooks.where((b) => b.estado == true).toList();
+    final activos = _cachedBooks.where((b) => b.estado == true).toList();
+    return activos.map((book) => _bookToMap(book)).toList();
+  }
 
-      return activos.map((book) => _bookToMap(book)).toList();
-    }
+  // CONVIERTE SOLO LOS LIBROS SELECCIONADOS A FORMATO EXPORTABLE
+  Future<List<Map<String, dynamic>>> getSelectedBooksAsMap(
+    List<Book> selectedBooks,
+  ) async {
+    if (selectedBooks.isEmpty) return [];
 
-    /// Devuelve los libros seleccionados (recibidos desde la tabla)
-    Future<List<Map<String, dynamic>>> getSelectedBooksAsMap(
-        List<Book> selectedBooks) async {
-      if (selectedBooks.isEmpty) return [];
-      final activos = selectedBooks.where((b) => b.estado == true).toList();
-      return activos.map((b) => _bookToMap(b)).toList();
-    }
+    final activos = selectedBooks.where((b) => b.estado == true).toList();
+    return activos.map((b) => _bookToMap(b)).toList();
+  }
 
-    /// Convierte un libro a mapa legible y seguro para Excel
-    Map<String, dynamic> _bookToMap(Book book) {
-      return {
-        'Título': book.titulo,
-        'Autor': book.autor,
-        'Editorial': book.editorial,
-        'Colección': book.coleccion,
-        'Año': book.anio,
-        'ISBN': book.isbn,
-        'Copias': book.copias,
-        'Área de conocimiento': book.areaConocimiento,
-        'Registrado por': book.registradoPor,
-        'Estado': book.estado ? 'Activo' : 'Inactivo',
-        'Fecha de registro': book.fechaRegistro.toString(),
-      };
-    }
-
+  // MAPEA UN LIBRO A CAMPOS SEGUROS PARA EXCEL
+  Map<String, dynamic> _bookToMap(Book book) {
+    return {
+      'Título': book.titulo,
+      'Subtítulo': book.subtitulo,
+      'Autor': book.autor,
+      'Editorial': book.editorial,
+      'Colección': book.coleccion,
+      'Año': book.anio,
+      'ISBN': book.isbn,
+      'Copias': book.copias,
+      'Área de conocimiento': book.areaConocimiento,
+    };
+  }
 }

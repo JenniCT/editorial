@@ -160,6 +160,7 @@ class Book {
   String bookToQrData(Book book) {
     return [
       'Título: ${book.titulo}',
+      'Subtítulo: ${book.subtitulo}',
       'Autor: ${book.autor}',
       'Editorial: ${book.editorial}',
       'Año: ${book.anio}',

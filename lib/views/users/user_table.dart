@@ -53,19 +53,23 @@ class _UsersTableState extends State<UsersTable> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () => widget.onUserSelected(user),
-        child: SizedBox(width: double.infinity, height: double.infinity, child: child),
+        child: SizedBox(
+          width: double.infinity,
+          height: double.infinity,
+          child: child,
+        ),
       ),
     );
   }
 
   Widget _buildText(String text) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Text(
-          text,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Colors.white),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 4),
+    child: Text(
+      text,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(color: Colors.white),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -84,26 +88,44 @@ class _UsersTableState extends State<UsersTable> {
                 final q = query.toLowerCase();
                 return user.name.toLowerCase().contains(q) ||
                     user.email.toLowerCase().contains(q) ||
-                    user.role.toString().split('.').last.toLowerCase().contains(q);
+                    user.role
+                        .toString()
+                        .split('.')
+                        .last
+                        .toLowerCase()
+                        .contains(q);
               },
             ),
           ),
           const SizedBox(width: 12),
-          ActionButton(icon: Icons.filter_list, text: 'Filtrar', type: ActionType.secondary, onPressed: () {}),
+          ActionButton(
+            icon: Icons.filter_list,
+            text: 'Filtrar',
+            type: ActionType.secondary,
+            onPressed: () {},
+          ),
           const SizedBox(width: 12),
-          ActionButton(icon: Icons.sort, text: 'Ordenar', type: ActionType.secondary, onPressed: () {}),
+          ActionButton(
+            icon: Icons.sort,
+            text: 'Ordenar',
+            type: ActionType.secondary,
+            onPressed: () {},
+          ),
         ],
       );
     }
 
     // ITEMS A MOSTRAR
-    List<UserModel> itemsToShow = _isSearching ? _filteredUsuarios : widget.allUsuarios;
+    List<UserModel> itemsToShow = _isSearching
+        ? _filteredUsuarios
+        : widget.allUsuarios;
     final startIndex = _currentPage * _itemsPerPage;
     final endIndex = (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
     final usuariosPage = itemsToShow.sublist(startIndex, endIndex);
 
     // ACTUALIZA EL SELECT ALL
-    _selectAll = usuariosPage.isNotEmpty && usuariosPage.every((u) => u.selected);
+    _selectAll =
+        usuariosPage.isNotEmpty && usuariosPage.every((u) => u.selected);
 
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
@@ -116,7 +138,10 @@ class _UsersTableState extends State<UsersTable> {
               child: Text(
                 '$_selectedCount usuario(s) seleccionado(s)',
                 style: const TextStyle(
-                    color: Color(0xFF1C2532), fontSize: 16, fontWeight: FontWeight.w700),
+                  color: Color(0xFF1C2532),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           CustomTable(
@@ -144,14 +169,26 @@ class _UsersTableState extends State<UsersTable> {
                 ),
                 _buildClickableCell(_buildText(user.name), user),
                 _buildClickableCell(_buildText(user.email), user),
-                _buildClickableCell(_buildText(user.role.toString().split('.').last), user),
-                _buildClickableCell(_buildText(DateFormat('dd/MM/yyyy').format(user.createAt)), user),
                 _buildClickableCell(
-                    _buildText(user.expiresAt != null
+                  _buildText(user.role.toString().split('.').last),
+                  user,
+                ),
+                _buildClickableCell(
+                  _buildText(DateFormat('dd/MM/yyyy').format(user.createAt)),
+                  user,
+                ),
+                _buildClickableCell(
+                  _buildText(
+                    user.expiresAt != null
                         ? DateFormat('dd/MM/yyyy').format(user.expiresAt!)
-                        : 'No asignado'),
-                    user),
-                _buildClickableCell(_buildText(user.status ? 'Activo' : 'Inactivo'), user),
+                        : 'No asignado',
+                  ),
+                  user,
+                ),
+                _buildClickableCell(
+                  _buildText(user.status ? 'Activo' : 'Inactivo'),
+                  user,
+                ),
               ];
             }).toList(),
             columnWidths: columnWidths,
@@ -174,7 +211,11 @@ class _UsersTableState extends State<UsersTable> {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 'Mostrando ${itemsToShow.length} resultado(s)',
-                style: const TextStyle(color: Color(0xFF1C2532), fontSize: 16, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  color: Color(0xFF1C2532),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
         ],
@@ -185,13 +226,19 @@ class _UsersTableState extends State<UsersTable> {
   List<Widget> _buildHeaders(bool enableSelectAll) {
     return [
       IconButton(
-        icon: Icon(_selectAll ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
-            color: Colors.white),
+        icon: Icon(
+          _selectAll
+              ? Icons.check_box_outlined
+              : Icons.check_box_outline_blank_outlined,
+          color: Colors.white,
+        ),
         onPressed: enableSelectAll
             ? () {
                 setState(() {
                   _selectAll = !_selectAll;
-                  for (var user in widget.allUsuarios) user.selected = _selectAll;
+                  for (var user in widget.allUsuarios) {
+                    user.selected = _selectAll;
+                  }
                 });
                 _updateSelectedCount();
               }

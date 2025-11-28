@@ -170,7 +170,7 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     DropdownButtonFormField<String>(
-                                      value: _selectedAreaConocimiento,
+                                      initialValue: _selectedAreaConocimiento,
                                       decoration: InputDecoration(
                                         labelText: 'Área de conocimiento',
                                         labelStyle: const TextStyle(color: Colors.white),

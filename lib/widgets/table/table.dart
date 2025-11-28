@@ -48,15 +48,14 @@ class CustomTable extends StatelessWidget {
                           (columns) => Column(
                             children: [
                               CustomTableRow(
-                                children: columns,
                                 height: rowHeight,
                                 columnWidths: columnWidths,
+                                children: columns,
                               ),
                               const Divider(color: Colors.white30),
                             ],
                           ),
-                        )
-                        .toList(),
+                        ),
                   ],
                 ),
               ),
