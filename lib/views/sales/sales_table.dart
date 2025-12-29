@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../viewmodels/market/sales_vm.dart';
 import '../../models/sale_m.dart';
+
 import '../../widgets/global/search.dart';
 import '../../widgets/modules/table.dart';
 import '../../widgets/table/pagination.dart';
@@ -12,48 +14,108 @@ class SalesTable extends StatefulWidget {
   final TextEditingController searchController;
   final Function(Sale) onSaleSelected;
 
+  final void Function(int selectedCount)? onSelectionChanged;
+
   const SalesTable({
     required this.viewModel,
     required this.searchController,
     required this.onSaleSelected,
+    this.onSelectionChanged,
     super.key,
   });
 
   @override
-  State<SalesTable> createState() => _SalesTableState();
+  State<SalesTable> createState() => SalesTableState();
 }
 
-class _SalesTableState extends State<SalesTable> {
+class SalesTableState extends State<SalesTable> {
+  //=========================== STREAM ===========================//
+  StreamSubscription? _subscription;
+
+  //=========================== LISTAS ===========================//
   List<Sale> _allSales = [];
   List<Sale> _filteredSales = [];
+
+  //=========================== PAGINACIÓN ===========================//
   int _currentPage = 0;
   final int _itemsPerPage = 10;
+
+  //=========================== ESTADOS ===========================//
   bool _isSearching = false;
   bool _selectAll = false;
   int _selectedCount = 0;
 
-  void _updateSelectedCount() {
-    if (mounted) {
+  final List<Sale> _selectedSales = [];
+  List<Sale> get selectedSales => _selectedSales;
+
+  //=========================== INIT ===========================//
+  @override
+  void initState() {
+    super.initState();
+
+    _subscription = widget.viewModel.getSalesStream().listen((sales) {
+      // Guardar selección previa
+      final prev = {for (var s in _allSales.where((s) => s.selected)) s.id: true};
+
       setState(() {
-        _selectedCount = _allSales.where((s) => s.selected).length;
+        _allSales = sales;
+
+        // Restaurar selección
+        for (var s in _allSales) {
+          s.selected = prev[s.id] ?? false;
+        }
+
+        // Mantener filtro si se está buscando
+        if (_isSearching) {
+          final q = widget.searchController.text.toLowerCase();
+
+          _filteredSales = _allSales.where((s) {
+            return s.titulo.toLowerCase().contains(q) ||
+                s.userEmail.toLowerCase().contains(q) ||
+                s.lugar.toLowerCase().contains(q);
+          }).toList();
+        }
+
+        _updateSelectedCount();
       });
-    }
+    });
   }
 
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  //=========================== SELECCIÓN ===========================//
+  void _updateSelectedCount() {
+    _selectedSales
+      ..clear()
+      ..addAll(_allSales.where((s) => s.selected));
+
+    _selectedCount = _selectedSales.length;
+
+    widget.onSelectionChanged?.call(_selectedCount);
+
+    if (mounted) setState(() {});
+  }
+
+  //=========================== BÚSQUEDA ===========================//
   void _handleSearchResults(List<Sale> results) {
     setState(() {
       _filteredSales = results;
-      _isSearching = results.isNotEmpty || widget.searchController.text.isNotEmpty;
+      _isSearching = widget.searchController.text.isNotEmpty;
       _currentPage = 0;
     });
   }
 
+  //=========================== CELDAS ===========================//
   Widget _buildClickableCell(Widget child, Sale sale) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => widget.onSaleSelected(sale),
-        child: SizedBox(width: double.infinity, height: double.infinity, child: child),
+    return GestureDetector(
+      onTap: () => widget.onSaleSelected(sale),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: SizedBox(width: double.infinity, child: child),
       ),
     );
   }
@@ -67,19 +129,22 @@ class _SalesTableState extends State<SalesTable> {
         ),
       );
 
+  //=========================== CABECERAS ===========================//
   List<Widget> _buildHeaders(bool enableSelectAll) {
     return [
       IconButton(
         icon: Icon(
-          _selectAll ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
+          _selectAll
+              ? Icons.check_box_outlined
+              : Icons.check_box_outline_blank_outlined,
           color: Colors.white,
         ),
         onPressed: enableSelectAll
             ? () {
                 setState(() {
                   _selectAll = !_selectAll;
-                  for (var sale in _allSales) {
-                    sale.selected = _selectAll;
+                  for (var s in _allSales) {
+                    s.selected = _selectAll;
                   }
                   _updateSelectedCount();
                 });
@@ -95,10 +160,12 @@ class _SalesTableState extends State<SalesTable> {
     ];
   }
 
+  //=========================== BUILD ===========================//
   @override
   Widget build(BuildContext context) {
     final columnWidths = <double>[50, 320, 150, 150, 150, 150, 200];
 
+    //=========================== PANEL SUPERIOR ===========================//
     Widget buildTopWidget() {
       return Row(
         children: [
@@ -107,135 +174,130 @@ class _SalesTableState extends State<SalesTable> {
               controller: widget.searchController,
               allItems: _allSales,
               onResults: _handleSearchResults,
-              filter: (sale, query) {
-                final q = query.toLowerCase();
-                return sale.titulo.toLowerCase().contains(q) ||
-                    sale.userEmail.toLowerCase().contains(q) ||
-                    sale.lugar.toLowerCase().contains(q);
+              filter: (s, q) {
+                final x = q.toLowerCase();
+                return s.titulo.toLowerCase().contains(x) ||
+                    s.userEmail.toLowerCase().contains(x) ||
+                    s.lugar.toLowerCase().contains(x);
               },
             ),
           ),
           const SizedBox(width: 12),
-          ActionButton(icon: Icons.filter_list, text: 'Filtrar', type: ActionType.secondary, onPressed: () {}),
+          ActionButton(
+            icon: Icons.filter_list,
+            text: 'Filtrar',
+            type: ActionType.secondary,
+            onPressed: () {},
+          ),
           const SizedBox(width: 12),
-          ActionButton(icon: Icons.sort, text: 'Ordenar', type: ActionType.secondary, onPressed: () {}),
+          ActionButton(
+            icon: Icons.sort,
+            text: 'Ordenar',
+            type: ActionType.secondary,
+            onPressed: () {},
+          ),
         ],
       );
     }
 
-    return StreamBuilder<List<Sale>>(
-      stream: widget.viewModel.getSalesStream(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return CustomTable(
-            headers: _buildHeaders(false),
-            rows: const [],
-            width: 1200,
-            columnWidths: columnWidths,
-            topWidget: buildTopWidget(),
-          );
-        }
+    final salesToShow = _isSearching ? _filteredSales : _allSales;
 
-        final previousSelections = {for (var s in _allSales.where((s) => s.selected)) s.id: true};
-        _allSales = snapshot.data ?? [];
-        for (var sale in _allSales) {
-          if (previousSelections.containsKey(sale.id)) sale.selected = true;
-        }
+    if (salesToShow.isEmpty) {
+      return CustomTable(
+        headers: _buildHeaders(false),
+        rows: const [],
+        width: 1200,
+        columnWidths: columnWidths,
+        topWidget: buildTopWidget(),
+      );
+    }
 
-        List<Sale> itemsToShow = _isSearching ? _filteredSales : _allSales;
+    //=========================== PAGINACIÓN ===========================//
+    final start = _currentPage * _itemsPerPage;
+    final end = (start + _itemsPerPage).clamp(0, salesToShow.length);
 
-        if (_allSales.isEmpty || (_isSearching && itemsToShow.isEmpty)) {
-          return CustomTable(
-            headers: _buildHeaders(false),
-            rows: const [],
-            width: 1200,
-            columnWidths: columnWidths,
-            topWidget: buildTopWidget(),
-          );
-        }
+    final page = salesToShow.sublist(start, end);
 
-        final startIndex = _currentPage * _itemsPerPage;
-        final endIndex = (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
-        final salesPage = itemsToShow.sublist(startIndex, endIndex);
+    _selectAll = page.isNotEmpty && page.every((s) => s.selected);
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _updateSelectedCount();
-        });
-
-        _selectAll = salesPage.isNotEmpty && salesPage.every((s) => s.selected);
-
-        return SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_selectedCount > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, left: 8),
-                  child: Text(
-                    '$_selectedCount venta(s) seleccionadas',
-                    style: const TextStyle(
-                        color: Color(0xFF1C2532),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Roboto'),
-                  ),
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_selectedCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8, left: 8),
+              child: Text(
+                '$_selectedCount venta(s) seleccionadas',
+                style: const TextStyle(
+                  color: Color(0xFF1C2532),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                 ),
-              CustomTable(
-                headers: _buildHeaders(true),
-                rows: salesPage.map((sale) {
-                  return [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: IconButton(
-                        key: ValueKey(sale.selected),
-                        icon: Icon(
-                          sale.selected ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
-                          color: sale.selected ? const Color(0xFF1C2532) : Colors.white,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            sale.selected = !sale.selected;
-                          });
-                          _updateSelectedCount();
-                        },
-                      ),
-                    ),
-                    _buildClickableCell(_buildText(sale.titulo), sale),
-                    _buildClickableCell(_buildText(sale.cantidad.toString()), sale),
-                    _buildClickableCell(_buildText(sale.total.toStringAsFixed(2)), sale),
-                    _buildClickableCell(_buildText('${sale.fecha.day}/${sale.fecha.month}/${sale.fecha.year}'), sale),
-                    _buildClickableCell(_buildText(sale.lugar), sale),
-                    _buildClickableCell(_buildText(sale.userEmail), sale),
-                  ];
-                }).toList(),
-                columnWidths: columnWidths,
-                width: 1200,
-                topWidget: buildTopWidget(),
               ),
-              if (_isSearching)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Mostrando ${itemsToShow.length} resultado(s)',
-                    style: const TextStyle(color: Color(0xFF1C2532), fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Roboto'),
+            ),
+
+          //=========================== TABLA ===========================//
+          CustomTable(
+            headers: _buildHeaders(true),
+            rows: page.map((sale) {
+              return [
+                IconButton(
+                  icon: Icon(
+                    sale.selected
+                        ? Icons.check_box_outlined
+                        : Icons.check_box_outline_blank_outlined,
+                    color:
+                        sale.selected ? const Color(0xFF1C2532) : Colors.white,
                   ),
-                ),
-              if (itemsToShow.length > _itemsPerPage)
-                PaginationWidget(
-                  currentPage: _currentPage,
-                  totalItems: itemsToShow.length,
-                  itemsPerPage: _itemsPerPage,
-                  onPageChanged: (page) {
-                    setState(() {
-                      _currentPage = page;
-                    });
+                  onPressed: () {
+                    sale.selected = !sale.selected;
+                    _updateSelectedCount();
                   },
                 ),
-            ],
+                _buildClickableCell(_buildText(sale.titulo), sale),
+                _buildClickableCell(
+                    _buildText(sale.cantidad.toString()), sale),
+                _buildClickableCell(
+                    _buildText(sale.total.toStringAsFixed(2)), sale),
+                _buildClickableCell(
+                  _buildText(
+                      '${sale.fecha.day}/${sale.fecha.month}/${sale.fecha.year}'),
+                  sale,
+                ),
+                _buildClickableCell(_buildText(sale.lugar), sale),
+                _buildClickableCell(_buildText(sale.userEmail), sale),
+              ];
+            }).toList(),
+            width: 1200,
+            columnWidths: columnWidths,
+            topWidget: buildTopWidget(),
           ),
-        );
-      },
+
+          if (_isSearching)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Mostrando ${salesToShow.length} resultado(s)',
+                style: const TextStyle(
+                  color: Color(0xFF1C2532),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+
+          if (salesToShow.length > _itemsPerPage)
+            PaginationWidget(
+              currentPage: _currentPage,
+              totalItems: salesToShow.length,
+              itemsPerPage: _itemsPerPage,
+              onPageChanged: (page) => setState(() {
+                _currentPage = page;
+              }),
+            ),
+        ],
+      ),
     );
   }
 }

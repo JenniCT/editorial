@@ -165,4 +165,90 @@ class AcervoViewModel {
         });
   }
 
+  //=========================== EXPORTAR LIBROS INACTIVOS ===========================//
+  //                 CAMPOS PARA CACHE DE ACERVO
+  // ===============================================================
+  List<Book> _cachedAcervoBooks = [];
+
+  // ===============================================================
+  //                  GETTER — TOTAL DE LIBROS INACTIVOS
+  // ===============================================================
+  int get acervoBooksCount =>
+      _cachedAcervoBooks.where((b) => b.estado == false).length;
+
+  // ===============================================================
+  //                    REFRESH EXCLUSIVO DE ACERVO
+  // ===============================================================
+  Future<void> refreshAcervoCache() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('books')
+          .orderBy('titulo')
+          .get();
+
+      _cachedAcervoBooks = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return Book(
+          id: doc.id,
+          titulo: data['titulo'] ?? '',
+          autor: data['autor'] ?? '',
+          subtitulo: data['subtitulo'] ?? '',
+          editorial: data['editorial'] ?? '',
+          coleccion: data['coleccion'] ?? '',
+          anio: data['anio'] ?? 0,
+          isbn: data['isbn'] ?? '',
+          edicion: data['edicion'] ?? 0,
+          copias: data['copias'] ?? 0,
+          imagenUrl: data['imagenUrl'] ?? 'assets/sinportada.png',
+          estado: data['estado'] ?? true,
+          fechaRegistro: (data['fechaRegistro'] is Timestamp)
+              ? (data['fechaRegistro'] as Timestamp).toDate()
+              : DateTime.now(),
+          estante: data['estante'] ?? 0,
+          almacen: data['almacen'] ?? 0,
+          areaConocimiento: data['areaConocimiento'] ?? '',
+          registradoPor: data['registradoPor'] ?? '',
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint("ERROR ACERVO CACHE: $e");
+    }
+  }
+
+  // ===============================================================
+  //               EXPORTAR — TODOS LOS INACTIVOS
+  // ===============================================================
+  Future<List<Map<String, dynamic>>> getAllAcervoBooksAsMap() async {
+    if (_cachedAcervoBooks.isEmpty) await refreshAcervoCache();
+
+    final inactivos =
+        _cachedAcervoBooks.where((b) => b.estado == false).toList();
+
+    return inactivos.map((book) => _bookToMap(book)).toList();
+  }
+
+  // ===============================================================
+  //           EXPORTAR — SOLO SELECCIONADOS INACTIVOS
+  // ===============================================================
+  Future<List<Map<String, dynamic>>> getSelectedBooksAsMap(
+      List<Book> selectedBooks) async {
+    final inactivos =
+        selectedBooks.where((b) => b.estado == false).toList();
+
+    return inactivos.map((book) => _bookToMap(book)).toList();
+  }
+  Map<String, dynamic> _bookToMap(Book book) {
+    return {
+      'Título': book.titulo,
+      'Subtítulo': book.subtitulo,
+      'Autor': book.autor,
+      'Editorial': book.editorial,
+      'Colección': book.coleccion,
+      'Año': book.anio,
+      'ISBN': book.isbn,
+      'Copias': book.copias,
+      'Área de conocimiento': book.areaConocimiento,
+    };
+  }
+
 }

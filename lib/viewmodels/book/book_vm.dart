@@ -418,4 +418,5 @@ class BookViewModel {
       'Área de conocimiento': book.areaConocimiento,
     };
   }
+
 }

@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
-//=========================== VIEWMODEL ===========================//
+// VIEWMODELS
 import '../../viewmodels/donation/donation_vm.dart';
+import '../../viewmodels/docs/export_vm.dart';
 
-//=========================== WIDGETS REUTILIZABLES ===========================//
+// COMPONENTES
+import '../basic/export/download_dialog.dart';
+import '../basic/import/import.dart';
+
+// WIDGETS REUSABLES
 import '../../widgets/modules/page_header.dart';
 import '../../widgets/modules/header_button.dart';
 
-//=========================== SUBCOMPONENTES ===========================//
+// TABLA
 import 'donation_table.dart';
-import '../basic/import/import.dart';
-import '../basic/export/export.dart';
 
-//=========================== WIDGET PRINCIPAL DE DONACIONES ===========================//
 class DonationsPage extends StatefulWidget {
   const DonationsPage({super.key});
 
@@ -21,12 +23,14 @@ class DonationsPage extends StatefulWidget {
   State<DonationsPage> createState() => _DonationsPageState();
 }
 
-//=========================== ESTADO DE LA PÁGINA ===========================//
 class _DonationsPageState extends State<DonationsPage> {
   final DonationsViewModel _viewModel = DonationsViewModel();
   final TextEditingController _searchController = TextEditingController();
+  final ExportViewModel _exportVM = ExportViewModel();
 
-  //=========================== BUILD PRINCIPAL ===========================//
+  // KEY PARA ACCEDER A LA TABLA
+  final GlobalKey<DonationTableState> _tableKey = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,7 +40,6 @@ class _DonationsPageState extends State<DonationsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            //=========================== CABECERA DE PÁGINA ===========================//
             PageHeader(
               title: 'Donaciones',
               buttons: [
@@ -46,39 +49,89 @@ class _DonationsPageState extends State<DonationsPage> {
                   onPressed: () {},
                   type: ActionType.secondary,
                 ),
+
+                // EXPORTAR
                 HeaderButton(
                   icon: CupertinoIcons.arrow_down_circle,
                   text: 'Exportar',
-                  onPressed: () => showDialog(
-                    context: context,
-                    builder: (_) => const ExportadorCSV(),
-                  ),
+                  onPressed: () async {
+                    final selectedCount =
+                        _tableKey.currentState?.selectedDonations.length ?? 0;
+
+                    final option = await mostrarDialogoDescarga(
+                      context,
+                      totalItems: _viewModel.donationsCount,
+                      selectedItems: selectedCount,
+                      entityName: 'donaciones',
+                    );
+
+                    if (option == null) return;
+
+                    if (option == 'all') {
+                      final allData = _viewModel.getAllDonationsAsMap();
+
+                      if (!context.mounted) return;
+
+                      await _exportVM.exportToExcel(
+                        data: allData,
+                        fileName: 'donaciones_completas',
+                        context: context,
+                      );
+                    } else if (option == 'selected') {
+                      final selected =
+                          _tableKey.currentState?.selectedDonations ?? [];
+
+                      if (selected.isEmpty) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content:
+                                  Text('No hay donaciones seleccionadas')),
+                        );
+                        return;
+                      }
+
+                      final data =
+                          _viewModel.getSelectedDonationsAsMap(selected);
+
+                      if (!context.mounted) return;
+
+                      await _exportVM.exportToExcel(
+                        data: data,
+                        fileName: 'donaciones_seleccionadas',
+                        context: context,
+                      );
+                    }
+                  },
                   type: ActionType.secondary,
                 ),
+
                 HeaderButton(
                   icon: CupertinoIcons.arrow_up_circle,
                   text: 'Importar',
-                  onPressed: () => showDialog(
-                    context: context,
-                    builder: (_) => const ImportadorCSV(),
-                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => const ImportadorCSV(),
+                    );
+                  },
                   type: ActionType.secondary,
                 ),
+
                 HeaderButton(
                   icon: CupertinoIcons.add_circled_solid,
-                  text: 'Agregar donacion',
-                  onPressed: () {
-                    // Aquí puedes abrir un diálogo para agregar nueva donación
-                  },
+                  text: 'Agregar donación',
+                  onPressed: () {},
                   type: ActionType.primary,
                 ),
               ],
             ),
+
             const SizedBox(height: 20),
 
-            //=========================== TABLA DE DONACIONES ===========================//
             Expanded(
               child: DonationsTable(
+                key: _tableKey,
                 viewModel: _viewModel,
                 searchController: _searchController,
               ),
@@ -89,7 +142,6 @@ class _DonationsPageState extends State<DonationsPage> {
     );
   }
 
-  //=========================== DISPOSICIÓN DE RECURSOS ===========================//
   @override
   void dispose() {
     _searchController.dispose();

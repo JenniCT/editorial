@@ -25,14 +25,11 @@ class SalesViewModel {
       final bookData = bookDoc.data() as Map<String, dynamic>;
       int currentCopies = bookData['copias'] ?? 0;
 
-      // Copias restantes
       int updatedCopies = currentCopies - sale.cantidad;
       if (updatedCopies < 0) updatedCopies = 0;
 
-      // Determinar estado (ejemplo: activo si quedan más de 2 copias)
       bool updatedEstado = updatedCopies > 2;
 
-      // Actualizar datos del libro
       await _booksCollection.doc(sale.bookId).update({
         'copias': updatedCopies,
         'almacen': updatedCopies,
@@ -46,7 +43,7 @@ class SalesViewModel {
     }
   }
 
-  /// VISUALIZAR TODAS LAS VENTAS
+  /// STREAM DE VENTAS
   Stream<List<Sale>> getSalesStream() {
     return _salesCollection
         .orderBy('fecha', descending: true)
@@ -56,7 +53,7 @@ class SalesViewModel {
             .toList());
   }
 
-  /// VENTAS POR LIBRO
+  /// STREAM POR LIBRO
   Stream<List<Sale>> getSalesByBook(String bookId) {
     return _salesCollection
         .where('bookId', isEqualTo: bookId)
@@ -65,5 +62,71 @@ class SalesViewModel {
         .map((snapshot) => snapshot.docs
             .map((doc) => Sale.fromMap(doc.data() as Map<String, dynamic>, id: doc.id))
             .toList());
+  }
+
+  // ---------------------------------------------------------------------------
+  // --------------------- CACHE Y UTILIDADES DE EXPORTACIÓN -------------------
+  // ---------------------------------------------------------------------------
+
+  List<Sale> _cachedSales = [];
+
+  int get salesCount => _cachedSales.length;
+
+  Future<void> refreshSalesCache() async {
+    try {
+      final snapshot = await _salesCollection
+          .orderBy('fecha', descending: true)
+          .get();
+
+      _cachedSales = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        return Sale(
+          id: doc.id,
+          bookId: data['bookId'] ?? '',
+          titulo: data['titulo'] ?? '',
+          autor: data['autor'] ?? '',
+          cantidad: data['cantidad'] ?? 0,
+          fecha: (data['fecha'] is Timestamp)
+              ? (data['fecha'] as Timestamp).toDate()
+              : DateTime.tryParse(data['fecha'] ?? '') ?? DateTime.now(),
+          userId: data['userId'] ?? '',
+          userEmail: data['userEmail'] ?? '',
+          lugar: data['lugar'] ?? 'Desconocido',
+          total: (data['total'] is num)
+              ? (data['total'] as num).toDouble()
+              : 0.0,
+        );
+      }).toList();
+    } catch (e, s) {
+      debugPrint('ERROR EN refreshSalesCache: $e');
+      debugPrintStack(stackTrace: s);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllSalesAsMap() async {
+    if (_cachedSales.isEmpty) {
+      await refreshSalesCache();
+    }
+    return _cachedSales.map((sale) => _saleToMap(sale)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getSelectedSalesAsMap(
+      List<Sale> selectedSales) async {
+    return selectedSales.map((sale) => _saleToMap(sale)).toList();
+  }
+
+  /// 🔥 SOLO LOS CAMPOS QUE PEDISTE PARA EXPORTAR
+  Map<String, dynamic> _saleToMap(Sale s) {
+    return {
+      'Título': s.titulo,
+      'Autor': s.autor,
+      'Cantidad': s.cantidad,
+      'Fecha':
+          '${s.fecha.year}-${s.fecha.month.toString().padLeft(2, '0')}-${s.fecha.day.toString().padLeft(2, '0')}',
+      'Correo': s.userEmail,
+      'Lugar': s.lugar,
+      'Total': s.total,
+    };
   }
 }

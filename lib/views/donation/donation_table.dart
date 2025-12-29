@@ -18,28 +18,36 @@ class DonationsTable extends StatefulWidget {
   });
 
   @override
-  State<DonationsTable> createState() => _DonationsTableState();
+  State<DonationsTable> createState() => DonationTableState();
 }
 
-class _DonationsTableState extends State<DonationsTable> {
+class DonationTableState extends State<DonationsTable> {
   final List<Donation> _allDonations = [];
   List<Donation> _filteredDonations = [];
   int _currentPage = 0;
   final int _itemsPerPage = 10;
+
   bool _isSearching = false;
 
   bool _selectAll = false;
   int _selectedCount = 0;
 
+  // -----------------------------------------------------------
+  // MÉTODO QUE EXPONE LAS DONACIONES SELECCIONADAS PARA EXPORTAR
+  // -----------------------------------------------------------
+  List<Donation> get selectedDonations =>
+      _allDonations.where((d) => d.selected).toList();
+
   void _updateSelectedCount() {
-    _selectedCount = _allDonations.where((d) => d.selected).length;
-    _selectAll = _allDonations.isNotEmpty && _allDonations.every((d) => d.selected);
+    _selectedCount = selectedDonations.length;
+    _selectAll =
+        _allDonations.isNotEmpty && _allDonations.every((d) => d.selected);
   }
 
   void _handleSearchResults(List<Donation> results) {
     setState(() {
       _filteredDonations = results;
-      _isSearching = results.isNotEmpty || widget.searchController.text.isNotEmpty;
+      _isSearching = widget.searchController.text.isNotEmpty;
       _currentPage = 0;
     });
   }
@@ -72,9 +80,19 @@ class _DonationsTableState extends State<DonationsTable> {
           ),
         ),
         const SizedBox(width: 12),
-        ActionButton(icon: Icons.filter_list, text: 'Filtrar', type: ActionType.secondary, onPressed: () {}),
+        ActionButton(
+          icon: Icons.filter_list,
+          text: 'Filtrar',
+          type: ActionType.secondary,
+          onPressed: () {},
+        ),
         const SizedBox(width: 12),
-        ActionButton(icon: Icons.sort, text: 'Ordenar', type: ActionType.secondary, onPressed: () {}),
+        ActionButton(
+          icon: Icons.sort,
+          text: 'Ordenar',
+          type: ActionType.secondary,
+          onPressed: () {},
+        ),
       ],
     );
   }
@@ -83,7 +101,9 @@ class _DonationsTableState extends State<DonationsTable> {
     return [
       IconButton(
         icon: Icon(
-          _selectAll ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
+          _selectAll
+              ? Icons.check_box_outlined
+              : Icons.check_box_outline_blank_outlined,
           color: Colors.white,
         ),
         onPressed: enableSelectAll
@@ -115,7 +135,6 @@ class _DonationsTableState extends State<DonationsTable> {
     return StreamBuilder<List<Donation>>(
       stream: widget.viewModel.getDonationsStream(),
       builder: (context, snapshot) {
-        // Agregar solo nuevos items, mantener los existentes para conservar selección
         if (snapshot.hasData) {
           for (var newDonation in snapshot.data!) {
             if (!_allDonations.any((d) => d.id == newDonation.id)) {
@@ -124,7 +143,8 @@ class _DonationsTableState extends State<DonationsTable> {
           }
         }
 
-        List<Donation> itemsToShow = _isSearching ? _filteredDonations : _allDonations;
+        List<Donation> itemsToShow =
+            _isSearching ? _filteredDonations : _allDonations;
 
         if (itemsToShow.isEmpty) {
           return CustomTable(
@@ -139,8 +159,11 @@ class _DonationsTableState extends State<DonationsTable> {
         final totalPages = (itemsToShow.length / _itemsPerPage).ceil();
         if (_currentPage >= totalPages) _currentPage = totalPages - 1;
 
-        final startIndex = (_currentPage * _itemsPerPage).clamp(0, itemsToShow.length);
-        final endIndex = ((startIndex + _itemsPerPage)).clamp(startIndex, itemsToShow.length);
+        final startIndex =
+            (_currentPage * _itemsPerPage).clamp(0, itemsToShow.length);
+        final endIndex = ((startIndex + _itemsPerPage))
+            .clamp(startIndex, itemsToShow.length);
+
         final donationsPage = itemsToShow.sublist(startIndex, endIndex);
 
         _updateSelectedCount();
@@ -154,17 +177,26 @@ class _DonationsTableState extends State<DonationsTable> {
                   padding: const EdgeInsets.only(top: 8, left: 8),
                   child: Text(
                     '$_selectedCount donación(es) seleccionadas',
-                    style: const TextStyle(color: Color(0xFF1C2532), fontSize: 16, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      color: Color(0xFF1C2532),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
+
               CustomTable(
                 headers: _buildHeaders(true),
                 rows: donationsPage.map((donation) {
                   return [
                     IconButton(
                       icon: Icon(
-                        donation.selected ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
-                        color: donation.selected ? const Color(0xFF1C2532) : Colors.white,
+                        donation.selected
+                            ? Icons.check_box_outlined
+                            : Icons.check_box_outline_blank_outlined,
+                        color: donation.selected
+                            ? const Color(0xFF1C2532)
+                            : Colors.white,
                       ),
                       onPressed: () {
                         setState(() {
@@ -176,7 +208,8 @@ class _DonationsTableState extends State<DonationsTable> {
                     _buildText(donation.titulo),
                     _buildText(donation.autor),
                     _buildText(donation.cantidad.toString()),
-                    _buildText('${donation.fecha.day}/${donation.fecha.month}/${donation.fecha.year}'),
+                    _buildText(
+                        '${donation.fecha.day}/${donation.fecha.month}/${donation.fecha.year}'),
                     _buildText(donation.userEmail),
                     _buildText(donation.lugar),
                     _buildText(donation.nota ?? ''),
@@ -186,22 +219,22 @@ class _DonationsTableState extends State<DonationsTable> {
                 width: 1200,
                 topWidget: _buildTopWidget(),
               ),
+
               if (itemsToShow.length > _itemsPerPage)
                 PaginationWidget(
                   currentPage: _currentPage,
                   totalItems: itemsToShow.length,
                   itemsPerPage: _itemsPerPage,
                   onPageChanged: (page) {
-                    setState(() {
-                      _currentPage = page;
-                    });
+                    setState(() => _currentPage = page);
                   },
                 ),
+
               if (_isSearching)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'Mostrando ${itemsToShow.length} resultado(s) de búsqueda',
+                    'Mostrando ${itemsToShow.length} resultado(s)',
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ),

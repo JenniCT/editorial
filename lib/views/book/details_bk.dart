@@ -303,14 +303,14 @@ class DetalleLibroPageState extends State<DetalleLibroPage> {
       borderRadius: BorderRadius.circular(8),
       child: hasUrl
           ? FadeInImage.assetNetwork(
-              placeholder: 'assets/sinportada.png',
+              placeholder: 'assets/images/sinportada.png',
               image: book.imagenUrl!,
               height: height,
               width: width,
               fit: BoxFit.cover,
               imageErrorBuilder: (context, error, stackTrace) {
                 return Image.asset(
-                  'assets/sinportada.png',
+                  'assets/images/sinportada.png',
                   height: height,
                   width: width,
                   fit: BoxFit.cover,
@@ -318,7 +318,7 @@ class DetalleLibroPageState extends State<DetalleLibroPage> {
               },
             )
           : Image.asset(
-              'assets/sinportada.png',
+              'assets/images/sinportada.png',
               height: height,
               width: width,
               fit: BoxFit.cover,
