@@ -1,29 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/user.dart';
+
+//=========================== IMPORTACIÓN DE WIDGETS ===========================//
 import '../../widgets/global/search.dart';
 import '../../widgets/modules/table.dart';
 import '../../widgets/table/pagination.dart';
 import '../../widgets/modules/action_button.dart';
 import '../../widgets/modules/header_button.dart';
 
+//=========================== WIDGET PRINCIPAL DE TABLA USUARIOS ===========================//
 class UsersTable extends StatefulWidget {
   final List<UserModel> allUsuarios;
   final TextEditingController searchController;
   final Function(UserModel) onUserSelected;
+  // CALLBACK PARA NOTIFICAR CAMBIOS EN LA SELECCIÓN
+  final void Function(int selectedCount)? onSelectionChanged;
 
   const UsersTable({
     required this.allUsuarios,
     required this.searchController,
     required this.onUserSelected,
+    this.onSelectionChanged,
     super.key,
   });
 
   @override
-  State<UsersTable> createState() => _UsersTableState();
+  State<UsersTable> createState() => UsersTableState();
 }
 
-class _UsersTableState extends State<UsersTable> {
+class UsersTableState extends State<UsersTable> {
+  //=========================== VARIABLES INTERNAS ===========================//
   List<UserModel> _filteredUsuarios = [];
   int _currentPage = 0;
   final int _itemsPerPage = 10;
@@ -31,23 +38,30 @@ class _UsersTableState extends State<UsersTable> {
   bool _selectAll = false;
   int _selectedCount = 0;
 
+  // GETTER PARA OBTENER LOS USUARIOS SELECCIONADOS DESDE FUERA
+  List<UserModel> get selectedUsers => widget.allUsuarios.where((u) => u.selected).toList();
+
+  //=========================== ACTUALIZA CONTADOR ===========================//
   void _updateSelectedCount() {
     if (mounted) {
       setState(() {
         _selectedCount = widget.allUsuarios.where((u) => u.selected).length;
       });
     }
+    // NOTIFICAR AL PADRE EL NUEVO CONTEO
+    widget.onSelectionChanged?.call(_selectedCount);
   }
 
+  //=========================== RESULTADOS DE BÚSQUEDA ===========================//
   void _handleSearchResults(List<UserModel> results) {
     setState(() {
       _filteredUsuarios = results;
-      _isSearching =
-          results.isNotEmpty || widget.searchController.text.isNotEmpty;
+      _isSearching = results.isNotEmpty || widget.searchController.text.isNotEmpty;
       _currentPage = 0;
     });
   }
 
+  //=========================== CONSTRUCCIÓN DE CELDAS ===========================//
   Widget _buildClickableCell(Widget child, UserModel user) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -63,19 +77,19 @@ class _UsersTableState extends State<UsersTable> {
   }
 
   Widget _buildText(String text) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 4),
-    child: Text(
-      text,
-      overflow: TextOverflow.ellipsis,
-      style: const TextStyle(color: Colors.white),
-    ),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Text(
+          text,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Colors.white),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
     final columnWidths = <double>[50, 200, 250, 120, 120, 120, 100];
 
-    // WIDGET SUPERIOR: BÚSQUEDA Y FILTROS
+    // PANEL SUPERIOR: BÚSQUEDA Y FILTROS
     Widget buildTopWidget() {
       return Row(
         children: [
@@ -88,12 +102,7 @@ class _UsersTableState extends State<UsersTable> {
                 final q = query.toLowerCase();
                 return user.name.toLowerCase().contains(q) ||
                     user.email.toLowerCase().contains(q) ||
-                    user.role
-                        .toString()
-                        .split('.')
-                        .last
-                        .toLowerCase()
-                        .contains(q);
+                    user.role.toString().split('.').last.toLowerCase().contains(q);
               },
             ),
           ),
@@ -115,26 +124,28 @@ class _UsersTableState extends State<UsersTable> {
       );
     }
 
-    // ITEMS A MOSTRAR
-    List<UserModel> itemsToShow = _isSearching
-        ? _filteredUsuarios
-        : widget.allUsuarios;
+    // DETERMINAR LÓGICA DE MOSTRADO
+    List<UserModel> itemsToShow = _isSearching ? _filteredUsuarios : widget.allUsuarios;
+    
+    // PAGINACIÓN
     final startIndex = _currentPage * _itemsPerPage;
     final endIndex = (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
-    final usuariosPage = itemsToShow.sublist(startIndex, endIndex);
+    final usuariosPage = itemsToShow.isNotEmpty 
+        ? itemsToShow.sublist(startIndex, endIndex) 
+        : <UserModel>[];
 
-    // ACTUALIZA EL SELECT ALL
-    _selectAll =
-        usuariosPage.isNotEmpty && usuariosPage.every((u) => u.selected);
+    // SINCRONIZAR ESTADO DE "SELECCIONAR TODOS"
+    _selectAll = usuariosPage.isNotEmpty && usuariosPage.every((u) => u.selected);
 
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // INDICADOR DE SELECCIÓN
           if (_selectedCount > 0)
             Padding(
-              padding: const EdgeInsets.only(top: 8, left: 8),
+              padding: const EdgeInsets.only(top: 8, left: 8, bottom: 8),
               child: Text(
                 '$_selectedCount usuario(s) seleccionado(s)',
                 style: const TextStyle(
@@ -144,11 +155,13 @@ class _UsersTableState extends State<UsersTable> {
                 ),
               ),
             ),
+
+          // TABLA PERSONALIZADA
           CustomTable(
             headers: _buildHeaders(true),
             rows: usuariosPage.map((user) {
               return [
-                // CHECKBOX
+                // CELDA 1: CHECKBOX
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   child: IconButton(
@@ -157,7 +170,7 @@ class _UsersTableState extends State<UsersTable> {
                       user.selected
                           ? Icons.check_box_outlined
                           : Icons.check_box_outline_blank_outlined,
-                      color: user.selected ? Colors.green : Colors.white,
+                      color: user.selected ? const Color(0xFF1C2532) : Colors.white,
                     ),
                     onPressed: () {
                       setState(() {
@@ -167,6 +180,7 @@ class _UsersTableState extends State<UsersTable> {
                     },
                   ),
                 ),
+                // CELDAS DE DATOS
                 _buildClickableCell(_buildText(user.name), user),
                 _buildClickableCell(_buildText(user.email), user),
                 _buildClickableCell(
@@ -196,7 +210,7 @@ class _UsersTableState extends State<UsersTable> {
             topWidget: buildTopWidget(),
           ),
 
-          // PAGINACIÓN
+          // CONTROLES DE PAGINACIÓN
           if (itemsToShow.length > _itemsPerPage)
             PaginationWidget(
               currentPage: _currentPage,
@@ -205,7 +219,7 @@ class _UsersTableState extends State<UsersTable> {
               onPageChanged: (page) => setState(() => _currentPage = page),
             ),
 
-          // RESULTADOS DE BÚSQUEDA
+          // FEEDBACK DE BÚSQUEDA
           if (_isSearching)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -213,8 +227,8 @@ class _UsersTableState extends State<UsersTable> {
                 'Mostrando ${itemsToShow.length} resultado(s)',
                 style: const TextStyle(
                   color: Color(0xFF1C2532),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -223,20 +237,25 @@ class _UsersTableState extends State<UsersTable> {
     );
   }
 
+  // ENCABEZADOS DE LA TABLA
   List<Widget> _buildHeaders(bool enableSelectAll) {
     return [
       IconButton(
         icon: Icon(
-          _selectAll
-              ? Icons.check_box_outlined
-              : Icons.check_box_outline_blank_outlined,
+          _selectAll ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined,
           color: Colors.white,
         ),
         onPressed: enableSelectAll
             ? () {
                 setState(() {
                   _selectAll = !_selectAll;
-                  for (var user in widget.allUsuarios) {
+                  // Obtenemos los items de la página actual para marcar/desmarcar
+                  final itemsToShow = _isSearching ? _filteredUsuarios : widget.allUsuarios;
+                  final startIndex = _currentPage * _itemsPerPage;
+                  final endIndex = (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
+                  final pageItems = itemsToShow.sublist(startIndex, endIndex);
+
+                  for (var user in pageItems) {
                     user.selected = _selectAll;
                   }
                 });

@@ -106,7 +106,7 @@ class _DonationsPageState extends State<DonationsPage> {
                   type: ActionType.secondary,
                 ),
 
-                HeaderButton(
+                /*HeaderButton(
                   icon: CupertinoIcons.arrow_up_circle,
                   text: 'Importar',
                   onPressed: () {
@@ -116,7 +116,7 @@ class _DonationsPageState extends State<DonationsPage> {
                     );
                   },
                   type: ActionType.secondary,
-                ),
+                ),*/
 
                 HeaderButton(
                   icon: CupertinoIcons.add_circled_solid,

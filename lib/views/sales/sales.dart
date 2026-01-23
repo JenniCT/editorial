@@ -121,11 +121,36 @@ class _SalesPageState extends State<SalesPage> {
                   text: 'Importar',
                   onPressed: () => showDialog(
                     context: context,
-                    builder: (_) => const ImportadorCSV(),
+                    builder: (context) => ImportDialog(
+                      entityName: 'Ventas',
+                      onImportConfirmed: (List<Map<String, dynamic>> data) async {
+                        try {
+                          // Llamamos a la lógica masiva del VM
+                          await _viewModel.importSalesFromExcel(data);
+                          
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Importación finalizada con éxito"),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Error en la importación: $e"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
                   ),
                   type: ActionType.secondary,
                 ),
-
                 //==================== AGREGAR ====================//
                 HeaderButton(
                   icon: CupertinoIcons.add_circled_solid,

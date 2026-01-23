@@ -166,7 +166,7 @@ class _AcervoPageState extends State<AcervoPage> {
                 ),
 
                 //==================== IMPORTAR ====================//
-                HeaderButton(
+                /*HeaderButton(
                   icon: CupertinoIcons.arrow_up_circle,
                   text: 'Importar',
                   onPressed: () => showDialog(
@@ -174,7 +174,7 @@ class _AcervoPageState extends State<AcervoPage> {
                     builder: (_) => const ImportadorCSV(),
                   ),
                   type: ActionType.secondary,
-                ),
+                ),*/
 
                 //==================== AGREGAR NUEVO ====================//
                 HeaderButton(

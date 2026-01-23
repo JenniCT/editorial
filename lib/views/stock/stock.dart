@@ -182,7 +182,7 @@ class _InventarioPageState extends State<InventarioPage> {
                 //==================== IMPORTAR ====================//
                 // ESTE BOTÓN INVITA A AÑADIR INFORMACIÓN EXTERNA, GENERANDO UNA
                 // EXPERIENCIA DE CRECIMIENTO DEL INVENTARIO.
-                HeaderButton(
+                /*HeaderButton(
                   icon: CupertinoIcons.arrow_up_circle,
                   text: 'Importar',
                   onPressed: () => showDialog(
@@ -190,7 +190,7 @@ class _InventarioPageState extends State<InventarioPage> {
                     builder: (_) => const ImportadorCSV(),
                   ),
                   type: ActionType.secondary,
-                ),
+                ),*/
 
                 //==================== AGREGAR ====================//
                 // BOTÓN PRINCIPAL — COLOR DIFERENCIADO PARA DESTACAR SU ROL CREATIVO.
