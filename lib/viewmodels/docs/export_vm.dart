@@ -9,11 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:excel/excel.dart' as ex;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'dart:typed_data';
+import 'dart:js_interop';
 
 // IMPORTACIÓN ESPECIAL PARA WEB, PERMITIENDO DESCARGA DIRECTA DESDE EL NAVEGADOR.
 // SE USA PARA RESPONDER A LA EXPERIENCIA INMEDIATA DE QUIEN INTERACTÚA EN LÍNEA.
-import 'dart:html' as html;
-
+import 'package:web/web.dart' as web;
 //=========================== DECLARACIÓN DEL VIEWMODEL ===========================//
 // ESTE VIEWMODEL CENTRALIZA LA LÓGICA DE EXPORTACIÓN, SOSTENIENDO UNA NARRATIVA
 // DE ORDEN, DIGNIDAD Y COHERENCIA INSTITUCIONAL EN TODA LA OPERACIÓN.
@@ -174,34 +175,40 @@ class ExportViewModel {
       }
 
       //=========================== EXPORTACIÓN EN WEB ===========================//
-      // EN PLATAFORMAS WEB SE DESCARGA DIRECTAMENTE EL ARCHIVO,
-      // CUIDANDO UNA EXPERIENCIA INMEDIATA Y CLARA.
       if (kIsWeb) {
-        final blob = html.Blob([bytes]);
-        final url = html.Url.createObjectUrlFromBlob(blob);
+        // 1. Convertimos los bytes a Uint8List (requiere dart:typed_data)
+        final Uint8List uint8list = Uint8List.fromList(bytes);
 
-        html.AnchorElement(href: url)
-          ..setAttribute('download', '$fileName.xlsx')
-          ..click();
+        // 2. Usamos .toJS para que Wasm pueda procesar el archivo
+        final blob = web.Blob(
+          [uint8list.toJS].toJS, 
+          web.BlobPropertyBag(type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        );
+        
+        final url = web.URL.createObjectURL(blob);
 
-        html.Url.revokeObjectUrl(url);
+        final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+        anchor.href = url;
+        anchor.download = '$fileName.xlsx';
+        anchor.click();
+
+        web.URL.revokeObjectURL(url);
 
         if (!context.mounted) return;
         _showSnackBar(context, 'Archivo descargado correctamente.');
         return;
       }
 
-      //=========================== EXPORTACIÓN EN MÓVIL / ESCRITORIO ===========================//
-      // AQUÍ SE GUARDA EL ARCHIVO EN MEMORIA DEL SISTEMA Y SE COMPARTE UTILIZANDO
-      // share_plus PARA OFRECER UNA EXPERIENCIA FLUIDA Y HUMANA.
+      //=========================== EXPORTACIÓN EN MÓVIL ===========================//
       final directory = await getApplicationDocumentsDirectory();
       final path = '${directory.path}/$fileName.xlsx';
       final file = File(path);
       await file.writeAsBytes(bytes);
 
+      // 3. Uso correcto de SharePlus evitando métodos deprecados
       await SharePlus.instance.share(
         ShareParams(
-          files: [XFile(file.path)], 
+          files: [XFile(file.path)],
           text: 'Exportación de $fileName',
         ),
       );

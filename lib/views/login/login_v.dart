@@ -58,11 +58,9 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    // Detectamos si el teclado está abierto (en móvil) midiendo los 'viewInsets'
-    // Si es mayor a 0, el teclado está ocupando espacio y ocultamos la mascota.
-    final bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-
     return Scaffold(
+      // ESTO ES CLAVE: Evita que el teclado deforme el layout y cause el cuadro blanco
+      resizeToAvoidBottomInset: false, 
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -73,27 +71,28 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final mobile = constraints.maxWidth < 700;
-            final desktop = constraints.maxWidth >= 1000;
+            final bool isMobile = constraints.maxWidth < 700;
+            final bool isDesktop = constraints.maxWidth >= 1000;
 
             return Center(
               child: SingleChildScrollView(
+                // Permitimos scroll solo si es necesario para alcanzar los botones
+                physics: const BouncingScrollPhysics(), 
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1280),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-                    // 4. AutofillGroup: Envuelve todo el formulario para que el navegador 
-                    // entienda que el correo y la contraseña están relacionados.
                     child: AutofillGroup( 
-                      child: mobile
+                      child: isMobile
                           ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Ocultamos la mascota si el teclado está abierto
-                                if (!isKeyboardVisible) 
-                                  LoginMascot(controller: mascotController),
-                                
-                                const SizedBox(height: 24),
+                                // 1. ELIMINAMOS LA MASCOTA EN MÓVIL PERMANENTEMENTE
+                                // Esto libera espacio para que el teclado no tape el LoginCard
                                 LoginCard(vm: vm, desktop: false),
+                                
+                                // 2. Colchón de espacio dinámico para el teclado
+                                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
                               ],
                             )
                           : Row(
@@ -102,10 +101,11 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                 Expanded(
                                   child: Align(
                                     alignment: Alignment.centerRight,
-                                    child: LoginCard(vm: vm, desktop: desktop),
+                                    child: LoginCard(vm: vm, desktop: isDesktop),
                                   ),
                                 ),
                                 const SizedBox(width: 60),
+                                // En escritorio la mascota se mantiene siempre
                                 LoginMascot(controller: mascotController),
                               ],
                             ),
