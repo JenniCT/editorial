@@ -21,6 +21,7 @@ import '../../widgets/login/card.dart';
 
 //=========================== WIDGET PRINCIPAL DE LOGIN ===========================//
 // ESTE WIDGET ACTUA COMO PUERTA DE INGRESO Y PRESENTA UNA EXPERIENCIA VISUAL CUIDADA
+//=========================== WIDGET PRINCIPAL DE LOGIN ===========================//
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -28,62 +29,48 @@ class Login extends StatefulWidget {
   State<Login> createState() => _LoginState();
 }
 
-//=========================== ESTADO DEL LOGIN ===========================//
-// ADMINISTRA CONTROLADORES, ANIMACIONES Y CICLO DE VIDA DEL WIDGET
 class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
-
-  // CONTROLADOR DE LA LOGICA DEL LOGIN
-  final LoginVM vm = LoginVM();
-
-  // CONTROLADOR DE ANIMACION PARA LA MASCOTA
+  // 1. Declaramos el VM pero NO lo inicializamos aquí para respetar el ciclo de vida
+  late final LoginVM vm;
   late AnimationController mascotController;
 
   @override
   void initState() {
     super.initState();
+    
+    // 2. Inicialización correcta: Solo ocurre una vez al crear el estado
+    vm = LoginVM();
 
-    //=========================== INICIALIZACION DE ANIMACION ===========================//
-    // ANIMACION DE MOVIMIENTO SUAVE PARA DAR PRESENCIA HUMANA A LA MASCOTA
-    // ANIMACION DE DOS SEGUNDOS QUE SUBE Y BAJA PARA GENERAR CALIDEZ EMOCIONAL
     mascotController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
-    )
-    // REPETICION EN REVERSE PARA UN CICLO CONTINUO Y SERENO
-    ..repeat(reverse: true);
+    )..repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    //=========================== LIMPIEZA DE CONTROLADORES ===========================//
-    // LIBERACION DE RECURSOS PARA EVITAR FUGAS Y MANTENER SOLIDEZ TECNICA
+    // 3. Limpieza profunda: Evita fugas de memoria en Web
     mascotController.dispose();
-    vm.emailController.dispose();
-    vm.passwordController.dispose();
+    // Importante: No llamamos a vm.dispose aquí si el VM no tiene ese método,
+    // pero sí a sus controladores si los tiene públicos.
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Detectamos si el teclado está abierto (en móvil) midiendo los 'viewInsets'
+    // Si es mayor a 0, el teclado está ocupando espacio y ocultamos la mascota.
+    final bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
-    //=========================== ESTRUCTURA VISUAL PRINCIPAL ===========================//
-    // SE USA UN DEGRADADO SUAVE PARA CONSTRUIR UN AMBIENTE ACOGEDOR Y PROFESIONAL
-    // TONOS AZULES-GRISES QUE REFUERZAN ESTABILIDAD INSTITUCIONAL
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFDDE3EA), // TONO SUPERIOR SUAVE PARA DAR LIGEREZA
-              Color(0xFFC9D3E0), // TONO INFERIOR QUE APORTA PROFUNDIDAD
-            ],
+            colors: [Color(0xFFDDE3EA), Color(0xFFC9D3E0)],
           ),
         ),
-
-        //=========================== SISTEMA RESPONSIVE ===========================//
-        // SE ADAPTA A PANTALLAS AMPLIAS Y MOVILES PARA UNA EXPERIENCIA FLUIDA
         child: LayoutBuilder(
           builder: (context, constraints) {
             final mobile = constraints.maxWidth < 700;
@@ -91,54 +78,38 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
 
             return Center(
               child: SingleChildScrollView(
-
-                // CONTENEDOR CENTRAL CON ANCHO MAXIMO CONTROLADO
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1280),
-
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 40,
-                    ),
-
-                    //=========================== DISTRIBUCION SEGUN DISPOSITIVO ===========================//
-                    // VERSION MOVIL: COLUMNA VERTICAL QUE PRIORIZA LEGIBILIDAD
-                    child: mobile
-                        ? Column(
-                            children: [
-
-                              // MASCOTA ANIMADA COMO ELEMENTO DE ACOMPANIAMIENTO HUMANO
-                              LoginMascot(controller: mascotController),
-
-                              const SizedBox(height: 24),
-
-                              // TARJETA DE LOGIN COMPACTA PARA MOVILES
-                              LoginCard(vm: vm, desktop: false),
-                            ],
-                          )
-
-                        // VERSION ESCRITORIO: DISTRIBUCION HORIZONTAL EQUILIBRADA
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-
-                              //=========================== TARJETA DE FORMULARIO ===========================//
-                              // EN ESCRITORIO SE ALINEA A LA DERECHA PARA DAR JERARQUIA VISUAL
-                              Expanded(
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: LoginCard(vm: vm, desktop: desktop),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+                    // 4. AutofillGroup: Envuelve todo el formulario para que el navegador 
+                    // entienda que el correo y la contraseña están relacionados.
+                    child: AutofillGroup( 
+                      child: mobile
+                          ? Column(
+                              children: [
+                                // Ocultamos la mascota si el teclado está abierto
+                                if (!isKeyboardVisible) 
+                                  LoginMascot(controller: mascotController),
+                                
+                                const SizedBox(height: 24),
+                                LoginCard(vm: vm, desktop: false),
+                              ],
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: LoginCard(vm: vm, desktop: desktop),
+                                  ),
                                 ),
-                              ),
-
-                              const SizedBox(width: 60),
-
-                              //=========================== MASCOTA DE APOYO EMOCIONAL ===========================//
-                              // UBICADA A LA DERECHA PARA EQUILIBRAR LA COMPOSICION
-                              LoginMascot(controller: mascotController),
-                            ],
-                          ),
+                                const SizedBox(width: 60),
+                                LoginMascot(controller: mascotController),
+                              ],
+                            ),
+                    ),
                   ),
                 ),
               ),

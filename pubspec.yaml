@@ -77,9 +77,9 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/ocelote.png
-    - assets/images/siresu.png
-    - assets/images/unach.png
+    - assets/images/ocelote.webp
+    - assets/images/siresu.webp
+    - assets/images/unach.webp
     - assets/images/sinportada.png
     - assets/images/icono.png
     - assets/images/garra.png

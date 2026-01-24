@@ -20,7 +20,7 @@ class LoginLogos extends StatelessWidget {
         //=========================== LOGO PRINCIPAL UNACH ===========================//
         // REPRESENTA SOLIDEZ ACADEMICA Y DECLARA EL ENTORNO INSTITUCIONAL
         Image.asset(
-          'assets/images/unach.png',
+          'assets/images/unach.webp',
           height: 45,
         ),
 
@@ -29,7 +29,7 @@ class LoginLogos extends StatelessWidget {
         //=========================== LOGO SISTEMA SIRESU ===========================//
         // MARCA EL VINCULO ENTRE LA INSTITUCION Y EL SISTEMA QUE SE UTILIZA
         Image.asset(
-          'assets/images/siresu.png',
+          'assets/images/siresu.webp',
           height: 45,
         ),
       ],

@@ -111,7 +111,10 @@ class LoginCard extends StatelessWidget {
 
           //=========================== CAMPO DE CORREO ===========================//
           // ENTRADA PRIMARIA DEL USUARIO, DISEÑADA PARA CLARIDAD Y PROXIMIDAD
-          LoginInput(label: 'Correo electronico', controller: vm.emailController),
+          LoginInput(
+            label: 'Correo electronico', 
+            controller: vm.emailController,autofillHints: const [AutofillHints.email],
+          ),
           const SizedBox(height: 16),
 
           //=========================== CAMPO DE CONTRASENA ===========================//
@@ -120,6 +123,7 @@ class LoginCard extends StatelessWidget {
             label: 'Contraseña',
             controller: vm.passwordController,
             obscure: true,
+            autofillHints: const [AutofillHints.password],
           ),
 
           const SizedBox(height: 12),
