@@ -1,16 +1,21 @@
+
 import 'package:flutter/material.dart';
 
-/// Tipos de acción para personalizar el color y estilo del botón.
-enum ActionType { primary, secondary, danger }
+/// TIPOS DE ACCIÓN PARA DEFINIR JERARQUÍA VISUAL
+enum ActionType {
+  primary,
+  secondary,
+  danger,
+}
 
-/// Modelo simple que describe un botón del encabezado.
+/// MODELO SIMPLE PARA BOTONES DEL ENCABEZADO
 class HeaderButton {
   final IconData icon;
   final String text;
   final VoidCallback onPressed;
   final ActionType type;
 
-  HeaderButton({
+  const HeaderButton({
     required this.icon,
     required this.text,
     required this.onPressed,

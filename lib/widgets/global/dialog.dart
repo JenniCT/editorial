@@ -1,15 +1,15 @@
 //=========================== IMPORTACIONES PRINCIPALES ===========================//
-// IMPORTACION DE FLUTTER PARA CONSTRUCCION DE UI Y ANIMACIONES
+// IMPORTACION DE FLUTTER PARA UI, ANIMACIONES Y OVERLAY
 import 'package:flutter/material.dart';
 
-//=========================== WIDGET TOAST PERSONALIZADO ===========================//
-// WIDGET RESPONSABLE DE MOSTRAR MENSAJES EMOCIONALMENTE CLAROS Y VISUALMENTE ATRACTIVOS
+//=========================== TOAST PERSONALIZADO CON OVERLAY ===========================//
+
 class CustomToast extends StatefulWidget {
-  final String title; // TITULO DEL TOAST, DESTACA EL CONTEXTO DEL MENSAJE
-  final String message; // MENSAJE DESCRIPTIVO DEL TOAST
-  final Color color; // COLOR DEL ICONO PARA REFLEJAR EL TIPO DE MENSAJE (EXITO, ERROR, ADVERTENCIA)
-  final IconData icon; // ICONO QUE REPRESENTA VISUALMENTE EL ESTADO
-  final double durationSeconds; // DURACION DEL TOAST EN SEGUNDOS
+  final String title;
+  final String message;
+  final Color color;
+  final IconData icon;
+  final double durationSeconds;
 
   const CustomToast({
     super.key,
@@ -17,115 +17,126 @@ class CustomToast extends StatefulWidget {
     required this.message,
     required this.color,
     required this.icon,
-    this.durationSeconds = 4.0,
+    this.durationSeconds = 1.2, // MENOR TIEMPO PARA MAYOR FLUIDEZ
   });
 
   @override
   State<CustomToast> createState() => _CustomToastState();
 }
 
-//=========================== ESTADO DEL WIDGET ===========================//
-// MANEJA ANIMACIONES DE ENTRADA, SALIDA Y OPACIDAD DEL TOAST
 class _CustomToastState extends State<CustomToast>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller; // CONTROLADOR DE ANIMACION
-  late Animation<Offset> _slideAnimation; // ANIMACION DE DESPLAZAMIENTO
-  late Animation<double> _fadeAnimation; // ANIMACION DE OPACIDAD
+  late AnimationController _controller;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    // INICIALIZACION DEL CONTROLADOR DE ANIMACION
+    //=========================== CONTROLADOR DE ANIMACION ===========================//
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300), // DURACION SUAVE PARA ENTRADA
+      duration: const Duration(milliseconds: 180),
     );
 
-    //=========================== ANIMACION DE DESLIZAMIENTO ===========================//
+    //=========================== ANIMACION DE ENTRADA ===========================//
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0), // EMPIEZA FUERA DE PANTALLA A LA DERECHA
-      end: Offset.zero, // TERMINA EN POSICION CENTRAL
+      begin: const Offset(0.25, -0.15),
+      end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut), // CURVA NATURAL
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOut,
+      ),
     );
 
     //=========================== ANIMACION DE OPACIDAD ===========================//
     _fadeAnimation = Tween<double>(
-      begin: 0.0, // TRANSPARENTE AL INICIO
-      end: 1.0,   // COMPLETAMENTE VISIBLE
+      begin: 0,
+      end: 1,
     ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn), // APARECIDA SUAVE
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeIn,
+      ),
     );
 
-    _controller.forward(); // INICIA LA ANIMACION AL CREAR EL WIDGET
-
-    //=========================== CIERRE AUTOMATICO ===========================//
-    Future.delayed(Duration(milliseconds: (widget.durationSeconds * 1000).toInt()), () {
-      if (mounted) {
-        _controller.reverse().then((value) => Navigator.of(context).pop()); // DESAPARECE EL TOAST
-      }
-    });
+    _controller.forward();
   }
 
   @override
   void dispose() {
-    _controller.dispose(); // LIMPIEZA DE RECURSOS DE ANIMACION
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topRight, // POSICION DEL TOAST EN PANTALLA
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SlideTransition(
-          position: _slideAnimation, // ANIMACION DE DESPLAZAMIENTO
-          child: FadeTransition(
-            opacity: _fadeAnimation, // ANIMACION DE OPACIDAD
-            child: Material(
-              color: Colors.white, // FONDO DEL TOAST
-              elevation: 4, // SOMBRA PARA DESTACAR SOBRE EL FONDO
-              borderRadius: BorderRadius.circular(12), // BORDES SUAVES
-              shadowColor: const Color.fromRGBO(0, 0, 0, 0.15), // SOMBRA LEVE
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 350), // MAXIMO ANCHO
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // ICONO DEL TOAST, COLOR REFLEJA TIPO DE MENSAJE
-                    Icon(widget.icon, color: widget.color, size: 24),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // TITULO DESTACADO DEL MENSAJE
-                          Text(
-                            widget.title,
-                            style: const TextStyle(
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topRight,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Material(
+                color: Colors.white,
+                elevation: 8,
+                borderRadius: BorderRadius.circular(14),
+                shadowColor: const Color.fromRGBO(0, 0, 0, 0.12),
+                child: Container(
+                  constraints: const BoxConstraints(
+                    maxWidth: 360,
+                    minWidth: 280,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 14,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        widget.icon,
+                        color: widget.color,
+                        size: 26,
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.title,
+                              style: const TextStyle(
                                 fontFamily: 'Roboto',
                                 fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black),
-                          ),
-                          const SizedBox(height: 2),
-                          // MENSAJE DETALLADO
-                          Text(
-                            widget.message,
-                            style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black,
+                              ),
+                            ),
+
+                            const SizedBox(height: 4),
+
+                            Text(
+                              widget.message,
+                              style: const TextStyle(
                                 fontFamily: 'Roboto',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.black87),
-                          ),
-                        ],
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -136,24 +147,43 @@ class _CustomToastState extends State<CustomToast>
   }
 }
 
-//=========================== FUNCION DE UTILIDAD ===========================//
-// FUNCION RAPIDA PARA MOSTRAR EL TOAST, FACILITA USO DESDE CUALQUIER PANTALLA
-void showCustomToast(BuildContext context,
-    {required String title,
-    required String message,
-    required Color color,
-    required IconData icon,
-    double durationSeconds = 4.0}) {
-  Navigator.of(context).push(
-    PageRouteBuilder(
-      opaque: false, // HACE QUE LA RUTA SEA TRANSPARENTE
-      pageBuilder: (_, _, _) => CustomToast(
-        title: title,
-        message: message,
-        color: color,
-        icon: icon,
-        durationSeconds: durationSeconds,
-      ),
+//=========================== FUNCION GLOBAL PARA MOSTRAR TOAST ===========================//
+// ESTA FUNCION USA OVERLAYENTRY
+// NO CREA RUTAS NUEVAS
+// NO USA NAVIGATOR.PUSH()
+// ES MAS RAPIDA Y MAS SEGURA
+
+void showCustomToast(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required Color color,
+  required IconData icon,
+  double durationSeconds = 1.2,
+}) {
+  final overlay = Overlay.of(context);
+
+  late OverlayEntry overlayEntry;
+
+  overlayEntry = OverlayEntry(
+    builder: (context) => CustomToast(
+      title: title,
+      message: message,
+      color: color,
+      icon: icon,
+      durationSeconds: durationSeconds,
     ),
+  );
+
+  overlay.insert(overlayEntry);
+
+  //=========================== REMOCION AUTOMATICA ===========================//
+  Future.delayed(
+    Duration(
+      milliseconds: (durationSeconds * 1000).toInt(),
+    ),
+    () {
+      overlayEntry.remove();
+    },
   );
 }

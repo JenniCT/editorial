@@ -1,82 +1,126 @@
 import 'package:flutter/material.dart';
+import 'table_hover_row.dart';
 
-//=========================== WIDGET CUSTOM TABLE ===========================//
-// TABLA PERSONALIZADA PARA INVENTARIO DE LIBROS
-// PERMITE MOSTRAR CABECERAS, FILAS, ANCHO ADAPTATIVO, ESTILO DE HEADER Y WIDGET SUPERIOR
 class CustomTable extends StatelessWidget {
-  final List<Widget> headers; // LISTA DE CABECERAS DE COLUMNA
-  final List<List<Widget>> rows; // FILAS DE LA TABLA
-  final double rowHeight; // ALTURA DE CADA FILA
-  final double? width; // ANCHO TOTAL OPCIONAL
-  final List<double>? columnWidths; // ANCHO PERSONALIZADO DE CADA COLUMNA
-  final TextStyle headerStyle; // ESTILO DE TEXTO DEL HEADER
-  final Widget? topWidget; // WIDGET OPCIONAL POR ENCIMA DE LA TABLA (BÚSQUEDA, BOTONES, ETC.)
+  final List<Widget> headers;
+  final List<List<Widget>> rows;
+  final double rowHeight;
+  final double? width;
+  final List<double>? columnWidths;
+  final Widget? topWidget;
 
   const CustomTable({
+    super.key,
     required this.headers,
     required this.rows,
-    this.rowHeight = 50,
+    this.rowHeight = 72,
     this.width,
     this.columnWidths,
-    this.headerStyle = const TextStyle(
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
     this.topWidget,
-    super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    final totalWidth = width ?? 1000; // ANCHO TOTAL POR DEFECTO SI NO SE ESPECIFICA
-    final calculatedColumnWidths = columnWidths ??
-        List.generate(headers.length, (index) => totalWidth / headers.length);
+    final totalWidth = width ?? 1400;
 
-    //=========================== MÉTODO PARA CREAR UNA FILA ===========================//
-    // CONSTRUYE FILA DE HEADER O DATOS
-    Widget buildRow(List<Widget> children, {bool isHeader = false}) {
-      return SizedBox(
-        height: rowHeight,
+    final calculatedColumnWidths =
+        columnWidths ??
+        List.generate(
+          headers.length,
+          (_) => totalWidth / headers.length,
+        );
+
+    Widget buildRow(
+      List<Widget> children, {
+      bool isHeader = false,
+    }) {
+      return TableHoverRow(
+        isHeader: isHeader,
+        height: isHeader ? 56 : rowHeight,
+
         child: Row(
-          children: List.generate(children.length, (index) {
-            return Container(
-              width: calculatedColumnWidths[index],
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              alignment: Alignment.centerLeft,
-              child: children[index],
-            );
-          }),
+          children: List.generate(
+            children.length,
+            (index) {
+              final isCheckboxColumn = index == 0;
+              final isCoverColumn = index == 1;
+              final isStockColumn = index == 4;
+              final isActionsColumn =
+                  index == children.length - 1;
+
+              return Container(
+                width: calculatedColumnWidths[index],
+
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                ),
+
+                alignment:
+                    isCheckboxColumn ||
+                            isCoverColumn ||
+                            isStockColumn ||
+                            isActionsColumn
+                        ? Alignment.center
+                        : Alignment.centerLeft,
+
+                child: DefaultTextStyle(
+                  style: TextStyle(
+                    color: isHeader
+                        ? Colors.white
+                        : const Color(0xFF1C2532),
+                    fontSize: 14,
+                    fontWeight: isHeader
+                        ? FontWeight.w600
+                        : FontWeight.w500,
+                    fontFamily: 'Roboto',
+                  ),
+                  child: children[index],
+                ),
+              );
+            },
+          ),
         ),
       );
     }
 
-    //=========================== FILA VACÍA ===========================//
-    // MOSTRAR MENSAJE AMIGABLE CUANDO NO HAY DATOS DISPONIBLES
     Widget buildEmptyRow() {
       return SizedBox(
         height: rowHeight,
-        child: Row(
-          children: [
-            Expanded(
-              child: Center(
-                child: Text(
-                  "No hay libros disponibles",
-                  style: const TextStyle(color: Colors.white70, fontSize: 16),
-                ),
-              ),
+        child: const Center(
+          child: Text(
+            "No hay libros disponibles",
+            style: TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
-          ],
+          ),
         ),
       );
     }
 
-    //=========================== CONTENEDOR PRINCIPAL ===========================//
-    // BORDES REDONDEADOS, FONDO SEMI-TRANSPARENTE, SCROLL HORIZONTAL Y VERTICAL
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12), // BORDES REDONDEADOS PARA ESTILO SUAVE
-      child: Container(
-        padding: const EdgeInsets.all(16), // PADDING INTERNO PARA RESPIRACIÓN VISUAL
-        color: const Color.fromRGBO(28, 37, 50, 0.7), // FONDO OSCURO SEMI-TRANSPARENTE
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+
+        border: Border.all(
+          color: const Color(0xFFEAECEF),
+          width: 1,
+        ),
+
+        boxShadow: [
+          BoxShadow(
+            color: const Color.fromRGBO(0, 0, 0, 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
         child: SingleChildScrollView(
           scrollDirection: Axis.vertical,
           child: SingleChildScrollView(
@@ -84,22 +128,24 @@ class CustomTable extends StatelessWidget {
             child: SizedBox(
               width: totalWidth,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
-                  //=========================== WIDGET SUPERIOR ===========================//
-                  // PUEDE SER BARRA DE BÚSQUEDA, BOTONES O FILTROS
                   if (topWidget != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.only(
+                        bottom: 12,
+                      ),
                       child: topWidget!,
                     ),
 
-                  //=========================== HEADER ===========================//
-                  buildRow(headers, isHeader: true),
-                  const Divider(color: Colors.white54), // DIVISOR SUTIL ENTRE HEADER Y FILAS
+                  // HEADER
+                  buildRow(
+                    headers,
+                    isHeader: true,
+                  ),
 
-                  //=========================== FILAS DE DATOS ===========================//
-                  // SI NO HAY FILAS, MOSTRAR MENSAJE VACÍO
+                  // FILAS
                   if (rows.isEmpty)
                     buildEmptyRow()
                   else
@@ -107,7 +153,12 @@ class CustomTable extends StatelessWidget {
                       (columns) => Column(
                         children: [
                           buildRow(columns),
-                          const Divider(color: Colors.white30), // DIVISOR ENTRE FILAS
+
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0xFFF1F3F5),
+                          ),
                         ],
                       ),
                     ),

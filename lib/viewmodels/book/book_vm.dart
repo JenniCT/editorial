@@ -1,6 +1,6 @@
 //=========================== IMPORTACIONES PRINCIPALES ===========================//
 // ESTAS IMPORTACIONES PERMITEN MANEJAR ARCHIVOS, UI, FIREBASE, SUPABASE Y DATOS
-import 'dart:io'; 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -79,9 +79,8 @@ class BookViewModel {
 
   //=========================== AGREGAR LIBRO ===========================//
   // AGREGA UN NUEVO LIBRO A FIRESTORE SOLO SI NO EXISTE UN DUPLICADO
-  Future<void> addBook(Book book, BuildContext context) async {
+  Future<void> addBook(Book book, BuildContext context, {VoidCallback? onSuccess}) async {
     try {
-      // GENERAR ID ÚNICO PARA VALIDAR DUPLICADOS
       final tempId = generarIdTemporal(book);
 
       final existing = await _firestore
@@ -89,7 +88,6 @@ class BookViewModel {
           .where('idTemp', isEqualTo: tempId)
           .get();
 
-      // VALIDAR DUPLICADOS
       if (existing.docs.isNotEmpty) {
         if (context.mounted) {
           _mostrarDialogo(
@@ -104,38 +102,32 @@ class BookViewModel {
         return;
       }
 
-      //=========================== SUBIR IMAGEN A SUPABASE ===========================//
-      // SI EL LIBRO INCLUYE UNA IMAGEN, AQUÍ SE PROCESA LA CARGA
       String? uploadedUrl = book.imagenUrl;
 
       if (book.imagenFile != null) {
         try {
-          // GENERAR NOMBRE SEGURO DE ARCHIVO
-          final originalName = book.imagenFile!.path.split(RegExp(r'[\\/]+')).last;
+          final originalName =
+              book.imagenFile!.path.split(RegExp(r'[\\/]+')).last;
           final safeName = safeFileName(originalName);
           final fileName = '${DateTime.now().millisecondsSinceEpoch}_$safeName';
 
-          // SUBIR ARCHIVO A SUPABASE
           await supabase.storage.from('book_images').upload(
                 fileName,
                 File(book.imagenFile!.path),
               );
 
-          uploadedUrl = supabase.storage.from('book_images').getPublicUrl(fileName);
+          uploadedUrl =
+              supabase.storage.from('book_images').getPublicUrl(fileName);
         } catch (e) {
           debugPrint("ERROR SUBIENDO IMAGEN A SUPABASE: $e");
         }
       }
 
-      // CAPTURA DE USUARIO QUE REGISTRA EL LIBRO
       final user = FirebaseAuth.instance.currentUser;
       final registrador = user?.email ?? 'desconocido';
       final fecha = DateTime.now();
-
-      // CALCULAR ESTADO (SOLO DISPONIBLE SI TIENE 3+ COPIAS)
       final bool estado = (book.copias >= 3);
 
-      // CREAR DOCUMENTO NUEVO EN FIRESTORE
       final docRef = _firestore.collection('books').doc();
 
       final bookToSave = book.copyWith(
@@ -143,9 +135,9 @@ class BookViewModel {
         imagenUrl: uploadedUrl,
         fechaRegistro: fecha,
         estado: estado,
+        clearImagenFile: true, // NO guardar el File en Firestore
       );
 
-      // GUARDAR DATOS COMPLETOS EN FIRESTORE
       await docRef.set({
         ...bookToSave.toMap(),
         'idBook': docRef.id,
@@ -155,7 +147,10 @@ class BookViewModel {
         'estado': estado,
       });
 
+      // PRIMERO CERRAR EL PANEL, LUEGO MOSTRAR TOAST
       if (context.mounted) {
+        Navigator.of(context).pop(); // cierra el panel AddBookDialog
+        onSuccess?.call();
         _mostrarDialogo(
           context,
           title: '¡REGISTRO EXITOSO!',
@@ -169,21 +164,16 @@ class BookViewModel {
       debugPrintStack(stackTrace: stackTrace);
 
       if (context.mounted) {
-        Future.delayed(const Duration(milliseconds: 200), () {
-          if (context.mounted) {
-            _mostrarDialogo(
-              context,
-              title: 'ERROR',
-              message: 'NO SE PUDO REGISTRAR EL LIBRO. INTENTA NUEVAMENTE.',
-              color: Colors.redAccent,
-              icon: Icons.error_outline,
-            );
-          }
-        });
+        _mostrarDialogo(
+          context,
+          title: 'ERROR',
+          message: 'NO SE PUDO REGISTRAR EL LIBRO. INTENTA NUEVAMENTE.',
+          color: Colors.redAccent,
+          icon: Icons.error_outline,
+        );
       }
     }
   }
-
 
   //=========================== EDITAR LIBRO EXISTENTE ===========================//
   // PERMITE MODIFICAR DATOS DE UN LIBRO Y REGISTRAR HISTORIAL DE CAMBIOS
@@ -236,9 +226,11 @@ class BookViewModel {
       });
 
       // REGISTRAR CAMBIOS EN HISTORIAL
+
       if (cambios.isNotEmpty) {
         final user = FirebaseAuth.instance.currentUser;
         final editor = user?.email ?? 'desconocido';
+        final fechaMod = DateTime.now();
 
         await _firestore.collection('history').add({
           'idBook': book.id,
@@ -247,10 +239,16 @@ class BookViewModel {
           'cambios': cambios,
           'accion': 'Modificado',
         });
-      }
 
-      // ACTUALIZAR LIBRO EN FIRESTORE
-      await _firestore.collection('books').doc(book.id).update(updatedBook.toMap());
+        // GUARDAR FECHA Y USUARIO DE MODIFICACIÓN EN EL LIBRO
+        await _firestore.collection('books').doc(book.id).update({
+          ...updatedBook.toMap(),
+          'fechaModificacion': Timestamp.fromDate(fechaMod),
+          'modificadoPor': editor,
+        });
+      } else {
+        await _firestore.collection('books').doc(book.id).update(updatedBook.toMap());
+      }
 
       if (context.mounted) {
         Future.delayed(const Duration(milliseconds: 100), () {
@@ -292,7 +290,8 @@ class BookViewModel {
 
 
   //=========================== STREAM DE LIBROS ACTIVOS ===========================//
-  // DEVUELVE LOS LIBROS DISPONIBLES (ESTADO == TRUE) EN TIEMPO REAL
+  // DEVUELVE LOS LIBROS DISPONIBLES (ESTADO == TRUE) EN TIEMPO REAL.
+  // .distinctUnique() evita rebuilds cuando Firestore emite snapshots sin cambios reales.
   Stream<List<Book>> getBooksStream() {
     return _firestore
         .collection('books')
@@ -300,29 +299,40 @@ class BookViewModel {
         .orderBy('titulo', descending: false)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return Book(
-          id: doc.id,
-          titulo: data['titulo'] ?? '',
-          autor: data['autor'] ?? '',
-          subtitulo: data['subtitulo'] ?? '',
-          editorial: data['editorial'] ?? '',
-          coleccion: data['coleccion'] ?? '',
-          anio: data['anio'] ?? 0,
-          isbn: data['isbn'] ?? '',
-          edicion: data['edicion'] ?? 0,
-          copias: data['copias'] ?? 0,
-          imagenUrl: (data['imagenUrl'] ?? 'assets/sinportada.png'),
-          estado: data['estado'] ?? true,
-          fechaRegistro: (data['fechaRegistro'] as Timestamp).toDate(),
-          estante: data['estante'] ?? 0,
-          almacen: data['almacen'] ?? 0,
-          areaConocimiento: data['areaConocimiento'] ?? '',
-          registradoPor: data['registradoPor'] ?? 'desconocido',
-        );
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            return Book(
+              id: doc.id,
+              titulo: data['titulo'] ?? '',
+              autor: data['autor'] ?? '',
+              subtitulo: data['subtitulo'] ?? '',
+              editorial: data['editorial'] ?? '',
+              coleccion: data['coleccion'] ?? '',
+              anio: data['anio'] ?? 0,
+              isbn: data['isbn'] ?? '',
+              edicion: data['edicion'] ?? 0,
+              copias: data['copias'] ?? 0,
+              imagenUrl: (data['imagenUrl'] ?? 'assets/sinportada.png'),
+              estado: data['estado'] ?? true,
+              fechaRegistro: (data['fechaRegistro'] as Timestamp).toDate(),
+              estante: data['estante'] ?? 0,
+              almacen: data['almacen'] ?? 0,
+              areaConocimiento: data['areaConocimiento'] ?? '',
+              registradoPor: data['registradoPor'] ?? 'desconocido',
+              fechaModificacion: (data['fechaModificacion'] as Timestamp?)?.toDate(),
+              modificadoPor: data['modificadoPor'] as String?,
+            );
+          }).toList();
+        })
+        .distinct((prev, next) =>
+            prev.length == next.length &&
+            List.generate(prev.length, (i) => i).every(
+              (i) =>
+                  prev[i].id == next[i].id &&
+                  prev[i].copias == next[i].copias &&
+                  prev[i].titulo == next[i].titulo &&
+                  prev[i].autor == next[i].autor,
+            ));
   }
 
 
@@ -418,5 +428,4 @@ class BookViewModel {
       'Área de conocimiento': book.areaConocimiento,
     };
   }
-
 }

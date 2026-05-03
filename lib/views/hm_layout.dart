@@ -32,7 +32,8 @@ class _HomeLayoutState extends State<HomeLayout> {
   bool showingDetail = false;
   Map<String, bool> permisosModulos = {};
   bool loadingPermisos = true;
-  bool isDarkMode = false;
+
+  final List<Widget?> loadedPages = [];
 
   // KEY PARA CONTROLAR EL SCAFFOLD Y EL DRAWER
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -40,12 +41,24 @@ class _HomeLayoutState extends State<HomeLayout> {
   @override
   void initState() {
     super.initState();
+
+    loadedPages.addAll(
+      List<Widget?>.filled(
+        labels.length - 1,
+        null,
+        growable: false,
+      ),
+    );
+
+    loadedPages[0] = const Dashboard();
+
     _cargarPermisos();
   }
 
+
   Future<void> _cargarPermisos() async {
     setState(() => loadingPermisos = true);
-    Map<String, bool> permisos = {'Dashboard': true, 'Log out': true};
+    Map<String, bool> permisos = {'Dashboard': true, 'Cerrar sesión': true};
     
     if (widget.role == Role.adm) {
       setState(() {
@@ -56,7 +69,7 @@ class _HomeLayoutState extends State<HomeLayout> {
           'Ventas': true,
           'Donaciones': true,
           'Usuarios': true,
-          'Log out': true,
+          'Cerrar sesión': true,
         };
         loadingPermisos = false;
       });
@@ -88,6 +101,10 @@ class _HomeLayoutState extends State<HomeLayout> {
 
   void onItemSelected(int index) {
     final label = labels[index];
+    if (label == 'Cerrar sesión') {
+      Navigator.pushReplacementNamed(context, '/login');
+      return;
+    }
     if (!_tieneAccesoModulo(label)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No tienes permisos'), backgroundColor: Colors.redAccent),
@@ -98,6 +115,11 @@ class _HomeLayoutState extends State<HomeLayout> {
     setState(() {
       selectedIndex = index;
       showingDetail = false;
+
+      if (index < loadedPages.length &&
+          loadedPages[index] == null) {
+        loadedPages[index] = _buildPage(index);
+      }
     });
 
     // CIERRA EL MENÚ SI ESTÁ ABIERTO EN MÓVIL
@@ -107,38 +129,45 @@ class _HomeLayoutState extends State<HomeLayout> {
   }
 
   bool _tieneAccesoModulo(String label) {
-    if (label == 'Dashboard' || label == 'Log out') return true;
+    if (label == 'Dashboard' || label == 'Cerrar sesión') return true;
     if (widget.role == Role.adm) return true;
     return permisosModulos[label] ?? false;
   }
 
-  final List<String> labels = ['Dashboard', 'Inventario', 'Acervo', 'Ventas', 'Donaciones', 'Usuarios', 'Log out'];
+  final List<String> labels = ['Dashboard', 'Inventario', 'Acervo', 'Ventas', 'Donaciones', 'Usuarios', 'Cerrar sesión'];
 
   void handleBookSelection(Book book) => setState(() { selectedBook = book; showingDetail = true; });
 
-  Widget getView(int index) {
-    if (showingDetail && selectedBook != null) {
-      return DetalleLibroPage(
-        book: selectedBook!,
-        onBack: () => setState(() => showingDetail = false),
-        key: const ValueKey('DetalleLibro'),
-      );
-    }
-
-    final selectedLabel = labels[index];
-    if (selectedLabel == 'Log out') {
-      WidgetsBinding.instance.addPostFrameCallback((_) => Navigator.pushReplacementNamed(context, '/login'));
-      return const SizedBox();
-    }
-
+  Widget _buildPage(int index) {
     switch (index) {
-      case 0: return const Dashboard(key: ValueKey('Dashboard'));
-      case 1: return InventarioPage(key: const ValueKey('Inventario'), onBookSelected: handleBookSelection);
-      case 2: return AcervoPage(key: const ValueKey('Acervo'), onAcervoSelected: handleBookSelection);
-      case 3: return const SalesPage(key: ValueKey('Ventas'));
-      case 4: return const DonationsPage(key: ValueKey('Donaciones'));
-      case 5: return UsersPage(key: const ValueKey('Usuarios'), onUsuarioSelected: (u) {});
-      default: return const Center(child: Text('Vista no encontrada'));
+      case 0:
+        return const Dashboard();
+
+      case 1:
+        return InventarioPage(
+          onBookSelected: handleBookSelection,
+        );
+
+      case 2:
+        return AcervoPage(
+          onAcervoSelected: handleBookSelection,
+        );
+
+      case 3:
+        return const SalesPage();
+
+      case 4:
+        return const DonationsPage();
+
+      case 5:
+        return UsersPage(
+          onUsuarioSelected: (u) {},
+        );
+
+      default:
+        return const Center(
+          child: Text('Vista no encontrada'),
+        );
     }
   }
 
@@ -155,7 +184,7 @@ class _HomeLayoutState extends State<HomeLayout> {
         ? Sidebar(
             selectedIndex: selectedIndex,
             onItemSelected: onItemSelected,
-            userEmail: widget.user.email,
+            userName: widget.user.name,
             userRole: widget.user.roleName,
             permisosModulos: permisosModulos,
           ) 
@@ -176,17 +205,32 @@ class _HomeLayoutState extends State<HomeLayout> {
             Sidebar(
               selectedIndex: selectedIndex,
               onItemSelected: onItemSelected,
-              userEmail: widget.user.email,
+              userName: widget.user.name,
               userRole: widget.user.roleName,
               permisosModulos: permisosModulos,
             ),
           Expanded(
             child: Container(
               color: const Color(0xFFF2F3F5),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: getView(selectedIndex),
-              ),
+              child: showingDetail && selectedBook != null
+                ? DetalleLibroPage(
+                    book: selectedBook!,
+                    onBack: () {
+                      setState(() {
+                        showingDetail = false;
+                      });
+                    },
+                    key: const ValueKey('DetalleLibro'),
+                  )
+                : IndexedStack(
+                  index: selectedIndex,
+                  children: List.generate(
+                    loadedPages.length,
+                    (index) =>
+                        loadedPages[index] ??
+                        const SizedBox(),
+                  ),
+                )
             ),
           ),
         ],

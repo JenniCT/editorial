@@ -1,26 +1,20 @@
-//=========================== IMPORTACIONES PRINCIPALES ===========================//
-import 'dart:ui'; // Requerido para PointerDeviceKind
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-//=========================== CONFIGURACIÓN ===========================//
 import 'firebase_options.dart';
 
-//=========================== VISTAS PRINCIPALES ===========================//
-import 'views/login/login_v.dart';
-
-//=========================== PUNTO DE ENTRADA ===========================//
+// AuthGate decide si mostrar Login o HomeLayout
+import '../../../widgets/global/auth_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializar Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Inicializar Supabase
   await Supabase.initialize(
     url: 'https://jfgzsnvzbeoajpvhotjk.supabase.co',
     anonKey:
@@ -29,8 +23,6 @@ Future<void> main() async {
 
   runApp(const InkventoryApp());
 }
-
-//=========================== APLICACIÓN PRINCIPAL ===========================//
 
 class InkventoryApp extends StatelessWidget {
   const InkventoryApp({super.key});
@@ -41,18 +33,18 @@ class InkventoryApp extends StatelessWidget {
       title: 'Inkventory',
       debugShowCheckedModeBanner: false,
 
+      // ── AuthGate como home ─────────────────────────────────
+      // Ya no usamos initialRoute + routes para la navegación
+      // principal. AuthGate escucha Firebase Auth y decide
+      // si mostrar Login o HomeLayout, persistiendo la sesión
+      // entre recargas automáticamente.
+      home: const AuthGate(),
 
-      //=========================== NAVEGACIÓN PRINCIPAL ===========================//
-      initialRoute: '/login',
+      // Rutas nombradas opcionales para navegación interna
       routes: {
-        '/login': (context) => const Login(),
-        // futuras rutas:
-        // '/dashboard': (context) => const DashboardView(),
-        // '/inventario': (context) => const InventoryView(),
-        // '/usuarios': (context) => const UsersView(),
+        '/login': (context) => const AuthGate(),
       },
 
-      //=========================== SOPORTE PARA WEB ===========================//
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: {
           PointerDeviceKind.mouse,

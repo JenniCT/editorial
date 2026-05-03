@@ -19,23 +19,21 @@ import 'button.dart';
 // IDENTIDAD VISUAL Y LOGOS INSTITUCIONALES
 import 'logos.dart';
 
+///TOAST
+import '../../widgets/global/dialog.dart';
+
 //=========================== TARJETA VISUAL DEL LOGIN ===========================//
 // ESTA TARJETA ES EL ESPACIO CENTRAL DE LA INTERACCION. OFRECE CONTENCION,
 // JERARQUIA VISUAL Y ACCESO CLARO AL SISTEMA
 
 class LoginCard extends StatelessWidget {
-  final LoginVM vm;       // VISTA-MODELO QUE CONTIENE LOGICA Y CONTROLADORES
-  final bool desktop;     // DETERMINA ESTILO Y DIMENSION SEGUN DISPOSITIVO
+  final LoginVM vm; // VISTA-MODELO QUE CONTIENE LOGICA Y CONTROLADORES
+  final bool desktop; // DETERMINA ESTILO Y DIMENSION SEGUN DISPOSITIVO
 
-  const LoginCard({
-    super.key,
-    required this.vm,
-    required this.desktop,
-  });
+  const LoginCard({super.key, required this.vm, required this.desktop});
 
   @override
   Widget build(BuildContext context) {
-
     //=========================== CONTENEDOR PRINCIPAL ===========================//
     // ESPACIO ACOTADO PARA CREAR UNA COMPOSICION LIMPIA Y SERENA
     return Container(
@@ -65,14 +63,13 @@ class LoginCard extends StatelessWidget {
             color: Color.fromRGBO(15, 23, 42, 0.15),
             blurRadius: 20,
             offset: Offset(0, 8),
-          )
+          ),
         ],
       ),
 
       //=========================== CONTENIDO INTERNO ===========================//
       child: Column(
         children: [
-
           // LOGOS OFICIALES PARA REFORZAR IDENTIDAD INSTITUCIONAL
           const LoginLogos(),
           const SizedBox(height: 32),
@@ -87,7 +84,9 @@ class LoginCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
               fontSize: 32,
               height: 1.25,
-              color: Color(0xFF1B1F3B), // TONO AZUL PROFUNDO PARA AUTORIDAD Y SOBRIEDAD
+              color: Color(
+                0xFF1B1F3B,
+              ), // TONO AZUL PROFUNDO PARA AUTORIDAD Y SOBRIEDAD
             ),
           ),
 
@@ -112,8 +111,12 @@ class LoginCard extends StatelessWidget {
           //=========================== CAMPO DE CORREO ===========================//
           // ENTRADA PRIMARIA DEL USUARIO, DISEÑADA PARA CLARIDAD Y PROXIMIDAD
           LoginInput(
-            label: 'Correo electronico', 
-            controller: vm.emailController,autofillHints: const [AutofillHints.email],
+            label: 'Correo electronico',
+            controller: vm.emailController,
+            autofillHints: const [AutofillHints.email],
+            onSubmitted: (_) {
+              FocusScope.of(context).nextFocus();
+            },
           ),
           const SizedBox(height: 16),
 
@@ -124,6 +127,11 @@ class LoginCard extends StatelessWidget {
             controller: vm.passwordController,
             obscure: true,
             autofillHints: const [AutofillHints.password],
+            onSubmitted: (_) async{
+              if(!vm.isLoading){
+                await vm.login(context);
+              }
+            },
           ),
 
           const SizedBox(height: 12),
@@ -144,23 +152,30 @@ class LoginCard extends StatelessWidget {
               ),
             ),
           ),
-                    const SizedBox(height: 26),
+          const SizedBox(height: 26),
 
           //=========================== BOTON PRINCIPAL DE ACCESO ===========================//
           // ACCION CENTRAL. CONFIRMA IDENTIDAD Y DA PASO AL SISTEMA
           LoginButton(
             text: 'Iniciar sesion',
-            onTap: () {
+            onTap: () async{
               // VERIFICACION BASICA PARA EVITAR ERRORES Y CONFUSION EN EL USUARIO
-              if (vm.emailController.text.isEmpty || vm.passwordController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Completa todos los campos')),
+              if (vm.emailController.text.isEmpty ||
+                  vm.passwordController.text.isEmpty) {
+                showCustomToast(
+                  context,
+                  title: "Campos vacíos",
+                  message: "Completa todos los campos",
+                  color: Colors.orange,
+                  icon: Icons.warning_amber_rounded,
+                  durationSeconds: 1.5,
                 );
                 return;
               }
-
               // ACCION PRINCIPAL DE AUTENTICACION
-              vm.login(context);
+              if (!vm.isLoading){
+                await vm.login(context);
+              }
             },
           ),
 
@@ -171,10 +186,7 @@ class LoginCard extends StatelessWidget {
           const Text(
             'Acceso exclusivo para personal autorizado',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF475569),
-            ),
+            style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
           ),
         ],
       ),

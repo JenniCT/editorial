@@ -24,6 +24,9 @@ class Book {
   final bool estado;
   final DateTime fechaRegistro;
   final String registradoPor;
+  // NUEVOS CAMPOS DE MODIFICACIÓN
+  final DateTime? fechaModificacion;
+  final String? modificadoPor;
   bool selected = false;
 
   Book({
@@ -45,11 +48,13 @@ class Book {
     this.estado = true,
     required this.fechaRegistro,
     required this.registradoPor,
+    this.fechaModificacion,
+    this.modificadoPor,
     this.selected = false,
-  }) : tituloLower = titulo.toLowerCase(),
-      autorLower = autor.toLowerCase(),
-      editorialLower = editorial.toLowerCase(),
-      areaLower = areaConocimiento.toLowerCase();
+  })  : tituloLower = titulo.toLowerCase(),
+        autorLower = autor.toLowerCase(),
+        editorialLower = editorial.toLowerCase(),
+        areaLower = areaConocimiento.toLowerCase();
 
   factory Book.fromMap(Map<String, dynamic> map, String documentId) {
     int est = map['estante'] ?? 0;
@@ -59,19 +64,14 @@ class Book {
     if (est == 0 && total > 0) est = total - alm;
     if (alm == 0 && total > 0) alm = total - est;
 
-    final titulo = map['titulo'] ?? '';
-    final autor = map['autor'] ?? '';
-    final editorial = map['editorial'] ?? '';
-    final area = map['areaConocimiento'] ?? 'Sin definir';
-
     return Book(
       id: documentId,
       imagenFile: null,
       imagenUrl: map['imagenUrl'] as String?,
-      titulo: titulo,
+      titulo: map['titulo'] ?? '',
       subtitulo: map['subtitulo'] as String?,
-      autor: autor,
-      editorial: editorial,
+      autor: map['autor'] ?? '',
+      editorial: map['editorial'] ?? '',
       coleccion: map['coleccion'] as String?,
       anio: (map['anio'] is int)
           ? map['anio']
@@ -83,11 +83,12 @@ class Book {
       estante: est,
       almacen: alm,
       copias: total,
-      areaConocimiento: area,
+      areaConocimiento: map['areaConocimiento'] ?? 'Sin definir',
       estado: map['estado'] ?? true,
-      fechaRegistro:
-          (map['fechaRegistro'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      fechaRegistro: (map['fechaRegistro'] as Timestamp?)?.toDate() ?? DateTime.now(),
       registradoPor: map['registradoPor'] ?? 'desconocido',
+      fechaModificacion: (map['fechaModificacion'] as Timestamp?)?.toDate(),
+      modificadoPor: map['modificadoPor'] as String?,
     );
   }
 
@@ -109,13 +110,16 @@ class Book {
       'estado': estado,
       'fechaRegistro': Timestamp.fromDate(fechaRegistro),
       'registradoPor': registradoPor,
-      
+      if (fechaModificacion != null)
+        'fechaModificacion': Timestamp.fromDate(fechaModificacion!),
+      if (modificadoPor != null) 'modificadoPor': modificadoPor,
     };
   }
 
   Book copyWith({
     String? id,
     File? imagenFile,
+    bool clearImagenFile = false,
     String? imagenUrl,
     String? titulo,
     String? subtitulo,
@@ -132,11 +136,14 @@ class Book {
     bool? estado,
     DateTime? fechaRegistro,
     String? registradoPor,
+    DateTime? fechaModificacion,
+    String? modificadoPor,
     bool? selected,
   }) {
     return Book(
       id: id ?? this.id,
-      imagenFile: imagenFile ?? this.imagenFile,
+      // SI clearImagenFile=true SE LIMPIA, SI SE PASA imagenFile SE USA, SI NO SE MANTIENE
+      imagenFile: clearImagenFile ? null : (imagenFile ?? this.imagenFile),
       imagenUrl: imagenUrl ?? this.imagenUrl,
       titulo: titulo ?? this.titulo,
       subtitulo: subtitulo ?? this.subtitulo,
@@ -153,6 +160,8 @@ class Book {
       estado: estado ?? this.estado,
       fechaRegistro: fechaRegistro ?? this.fechaRegistro,
       registradoPor: registradoPor ?? this.registradoPor,
+      fechaModificacion: fechaModificacion ?? this.fechaModificacion,
+      modificadoPor: modificadoPor ?? this.modificadoPor,
       selected: selected ?? this.selected,
     );
   }

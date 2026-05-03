@@ -20,6 +20,7 @@ class _BookSearchViewState extends State<BookSearchView> {
       children: [
         Search<Book>(
           controller: _searchController,
+          hintText: 'Buscar por título, autor, área, etc.',
           allItems: widget.allBooks,
           onResults: (results) {
             setState(() {
