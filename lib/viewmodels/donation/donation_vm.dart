@@ -153,4 +153,19 @@ class DonationsViewModel {
       };
     }).toList();
   }
+  // ===================================================================
+  // ACTUALIZAR DONACIÓN
+  // ===================================================================
+  Future<void> updateDonation(Donation donation) async {
+    try {
+      await _donationsCollection.doc(donation.id).update({
+        'lugar':    donation.lugar,
+        'cantidad': donation.cantidad,
+        'nota':     donation.nota,
+      });
+    } catch (e) {
+      debugPrint('Error al actualizar donación: $e');
+      rethrow;
+    }
+  }
 }

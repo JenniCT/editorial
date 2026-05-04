@@ -1,45 +1,53 @@
 import 'dart:io';
-import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
-//MODELO
-import '../../models/book_m.dart';
-//VISTA-MODELO
-import '../../viewmodels/book/book_vm.dart';
-//WIDGETS
-import '../../widgets/addbook/image_picker_field.dart';
-import '../../widgets/global/textfield.dart';
 
+import '../../models/book_m.dart';
+import '../../viewmodels/book/book_vm.dart';
+import '../../widgets/side_panel/dashed_border_painter.dart';
+import '../../widgets/side_panel/side_panel.dart';
+import '../../widgets/side_panel/side_panel_fields.dart';
+import '../../widgets/side_panel/side_panel_section.dart';
 
 class EditBookDialog extends StatefulWidget {
   final Book book;
-  final Function(Book) onUpdate;
+  final void Function(Book) onUpdate;
 
-  const EditBookDialog({super.key, required this.book, required this.onUpdate});
+  const EditBookDialog({required this.book, required this.onUpdate, super.key});
 
   @override
   State<EditBookDialog> createState() => _EditBookDialogState();
 }
 
 class _EditBookDialogState extends State<EditBookDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final BookViewModel _viewModel = BookViewModel();
+  final _formKey   = GlobalKey<FormState>();
+  final _viewModel = BookViewModel();
 
-  String _selectedAreaConocimiento = 'Sin definir';
-  File? _selectedImage;
+  // ─── Imagen ───────────────────────────────────────────────────────────────
+  File?      _selectedImage;
+  Uint8List? _imageBytes;
+  bool       _showUrlField = false;
+  bool       _clearUrl     = false; // indica que se quitó la URL existente
 
-  late TextEditingController _imageUrlController;
-  late TextEditingController _tituloController;
-  late TextEditingController _subtituloController;
-  late TextEditingController _autorController;
-  late TextEditingController _editorialController;
-  late TextEditingController _coleccionController;
-  late TextEditingController _anioController;
-  late TextEditingController _isbnController;
-  late TextEditingController _edicionController;
-  late TextEditingController _copiasController;
-  late TextEditingController _estanteController;
-  late TextEditingController _almacenController;
+  // ─── Controllers ─────────────────────────────────────────────────────────
+  late final TextEditingController _imageUrlController;
+  late final TextEditingController _tituloController;
+  late final TextEditingController _subtituloController;
+  late final TextEditingController _autorController;
+  late final TextEditingController _editorialController;
+  late final TextEditingController _coleccionController;
+  late final TextEditingController _anioController;
+  late final TextEditingController _isbnController;
+  late final TextEditingController _edicionController;
+  late final TextEditingController _copiasController;
+  late final TextEditingController _estanteController;
+  late final TextEditingController _almacenController;
+
+  late String _selectedAreaConocimiento;
+  bool _isUpdating = false;
 
   final List<String> _areasConocimiento = [
     'Sin definir',
@@ -57,24 +65,30 @@ class _EditBookDialogState extends State<EditBookDialog> {
   void initState() {
     super.initState();
     final b = widget.book;
-
+    _imageUrlController   = TextEditingController(text: b.imagenUrl ?? '');
+    _tituloController     = TextEditingController(text: b.titulo);
+    _subtituloController  = TextEditingController(text: b.subtitulo ?? '');
+    _autorController      = TextEditingController(text: b.autor);
+    _editorialController  = TextEditingController(text: b.editorial);
+    _coleccionController  = TextEditingController(text: b.coleccion ?? '');
+    _anioController       = TextEditingController(text: b.anio.toString());
+    _isbnController       = TextEditingController(text: b.isbn ?? '');
+    _edicionController    = TextEditingController(text: b.edicion.toString());
+    _copiasController     = TextEditingController(text: b.copias.toString());
+    _estanteController    = TextEditingController(text: b.estante.toString());
+    _almacenController    = TextEditingController(text: b.almacen.toString());
     _selectedAreaConocimiento = b.areaConocimiento;
-    _imageUrlController = TextEditingController(text: b.imagenUrl);
-    _tituloController = TextEditingController(text: b.titulo);
-    _subtituloController = TextEditingController(text: b.subtitulo ?? '');
-    _autorController = TextEditingController(text: b.autor);
-    _editorialController = TextEditingController(text: b.editorial);
-    _coleccionController = TextEditingController(text: b.coleccion ?? '');
-    _anioController = TextEditingController(text: b.anio.toString());
-    _isbnController = TextEditingController(text: b.isbn ?? '');
-    _edicionController = TextEditingController(text: b.edicion.toString());
-    _copiasController = TextEditingController(text: b.copias.toString());
-    _estanteController = TextEditingController(text: b.estante.toString());
-    _almacenController = TextEditingController(text: b.almacen.toString());
+
+    _copiasController.addListener(_onCopiasChanged);
+    _estanteController.addListener(_onEstanteChanged);
+    _almacenController.addListener(_onAlmacenChanged);
   }
 
   @override
   void dispose() {
+    _copiasController.removeListener(_onCopiasChanged);
+    _estanteController.removeListener(_onEstanteChanged);
+    _almacenController.removeListener(_onAlmacenChanged);
     _imageUrlController.dispose();
     _tituloController.dispose();
     _subtituloController.dispose();
@@ -90,368 +104,458 @@ class _EditBookDialogState extends State<EditBookDialog> {
     super.dispose();
   }
 
-  Future<void> _updateBook() async {
-    if (_formKey.currentState!.validate()) {
-      final updatedBook = widget.book.copyWith(
-        imagenFile: _selectedImage, // <--- PASAMOS LA IMAGEN SELECCIONADA
-        imagenUrl: _imageUrlController.text.isNotEmpty ? _imageUrlController.text : null,
-        titulo: _tituloController.text,
-        subtitulo: _subtituloController.text.isNotEmpty ? _subtituloController.text : null,
-        autor: _autorController.text,
-        editorial: _editorialController.text,
-        coleccion: _coleccionController.text.isNotEmpty ? _coleccionController.text : null,
-        anio: int.tryParse(_anioController.text) ?? 0,
-        isbn: _isbnController.text.isNotEmpty ? _isbnController.text : null,
-        edicion: int.tryParse(_edicionController.text) ?? 1,
-        copias: int.tryParse(_copiasController.text) ?? 1,
-        estante: int.tryParse(_estanteController.text) ?? 0,
-        almacen: int.tryParse(_almacenController.text) ?? 0,
-        areaConocimiento: _selectedAreaConocimiento,
-      );
-
-      // Actualizar en la base de datos
-      await _viewModel.editBook(updatedBook, context);
-
-      // Actualizar la UI del padre
-      widget.onUpdate(updatedBook);
-
-      // Cerrar el diálogo
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    }
-  }
-
+  // ─── Imagen ───────────────────────────────────────────────────────────────
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() => _selectedImage = File(pickedFile.path));
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _selectedImage = File(picked.path);
+        _imageBytes    = bytes;
+        _imageUrlController.clear();
+        _clearUrl      = false;
+        _showUrlField  = false;
+      });
     }
   }
 
+  void _clearImage() {
+    setState(() {
+      _selectedImage = null;
+      _imageBytes    = null;
+      _imageUrlController.clear();
+      _clearUrl     = true;
+      _showUrlField = false;
+    });
+  }
 
+  // ─── Validaciones stock ───────────────────────────────────────────────────
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.redAccent,
+          duration: const Duration(seconds: 2)));
+  }
 
+  void _onCopiasChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+    final copias  = int.tryParse(_copiasController.text) ?? 0;
+    final almacen = int.tryParse(_almacenController.text) ?? 0;
+    if (almacen > copias) {
+      _showError('Almacén no puede ser mayor que copias');
+      _almacenController.text = copias.toString();
+      _estanteController.text = '0';
+    } else {
+      _estanteController.text = (copias - almacen).toString();
+    }
+    _isUpdating = false;
+  }
+
+  void _onEstanteChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+    final copias  = int.tryParse(_copiasController.text) ?? 0;
+    final estante = int.tryParse(_estanteController.text) ?? 0;
+    if (estante > copias) {
+      _showError('Estante no puede ser mayor que copias');
+      _estanteController.text = copias.toString();
+      _almacenController.text = '0';
+    } else {
+      _almacenController.text = (copias - estante).toString();
+    }
+    _isUpdating = false;
+  }
+
+  void _onAlmacenChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+    final copias  = int.tryParse(_copiasController.text) ?? 0;
+    final almacen = int.tryParse(_almacenController.text) ?? 0;
+    if (almacen > copias) {
+      _showError('Almacén no puede ser mayor que copias');
+      _almacenController.text = copias.toString();
+      _estanteController.text = '0';
+    } else {
+      _estanteController.text = (copias - almacen).toString();
+    }
+    _isUpdating = false;
+  }
+
+  // ─── Guardar ──────────────────────────────────────────────────────────────
+  Future<void> _saveBook() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    final updatedBook = widget.book.copyWith(
+      imagenFile:   _selectedImage,
+      imagenUrl:    _clearUrl
+          ? null
+          : (_selectedImage == null
+              ? (_imageUrlController.text.trim().isNotEmpty
+                  ? _imageUrlController.text.trim()
+                  : widget.book.imagenUrl)
+              : null),
+      titulo:       _tituloController.text.trim(),
+      subtitulo:    _subtituloController.text.trim().isNotEmpty
+          ? _subtituloController.text.trim()
+          : null,
+      autor:        _autorController.text.trim(),
+      editorial:    _editorialController.text.trim(),
+      coleccion:    _coleccionController.text.trim().isNotEmpty
+          ? _coleccionController.text.trim()
+          : null,
+      anio:         int.tryParse(_anioController.text) ?? widget.book.anio,
+      isbn:         _isbnController.text.trim().isNotEmpty
+          ? _isbnController.text.trim()
+          : null,
+      edicion:      int.tryParse(_edicionController.text) ?? widget.book.edicion,
+      copias:       int.tryParse(_copiasController.text) ?? widget.book.copias,
+      estante:      int.tryParse(_estanteController.text) ?? widget.book.estante,
+      almacen:      int.tryParse(_almacenController.text) ?? widget.book.almacen,
+      areaConocimiento: _selectedAreaConocimiento,
+      fechaModificacion: DateTime.now(),
+      modificadoPor: user?.email ?? 'desconocido',
+    );
+
+    await _viewModel.editBook(updatedBook, context);
+    widget.onUpdate(updatedBook);
+  }
+
+  // ─── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            width: 600,
-            height: 750,
-            decoration: BoxDecoration(
-              color: const Color.fromRGBO(19, 38, 87, 0.3),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color.fromRGBO(47, 65, 87, 0.3)),
+    return Form(
+      key: _formKey,
+      child: SidePanel(
+        title:      'Editar libro',
+        headerIcon: CupertinoIcons.pencil,
+        onSave:     _saveBook,
+        saveLabel:  'Guardar cambios',
+        bodyBuilder: (_) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            PanelSection(
+              title: 'Imagen del libro',
+              children: [_buildImageSection()],
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
+            PanelSection(
+              title: 'Identificación',
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Editar Libro',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            ImagePickerField(
-                              selectedImage: _selectedImage,
-                              imageUrlController: _imageUrlController,
-                              onPickImage: _pickImage,
-                              onClearImage: () =>
-                                  setState(() => _selectedImage = null),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    children: [
-                                      CustomTextField(
-                                        controller: _tituloController,
-                                        label: 'Título',
-                                        validator: (v) =>
-                                            v!.isEmpty ? 'Obligatorio' : null,
-                                      ),
-                                      CustomTextField(
-                                        controller: _autorController,
-                                        label: 'Autor',
-                                        validator: (v) =>
-                                            v!.isEmpty ? 'Obligatorio' : null,
-                                      ),
-                                      CustomTextField(
-                                        controller: _editorialController,
-                                        label: 'Editorial',
-                                        validator: (v) =>
-                                            v!.isEmpty ? 'Obligatorio' : null,
-                                      ),
-                                      CustomTextField(
-                                        controller: _anioController,
-                                        label: 'Año',
-                                        isNumeric: true,
-                                        validator: (v) =>
-                                            v!.isEmpty ? 'Obligatorio' : null,
-                                      ),
-                                      CustomTextField(
-                                        controller: _coleccionController,
-                                        label: 'Colección',
-                                        isOptional: true,
-                                      ),
-                                      // ÁREA DE CONOCIMIENTO
-                                      FormField<String>(
-                                        initialValue: _selectedAreaConocimiento,
-                                        validator: (value) => value == null || value.isEmpty ? 'Selecciona un área de conocimiento válida' : null,
-                                        builder: (fieldState) {
-                                          return Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              SizedBox(
-                                                width: double.infinity,
-                                                child: DropdownButtonFormField<String>(
-                                                  initialValue: _selectedAreaConocimiento,
-                                                  decoration: InputDecoration(
-                                                    labelText:
-                                                        'Área de conocimiento',
-                                                    labelStyle: const TextStyle(
-                                                      color: Colors.white,
-                                                    ),
-                                                    enabledBorder:
-                                                        OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                8,
-                                                              ),
-                                                          borderSide:
-                                                              const BorderSide(
-                                                                color: Colors
-                                                                    .white70,
-                                                              ),
-                                                        ),
-                                                    focusedBorder: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                            color:
-                                                                Color.fromRGBO(
-                                                                  47,
-                                                                  65,
-                                                                  87,
-                                                                  1,
-                                                                ),
-                                                          ),
-                                                    ),
-                                                    errorBorder: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                            color: Colors.red,
-                                                          ),
-                                                    ),
-                                                    focusedErrorBorder:
-                                                        OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                8,
-                                                              ),
-                                                          borderSide:
-                                                              const BorderSide(
-                                                                color: Colors
-                                                                    .redAccent,
-                                                              ),
-                                                        ),
-                                                  ),
-                                                  dropdownColor:
-                                                      const Color.fromRGBO(
-                                                        30,
-                                                        50,
-                                                        100,
-                                                        1,
-                                                      ),
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                  isExpanded: true,
-                                                  items: _areasConocimiento.map(
-                                                    (area) {
-                                                      return DropdownMenuItem(
-                                                        value: area,
-                                                        child: Text(
-                                                          area,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      );
-                                                    },
-                                                  ).toList(),
-                                                  onChanged: (value) {
-                                                    setState(() {
-                                                      _selectedAreaConocimiento =
-                                                          value ??
-                                                          'Sin definir';
-                                                      fieldState.didChange(
-                                                        value,
-                                                      );
-                                                    });
-                                                  },
-                                                ),
-                                              ),
-                                              if (fieldState.hasError)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                        top: 4,
-                                                      ),
-                                                  child: Text(
-                                                    fieldState.errorText ?? '',
-                                                    style: const TextStyle(
-                                                      color: Colors.red,
-                                                      fontSize: 12,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    children: [
-                                      CustomTextField(
-                                        controller: _subtituloController,
-                                        label: 'Subtítulo',
-                                        isOptional: true,
-                                      ),
-                                      CustomTextField(
-                                        controller: _isbnController,
-                                        label: 'ISBN',
-                                        isOptional: true,
-                                      ),
-                                      CustomTextField(
-                                        controller: _edicionController,
-                                        label: 'Edición',
-                                        isNumeric: true,
-                                        isOptional: true,
-                                      ),
-                                      CustomTextField(
-                                        controller: _copiasController,
-                                        label: 'Copias',
-                                        isNumeric: true,
-                                        validator: (v) =>
-                                            v!.isEmpty ? 'Obligatorio' : null,
-                                      ),
-                                      CustomTextField(
-                                        controller: _estanteController,
-                                        label: 'Estante',
-                                        isNumeric: true,
-                                      ),
-                                      CustomTextField(
-                                        controller: _almacenController,
-                                        label: 'Almacén',
-                                        isNumeric: true,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                      child: panelField('Título', _tituloController,
+                          hint: 'Título del libro'),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromRGBO(
-                              240,
-                              91,
-                              84,
-                              1,
-                            ),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 4,
-                          ),
-                          child: const Text('Cancelar'),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: _updateBook,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurpleAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 4,
-                          ),
-                          child: const Text('Guardar'),
-                        ),
-                      ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: panelField('Subtítulo', _subtituloController,
+                          hint: 'Opcional', required: false),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 12),
+                panelField('Autor(es)', _autorController,
+                    hint: 'Nombre del autor'),
+                const SizedBox(height: 12),
+                panelField('ISBN', _isbnController,
+                    hint: 'Ej. 978-607-561-088-7', required: false),
+              ],
             ),
-          ),
+            PanelSection(
+              title: 'Publicación',
+              children: [
+                panelField('Editorial', _editorialController,
+                    hint: 'Ej. Dirección Editorial'),
+                const SizedBox(height: 12),
+                panelField('Colección', _coleccionController,
+                    hint: 'Nombre de la colección', required: false),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: panelField('Año', _anioController,
+                          hint: 'Ej. 2023',
+                          onlyDigits: true,
+                          maxLength: 4,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return 'Obligatorio';
+                            final yr = int.tryParse(v);
+                            if (yr == null || yr < 1000 ||
+                                yr > DateTime.now().year + 1) return 'Año inválido';
+                            return null;
+                          }),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: panelField('Edición', _edicionController,
+                          hint: 'Ej. 1', required: false, onlyDigits: true),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            PanelSection(
+              title: 'Stock',
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: panelField('Número de copias', _copiasController,
+                          hint: '0', onlyDigits: true),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: panelField('Estante', _estanteController,
+                          hint: '0', onlyDigits: true),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: panelField('Almacén', _almacenController,
+                          hint: '0', onlyDigits: true),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            PanelSection(
+              title: 'Clasificación',
+              showDividerAfter: false,
+              children: [
+                panelLabeledField(
+                  label: 'Área de conocimiento',
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedAreaConocimiento,
+                    decoration: panelInputDecoration(hint: 'Seleccione el área'),
+                    style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF1C2532),
+                        fontWeight: FontWeight.w500),
+                    dropdownColor: Colors.white,
+                    isExpanded: true,
+                    borderRadius: BorderRadius.circular(10),
+                    items: _areasConocimiento
+                        .map((a) => DropdownMenuItem(
+                            value: a,
+                            child: Text(a, overflow: TextOverflow.ellipsis)))
+                        .toList(),
+                    onChanged: (v) =>
+                        setState(() => _selectedAreaConocimiento = v ?? ''),
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? 'Selecciona un área' : null,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
+
+  // ─── Sección imagen ───────────────────────────────────────────────────────
+  Widget _buildImageSection() {
+    final hasFile = _imageBytes != null;
+    final urlText = _imageUrlController.text.trim();
+    final hasUrl  = !_clearUrl &&
+        (hasFile == false) &&
+        (urlText.isNotEmpty && urlText.startsWith('http') ||
+            (widget.book.imagenUrl ?? '').startsWith('http'));
+
+    final displayUrl = urlText.isNotEmpty ? urlText : (widget.book.imagenUrl ?? '');
+
+    if (hasFile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.memory(_imageBytes!,
+                height: 160, width: double.infinity, fit: BoxFit.cover),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(CupertinoIcons.photo, size: 14),
+                label: const Text('Cambiar'),
+                style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF052B67),
+                    padding: EdgeInsets.zero,
+                    textStyle: const TextStyle(fontSize: 13)),
+              ),
+              const SizedBox(width: 16),
+              TextButton.icon(
+                onPressed: _clearImage,
+                icon: const Icon(Icons.close, size: 14),
+                label: const Text('Quitar'),
+                style: TextButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    padding: EdgeInsets.zero,
+                    textStyle: const TextStyle(fontSize: 13)),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    if (hasUrl && displayUrl.startsWith('http')) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              displayUrl,
+              height: 160,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _imagePlaceholder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(CupertinoIcons.photo, size: 14),
+                label: const Text('Cambiar'),
+                style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF052B67),
+                    padding: EdgeInsets.zero,
+                    textStyle: const TextStyle(fontSize: 13)),
+              ),
+              const SizedBox(width: 16),
+              TextButton.icon(
+                onPressed: _clearImage,
+                icon: const Icon(Icons.close, size: 14),
+                label: const Text('Quitar'),
+                style: TextButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    padding: EdgeInsets.zero,
+                    textStyle: const TextStyle(fontSize: 13)),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: _pickImage,
+          child: CustomPaint(
+            painter: DashedBorderPainter(
+              color: const Color(0xFF052B67).withValues(alpha: 0.25),
+            ),
+            child: Container(
+              height: 110,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(CupertinoIcons.cloud_upload,
+                      size: 30,
+                      color: const Color(0xFF052B67).withValues(alpha: 0.45)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Seleccionar nueva imagen',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF052B67).withValues(alpha: 0.65)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text('JPG, PNG (máx. 5MB)',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () => setState(() => _showUrlField = !_showUrlField),
+          child: Row(
+            children: [
+              Icon(
+                _showUrlField ? CupertinoIcons.chevron_up : CupertinoIcons.link,
+                size: 13, color: const Color(0xFF052B67)),
+              const SizedBox(width: 6),
+              Text(
+                _showUrlField ? 'Ocultar campo de URL' : 'O ingresa una URL de imagen',
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF052B67),
+                    fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+        if (_showUrlField) ...[
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _imageUrlController,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF1C2532)),
+            decoration:
+                panelInputDecoration(hint: 'https://ejemplo.com/portada.jpg')
+                    .copyWith(
+              prefixIcon: const Icon(CupertinoIcons.link,
+                  size: 16, color: Color(0xFF6B7280)),
+            ),
+            onChanged: (_) => setState(() => _clearUrl = false),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _imagePlaceholder() => Container(
+        height: 160,
+        color: const Color(0xFFF8FAFC),
+        child: const Center(
+            child: Icon(CupertinoIcons.photo,
+                color: Color(0xFFCCCCCC), size: 40)),
+      );
 }
 
+// ─── Función de apertura ──────────────────────────────────────────────────────
 void showEditBookDialog(
   BuildContext context,
-  Book book,
-  Function(Book) onUpdate,
-) {
+  Book book, {
+  required void Function(Book) onUpdate,
+}) {
   showGeneralDialog(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Editar libro',
-    transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (_, _, _) => const SizedBox(),
-    transitionBuilder: (context, animation, _, _) {
-      return ScaleTransition(
-        scale: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-        child: EditBookDialog(book: book, onUpdate: onUpdate),
+    barrierColor: const Color.fromRGBO(0, 0, 0, 0.45),
+    transitionDuration: const Duration(milliseconds: 280),
+    pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+    transitionBuilder: (ctx, anim, _, __) {
+      final curved =
+          CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+      return SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).animate(curved),
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: EditBookDialog(book: book, onUpdate: onUpdate),
+        ),
       );
     },
   );

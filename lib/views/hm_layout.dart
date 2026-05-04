@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // WIDGETS
 import '../widgets/global/sidebar.dart';
-// MODELO
+
+// MODELOS
 import '../models/book_m.dart';
 import '../models/user.dart';
 
@@ -20,7 +22,11 @@ class HomeLayout extends StatefulWidget {
   final UserModel user;
   final Role role;
 
-  const HomeLayout({required this.user, required this.role, super.key});
+  const HomeLayout({
+    required this.user,
+    required this.role,
+    super.key,
+  });
 
   @override
   State<HomeLayout> createState() => _HomeLayoutState();
@@ -36,7 +42,18 @@ class _HomeLayoutState extends State<HomeLayout> {
   final List<Widget?> loadedPages = [];
 
   // KEY PARA CONTROLAR EL SCAFFOLD Y EL DRAWER
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey =
+      GlobalKey<ScaffoldState>();
+
+  final List<String> labels = [
+    'Dashboard',
+    'Inventario',
+    'Acervo',
+    'Ventas',
+    'Donaciones',
+    'Usuarios',
+    'Cerrar sesión',
+  ];
 
   @override
   void initState() {
@@ -50,16 +67,21 @@ class _HomeLayoutState extends State<HomeLayout> {
       ),
     );
 
+    // Dashboard precargado
     loadedPages[0] = const Dashboard();
 
     _cargarPermisos();
   }
 
-
   Future<void> _cargarPermisos() async {
     setState(() => loadingPermisos = true);
-    Map<String, bool> permisos = {'Dashboard': true, 'Cerrar sesión': true};
-    
+
+    Map<String, bool> permisos = {
+      'Dashboard': true,
+      'Cerrar sesión': true,
+    };
+
+    // ADMIN: acceso total
     if (widget.role == Role.adm) {
       setState(() {
         permisosModulos = {
@@ -85,9 +107,15 @@ class _HomeLayoutState extends State<HomeLayout> {
 
       for (var doc in permisosSnapshot.docs) {
         final data = doc.data();
+
         final modulo = data['module'] as String? ?? '';
-        final perms = Map<String, bool>.from(data['permissions'] ?? {});
-        permisos[modulo] = perms.values.any((v) => v == true);
+
+        final perms = Map<String, bool>.from(
+          data['permissions'] ?? {},
+        );
+
+        permisos[modulo] =
+            perms.values.any((value) => value == true);
       }
 
       setState(() {
@@ -95,19 +123,57 @@ class _HomeLayoutState extends State<HomeLayout> {
         loadingPermisos = false;
       });
     } catch (e) {
-      setState(() => loadingPermisos = false);
+      setState(() {
+        loadingPermisos = false;
+      });
     }
   }
 
-  void onItemSelected(int index) {
+  bool _tieneAccesoModulo(String label) {
+    if (label == 'Dashboard' ||
+        label == 'Cerrar sesión') {
+      return true;
+    }
+
+    if (widget.role == Role.adm) {
+      return true;
+    }
+
+    return permisosModulos[label] ?? false;
+  }
+
+  void handleBookSelection(Book book) {
+    setState(() {
+      selectedBook = book;
+      showingDetail = true;
+    });
+  }
+
+  Future<void> onItemSelected(int index) async {
     final label = labels[index];
+
+    // CERRAR SESIÓN REAL
     if (label == 'Cerrar sesión') {
-      Navigator.pushReplacementNamed(context, '/login');
+      await FirebaseAuth.instance.signOut();
+
+      if (!mounted) return;
+
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/login',
+        (route) => false,
+      );
+
       return;
     }
+
+    // VALIDAR PERMISOS
     if (!_tieneAccesoModulo(label)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No tienes permisos'), backgroundColor: Colors.redAccent),
+        const SnackBar(
+          content: Text('No tienes permisos'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
@@ -122,21 +188,12 @@ class _HomeLayoutState extends State<HomeLayout> {
       }
     });
 
-    // CIERRA EL MENÚ SI ESTÁ ABIERTO EN MÓVIL
-    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+    // CERRAR DRAWER EN MÓVIL
+    if (_scaffoldKey.currentState?.isDrawerOpen ??
+        false) {
       Navigator.pop(context);
     }
   }
-
-  bool _tieneAccesoModulo(String label) {
-    if (label == 'Dashboard' || label == 'Cerrar sesión') return true;
-    if (widget.role == Role.adm) return true;
-    return permisosModulos[label] ?? false;
-  }
-
-  final List<String> labels = ['Dashboard', 'Inventario', 'Acervo', 'Ventas', 'Donaciones', 'Usuarios', 'Cerrar sesión'];
-
-  void handleBookSelection(Book book) => setState(() { selectedBook = book; showingDetail = true; });
 
   Widget _buildPage(int index) {
     switch (index) {
@@ -173,34 +230,52 @@ class _HomeLayoutState extends State<HomeLayout> {
 
   @override
   Widget build(BuildContext context) {
-    if (loadingPermisos) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (loadingPermisos) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
-    final bool isMobile = MediaQuery.of(context).size.width < 800;
+    final bool isMobile =
+        MediaQuery.of(context).size.width < 800;
 
     return Scaffold(
       key: _scaffoldKey,
+
       // DRAWER PARA MÓVIL
-      drawer: isMobile 
-        ? Sidebar(
-            selectedIndex: selectedIndex,
-            onItemSelected: onItemSelected,
-            userName: widget.user.name,
-            userRole: widget.user.roleName,
-            permisosModulos: permisosModulos,
-          ) 
-        : null,
+      drawer: isMobile
+          ? Sidebar(
+              selectedIndex: selectedIndex,
+              onItemSelected: onItemSelected,
+              userName: widget.user.name,
+              userRole: widget.user.roleName,
+              permisosModulos: permisosModulos,
+            )
+          : null,
+
       // APPBAR PARA MÓVIL
-      appBar: isMobile 
-        ? AppBar(
-            backgroundColor: const Color(0xFF1C2532),
-            title: Text(labels[selectedIndex], style: const TextStyle(color: Colors.white)),
-            iconTheme: const IconThemeData(color: Colors.white),
-            elevation: 0,
-          ) 
-        : null,
+      appBar: isMobile
+          ? AppBar(
+              backgroundColor:
+                  const Color(0xFF1C2532),
+              title: Text(
+                labels[selectedIndex],
+                style: const TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+              iconTheme: const IconThemeData(
+                color: Colors.white,
+              ),
+              elevation: 0,
+            )
+          : null,
+
       body: Row(
         children: [
-          // SIDEBAR FIJA PARA ESCRITORIO
+          // SIDEBAR EN ESCRITORIO
           if (!isMobile)
             Sidebar(
               selectedIndex: selectedIndex,
@@ -209,28 +284,33 @@ class _HomeLayoutState extends State<HomeLayout> {
               userRole: widget.user.roleName,
               permisosModulos: permisosModulos,
             ),
+
           Expanded(
             child: Container(
               color: const Color(0xFFF2F3F5),
-              child: showingDetail && selectedBook != null
-                ? DetalleLibroPage(
-                    book: selectedBook!,
-                    onBack: () {
-                      setState(() {
-                        showingDetail = false;
-                      });
-                    },
-                    key: const ValueKey('DetalleLibro'),
-                  )
-                : IndexedStack(
-                  index: selectedIndex,
-                  children: List.generate(
-                    loadedPages.length,
-                    (index) =>
-                        loadedPages[index] ??
-                        const SizedBox(),
-                  ),
-                )
+
+              child: showingDetail &&
+                      selectedBook != null
+                  ? DetalleLibroPage(
+                      key: const ValueKey(
+                        'DetalleLibro',
+                      ),
+                      book: selectedBook!,
+                      onBack: () {
+                        setState(() {
+                          showingDetail = false;
+                        });
+                      },
+                    )
+                  : IndexedStack(
+                      index: selectedIndex,
+                      children: List.generate(
+                        loadedPages.length,
+                        (index) =>
+                            loadedPages[index] ??
+                            const SizedBox(),
+                      ),
+                    ),
             ),
           ),
         ],

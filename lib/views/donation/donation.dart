@@ -10,6 +10,9 @@ import '../../viewmodels/docs/export_vm.dart';
 
 //=========================== VISTAS SECUNDARIAS ===========================//
 import '../basic/export/download_dialog.dart';
+import 'add_done.dart';
+import 'detail_donation.dart';
+import 'edit_donation.dart';
 
 //=========================== WIDGETS ===========================//
 import '../../widgets/layout/page_header.dart';
@@ -53,6 +56,21 @@ class _DonationsPageState extends State<DonationsPage> {
   int _currentPage = 0;
   final int _itemsPerPage = 10;
 
+  //=========================== DETALLE ===========================//
+  void _handleDonationSelected(Donation donation) {
+    mostrarDetalleDonacion(
+      context,
+      donation,
+      onUpdate: (updatedDonation) {
+        // Refleja cambios en _allDonations si la donación fue editada
+        setState(() {
+          final idx = _allDonations.indexWhere((d) => d.id == updatedDonation.id);
+          if (idx != -1) _allDonations[idx] = updatedDonation;
+        });
+      },
+    );
+  }
+
   //=========================== SELECCIÓN ===========================//
   List<Donation> get _selectedDonations =>
       _allDonations.where((d) => d.selected).toList();
@@ -72,17 +90,22 @@ class _DonationsPageState extends State<DonationsPage> {
     });
   }
 
+  //=========================== CELDAS ===========================//
+  Widget _buildClickableCell(Widget child, Donation donation) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => _handleDonationSelected(donation),
+        child: SizedBox(width: double.infinity, child: child),
+      ),
+    );
+  }
 
   //=========================== CABECERAS ===========================//
   List<Widget> _buildHeaders(bool enableSelectAll) {
     return [
       IconButton(
-        icon: Icon(
-          _selectAll
-              ? Icons.check_box_outlined
-              : Icons.check_box_outline_blank_outlined,
-          color: Colors.white,
-        ),
+        icon: Icon( _selectAll ? Icons.check_box_outlined : Icons.check_box_outline_blank_outlined, color: Colors.white,),
         onPressed: enableSelectAll
             ? () {
                 setState(() {
@@ -99,9 +122,7 @@ class _DonationsPageState extends State<DonationsPage> {
       const Text('Autor'),
       const Text('Cantidad'),
       const Text('Fecha'),
-      const Text('Usuario'),
       const Text('Lugar'),
-      const Text('Nota'),
       const Text('Acciones'),
     ];
   }
@@ -114,9 +135,7 @@ class _DonationsPageState extends State<DonationsPage> {
       180, // autor
       90,  // cantidad
       120, // fecha
-      180, // usuario
       160, // lugar
-      180, // nota
       220, // acciones
     ];
 
@@ -187,7 +206,11 @@ class _DonationsPageState extends State<DonationsPage> {
                 PrimaryButton(
                   icon: CupertinoIcons.add_circled_solid,
                   text: 'Agregar donación',
-                  onPressed: () {},
+                  onPressed: () => showDonateDialog(
+                    context,
+                    (updatedBooks) {
+                    },
+                  ),
                 ),
               ],
             ),
@@ -208,23 +231,17 @@ class _DonationsPageState extends State<DonationsPage> {
                     }
                   }
 
-                  final List<Donation> itemsToShow =
-                      _isSearching ? _filteredDonations : _allDonations;
+                  final List<Donation> itemsToShow =  _isSearching ? _filteredDonations : _allDonations;
 
                   // PAGINACIÓN
-                  final totalPages =
-                      (itemsToShow.length / _itemsPerPage).ceil();
+                  final totalPages = (itemsToShow.length / _itemsPerPage).ceil();
                   if (_currentPage >= totalPages && totalPages > 0) {
                     _currentPage = totalPages - 1;
                   }
 
-                  final startIndex =
-                      (_currentPage * _itemsPerPage).clamp(0, itemsToShow.length);
-                  final endIndex =
-                      (startIndex + _itemsPerPage).clamp(startIndex, itemsToShow.length);
-                  final donationsPage = itemsToShow.isNotEmpty
-                      ? itemsToShow.sublist(startIndex, endIndex)
-                      : <Donation>[];
+                  final startIndex = (_currentPage * _itemsPerPage).clamp(0, itemsToShow.length);
+                  final endIndex = (startIndex + _itemsPerPage).clamp(startIndex, itemsToShow.length);
+                  final donationsPage = itemsToShow.isNotEmpty ? itemsToShow.sublist(startIndex, endIndex) : <Donation>[];
 
                   _updateSelectedCount();
 
@@ -308,16 +325,23 @@ class _DonationsPageState extends State<DonationsPage> {
                                     ),
 
                                     //=========================== COLUMNAS DE TEXTO ===========================//
-                                    TableText(text: donation.titulo),
-                                    TableText(text: donation.autor),
-                                    TableText(text: donation.cantidad.toString()),
-                                    TableText(text: '${donation.fecha.day}/${donation.fecha.month}/${donation.fecha.year}'),
-                                    TableText(text: donation.userEmail),
-                                    TableText(text: donation.lugar),
-                                    TableText(text: donation.nota ?? ''),
+                                    _buildClickableCell(TableText(text: donation.titulo), donation),
+                                    _buildClickableCell(TableText(text: donation.autor), donation),
+                                    _buildClickableCell(TableText(text: donation.cantidad.toString()), donation),
+                                    _buildClickableCell(TableText(text: '${donation.fecha.day}/${donation.fecha.month}/${donation.fecha.year}'), donation),
+                                    _buildClickableCell(TableText(text: donation.lugar), donation),
                                     TableActions(
                                       showCost: false,
-                                      onEdit: () {},
+                                      onEdit: () => showEditDonationDialog(
+                                        context,
+                                        donation,
+                                        onUpdate: (updated) {
+                                          setState(() {
+                                            final idx = _allDonations.indexWhere((d) => d.id == updated.id);
+                                            if (idx != -1) _allDonations[idx] = updated;
+                                          });
+                                        },
+                                      ),
                                       showQR: true,
                                       onHistory: () {},
                                       onDelete: () {},

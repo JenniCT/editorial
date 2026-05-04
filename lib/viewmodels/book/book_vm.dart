@@ -428,4 +428,18 @@ class BookViewModel {
       'Área de conocimiento': book.areaConocimiento,
     };
   }
+
+  //=========================== BUSCAR LIBROS POR TÍTULO ===========================//
+  // BUSCA COINCIDENCIAS EN CACHÉ LOCAL; SI ESTÁ VACÍA, REFRESCA PRIMERO.
+  // LA BÚSQUEDA ES INSENSIBLE A MAYÚSCULAS, MINÚSCULAS Y ACENTOS.
+  Future<List<Book>> searchByTitle(String query) async {
+    if (_cachedBooks.isEmpty) await refreshCache();
+
+    final normalizedQuery = removeDiacritics(query.trim().toLowerCase());
+
+    return _cachedBooks.where((book) {
+      final normalizedTitle = removeDiacritics(book.titulo.toLowerCase());
+      return normalizedTitle.contains(normalizedQuery);
+    }).toList();
+  }
 }

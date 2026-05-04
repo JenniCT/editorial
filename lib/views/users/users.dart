@@ -244,7 +244,7 @@ class _UsersPageState extends State<UsersPage> {
                                   'ACTIVO',
                             );
 
-                            await _viewModel.addUsuario(newUser);
+                            await _viewModel.addUsuario(newUser, {});
                           }
 
                           if (mounted) {
@@ -327,7 +327,8 @@ class _UsersPageState extends State<UsersPage> {
                   icon: CupertinoIcons.add_circled_solid,
                   text: 'Agregar usuario',
                   onPressed: () async {
-                    await showAddUserDialog(context);
+                    showAddUserDialog(context);
+                    await Future.delayed(const Duration(milliseconds: 500));
                     await _loadUsuarios();
                   },
                 ),

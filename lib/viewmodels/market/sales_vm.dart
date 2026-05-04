@@ -14,7 +14,7 @@ class SalesViewModel {
     final user = _auth.currentUser;
     if (user == null) throw Exception("Sesión no activa");
 
-    debugPrint("🚀 Iniciando importación de ${data.length} filas...");
+    debugPrint(" Iniciando importación de ${data.length} filas...");
 
     final booksSnapshot = await _booksCollection.get();
     final allBooks = booksSnapshot.docs;
@@ -26,18 +26,19 @@ class SalesViewModel {
       
       // Si el título es igual al nombre de la columna, es la fila de encabezado del Excel. Saltamos.
       if (tituloExcel.isEmpty || tituloExcel.toLowerCase() == "título" || tituloExcel.toLowerCase() == "titulo") {
-        debugPrint("⏭️ Fila de encabezado o vacía detectada ('$tituloExcel'). Saltando...");
+        debugPrint("Fila de encabezado o vacía detectada ('$tituloExcel'). Saltando...");
         continue;
       }
 
       int cantidad = int.tryParse((row['Cantidad'] ?? row['cantidad'] ?? "0").toString()) ?? 0;
       double total = double.tryParse((row['Total'] ?? row['total'] ?? "0").toString()) ?? 0.0;
       String lugar = (row['Lugar'] ?? row['lugar'] ?? "FIL UNACH").toString().trim();
+      double precio = cantidad > 0 ? total / cantidad : 0.0;
 
-      debugPrint("🔍 Procesando: '$tituloExcel' | Cantidad: $cantidad | Total: $total");
+      debugPrint(" Procesando: '$tituloExcel' | Cantidad: $cantidad | Total: $total");
 
       if (cantidad <= 0) {
-        debugPrint("⚠️ Cantidad inválida para '$tituloExcel'. Saltando...");
+        debugPrint(" Cantidad inválida para '$tituloExcel'. Saltando...");
         continue;
       }
 
@@ -52,7 +53,7 @@ class SalesViewModel {
       );
 
       if (bookDoc == null) {
-        debugPrint("❌ No se encontró el libro '$tituloExcel' en Firebase.");
+        debugPrint(" No se encontró el libro '$tituloExcel' en Firebase.");
         continue;
       }
 
@@ -61,7 +62,7 @@ class SalesViewModel {
       final int stockActual = (bookData['copias'] ?? 0);
 
       if (stockActual < cantidad) {
-        debugPrint("🚫 Stock insuficiente para $tituloExcel ($stockActual < $cantidad)");
+        debugPrint("Stock insuficiente para $tituloExcel ($stockActual < $cantidad)");
         continue;
       }
 
@@ -76,6 +77,7 @@ class SalesViewModel {
         userEmail: user.email ?? '',
         lugar: lugar,
         total: total,
+        precioUnitario: precio,
       );
 
       try {
@@ -92,12 +94,12 @@ class SalesViewModel {
             'estado': nuevoStock > 2,
           });
         });
-        debugPrint("✅ REGISTRO EXITOSO: $tituloExcel");
+        debugPrint(" REGISTRO EXITOSO: $tituloExcel");
       } catch (e) {
-        debugPrint("❌ ERROR FIRESTORE: $e");
+        debugPrint("ERROR FIRESTORE: $e");
       }
     }
-    debugPrint("🏁 Proceso terminado.");
+    debugPrint("Proceso terminado.");
   }
 
   // MÉTODOS ADICIONALES (addSale, getSalesStream, etc.)
@@ -154,5 +156,22 @@ class SalesViewModel {
       'Fecha': '${s.fecha.year}-${s.fecha.month.toString().padLeft(2, '0')}-${s.fecha.day.toString().padLeft(2, '0')}',
       'Correo': s.userEmail, 'Lugar': s.lugar, 'Total': s.total,
     };
+  }
+
+  // ===================================================================
+  // ACTUALIZAR VENTA
+  // ===================================================================
+  Future<void> updateSale(Sale sale) async {
+    try {
+      await _salesCollection.doc(sale.id).update({
+        'lugar':    sale.lugar,
+        'cantidad': sale.cantidad,
+        'total':    sale.total,
+        'precioUnitario': sale.precioUnitario, 
+      });
+    } catch (e) {
+      debugPrint('Error al actualizar venta: $e');
+      rethrow;
+    }
   }
 }

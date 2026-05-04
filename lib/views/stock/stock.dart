@@ -13,6 +13,7 @@ import '../../viewmodels/docs/export_vm.dart';
 //=========================== VISTAS SECUNDARIAS ===========================//
 import 'add_bk.dart';
 import '../book/details_bk.dart';
+import '../book/edit_bk.dart';
 import '../basic/export/download_dialog.dart';
 
 //=========================== WIDGETS ===========================//
@@ -418,7 +419,16 @@ class _InventarioPageState extends State<InventarioPage> {
                                           _buildClickableCell(AreaBadge(area: book.areaConocimiento), book),
                                           TableActions(
                                             showCost: true,
-                                            onEdit: () {},
+                                            onEdit: () => showEditBookDialog(
+                                              context,
+                                              book,
+                                              onUpdate: (updated) {
+                                                setState(() {
+                                                  final idx = _allBooks.indexWhere((b) => b.id == updated.id);
+                                                  if (idx != -1) _allBooks[idx] = updated;
+                                                });
+                                              },
+                                            ),
                                             showQR: true,
                                             onHistory: () {},
                                             onCost: () {},

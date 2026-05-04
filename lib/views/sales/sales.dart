@@ -12,6 +12,9 @@ import '../../viewmodels/docs/export_vm.dart';
 //=========================== VISTAS SECUNDARIAS ===========================//
 import '../basic/import/import.dart';
 import '../basic/export/download_dialog.dart';
+import 'add_sale.dart';
+import 'detail_sale.dart';
+import 'edit_sale.dart';
 
 //=========================== WIDGETS ===========================//
 import '../../widgets/layout/page_header.dart';
@@ -114,29 +117,16 @@ class _SalesPageState extends State<SalesPage> {
 
   //=========================== DETALLE ===========================//
   void _handleSaleSelected(Sale sale) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Detalle de la venta'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Título: ${sale.titulo}'),
-            Text('Cantidad: ${sale.cantidad}'),
-            Text('Total: ${sale.total.toStringAsFixed(2)}'),
-            Text('Fecha: ${sale.fecha.day}/${sale.fecha.month}/${sale.fecha.year}'),
-            Text('Lugar: ${sale.lugar}'),
-            Text('Usuario: ${sale.userEmail}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
+    mostrarDetallVenta(
+      context,
+      sale,
+      onUpdate: (updatedSale) {
+        // Refleja cambios en _allSales si la venta fue editada
+        setState(() {
+          final idx = _allSales.indexWhere((s) => s.id == updatedSale.id);
+          if (idx != -1) _allSales[idx] = updatedSale;
+        });
+      },
     );
   }
 
@@ -179,7 +169,6 @@ class _SalesPageState extends State<SalesPage> {
       const Text('Total'),
       const Text('Fecha'),
       const Text('Lugar'),
-      const Text('Usuario'),
       const Text('Acciones'),
     ];
   }
@@ -193,15 +182,12 @@ class _SalesPageState extends State<SalesPage> {
       120, // total
       120, // fecha
       160, // lugar
-      180, // usuario
       220, // acciones
     ];
     final salesToShow = _isSearching ? _filteredSales : _allSales;
     final start = _currentPage * _itemsPerPage;
     final end = (start + _itemsPerPage).clamp(0, salesToShow.length);
-    final page = salesToShow.isNotEmpty
-        ? salesToShow.sublist(start, end)
-        : <Sale>[];
+    final page = salesToShow.isNotEmpty ? salesToShow.sublist(start, end) : <Sale>[];
 
     _selectAll = page.isNotEmpty && page.every((s) => s.selected);
 
@@ -306,7 +292,7 @@ class _SalesPageState extends State<SalesPage> {
                 PrimaryButton(
                   icon: CupertinoIcons.add_circled_solid,
                   text: 'Agregar ventas',
-                  onPressed: () {},
+                  onPressed: () => showSellDialog(context, (_) {}),
                 ),
               ],
             ),
@@ -319,13 +305,12 @@ class _SalesPageState extends State<SalesPage> {
                 Expanded(
                   child: Search<Sale>(
                     controller: _searchController,
-                    hintText: 'Buscar por título, email del usuario, lugar, etc.',
+                    hintText: 'Buscar por título, autor, lugar, etc.',
                     allItems: _allSales,
                     onResults: _handleSearchResults,
                     filter: (s, q) {
                       final x = q.toLowerCase();
                       return s.titulo.toLowerCase().contains(x) ||
-                          s.userEmail.toLowerCase().contains(x) ||
                           s.lugar.toLowerCase().contains(x);
                     },
                   ),
@@ -392,10 +377,18 @@ class _SalesPageState extends State<SalesPage> {
                           _buildClickableCell(TableText(text: sale.total.toStringAsFixed(2)), sale),
                           _buildClickableCell(TableText(text: '${sale.fecha.day}/${sale.fecha.month}/${sale.fecha.year}'),sale),
                           _buildClickableCell(TableText(text: sale.lugar), sale),
-                          _buildClickableCell(TableText(text: sale.userEmail), sale),
                           TableActions(
                             showCost: false,
-                            onEdit: () {},
+                            onEdit: () => showEditSaleDialog(
+                              context,
+                              sale,
+                              onUpdate: (updated) {
+                                setState(() {
+                                  final idx = _allSales.indexWhere((s) => s.id == updated.id);
+                                  if (idx != -1) _allSales[idx] = updated;
+                                });
+                              },
+                            ),
                             onQr: () {},
                             showQR: true,
                             onHistory: () {},

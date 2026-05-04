@@ -12,6 +12,7 @@ import '../../viewmodels/docs/export_vm.dart';
 
 //=========================== VISTAS SECUNDARIAS ===========================//
 import '../book/details_bk.dart';
+import '../book/edit_bk.dart';
 import '../acervo/add_acervo.dart';
 import '../basic/export/download_dialog.dart';
 
@@ -392,7 +393,16 @@ class _AcervoPageState extends State<AcervoPage> {
                           _buildClickableCell(AreaBadge(area: book.areaConocimiento), book),
                           TableActions(
                             showCost: true,
-                            onEdit: () {},
+                            onEdit: () => showEditBookDialog(
+                              context,
+                              book,
+                              onUpdate: (updated) {
+                                setState(() {
+                                  final idx = _allBooks.indexWhere((b) => b.id == updated.id);
+                                  if (idx != -1) _allBooks[idx] = updated;
+                                });
+                              },
+                            ),
                             showQR: true,
                             onHistory: () {},
                             onCost: () {},
