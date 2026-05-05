@@ -15,6 +15,7 @@ import '../book/details_bk.dart';
 import '../book/edit_bk.dart';
 import '../acervo/add_acervo.dart';
 import '../basic/export/download_dialog.dart';
+import '../basic/qr/qr_v.dart';
 
 //=========================== WIDGETS ===========================//
 import '../../widgets/layout/page_header.dart';
@@ -404,6 +405,7 @@ class _AcervoPageState extends State<AcervoPage> {
                               },
                             ),
                             showQR: true,
+                            onQr: () => showBookQrDialog(context,book,),
                             onHistory: () {},
                             onCost: () {},
                             onDelete: () {},

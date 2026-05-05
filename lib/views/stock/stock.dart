@@ -15,6 +15,7 @@ import 'add_bk.dart';
 import '../book/details_bk.dart';
 import '../book/edit_bk.dart';
 import '../basic/export/download_dialog.dart';
+import '../basic/qr/qr_v.dart';
 
 //=========================== WIDGETS ===========================//
 import '../../widgets/layout/page_header.dart';
@@ -280,15 +281,13 @@ class _InventarioPageState extends State<InventarioPage> {
                           : _allBooks;
 
                   final startIndex = _currentPage * _booksPerPage;
-                  final endIndex =
-                      (startIndex + _booksPerPage).clamp(0, booksToShow.length);
+                  final endIndex = (startIndex + _booksPerPage).clamp(0, booksToShow.length);
                   final books = booksToShow.isNotEmpty
                       ? booksToShow.sublist(startIndex, endIndex)
                       : <Book>[];
 
                   final bool hasData = _allBooks.isNotEmpty;
-                  final bool isEmpty =
-                      _allBooks.isEmpty || (_isSearching && booksToShow.isEmpty);
+                  final bool isEmpty = _allBooks.isEmpty || (_isSearching && booksToShow.isEmpty);
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,6 +429,7 @@ class _InventarioPageState extends State<InventarioPage> {
                                               },
                                             ),
                                             showQR: true,
+                                            onQr: () => showBookQrDialog(context,book,),
                                             onHistory: () {},
                                             onCost: () {},
                                             onDelete: () {},

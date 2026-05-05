@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // WIDGETS
 import '../widgets/global/sidebar.dart';
@@ -41,7 +42,6 @@ class _HomeLayoutState extends State<HomeLayout> {
 
   final List<Widget?> loadedPages = [];
 
-  // KEY PARA CONTROLAR EL SCAFFOLD Y EL DRAWER
   final GlobalKey<ScaffoldState> _scaffoldKey =
       GlobalKey<ScaffoldState>();
 
@@ -67,13 +67,69 @@ class _HomeLayoutState extends State<HomeLayout> {
       ),
     );
 
-    // Dashboard precargado
+    // precarga dashboard
     loadedPages[0] = const Dashboard();
 
-    _cargarPermisos();
+    _cargarPermisos().then((_) {
+      _restoreSelectedIndex();
+    });
   }
 
+  // =====================================================
+  // GUARDAR PÁGINA ACTUAL
+  // =====================================================
+
+  Future<void> _saveSelectedIndex(
+    int index,
+  ) async {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.setInt(
+      'home_selected_index',
+      index,
+    );
+  }
+
+  Future<void> _restoreSelectedIndex() async {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    final savedIndex =
+        prefs.getInt(
+              'home_selected_index',
+            ) ??
+            0;
+
+    if (!mounted) return;
+
+    setState(() {
+      selectedIndex = savedIndex;
+
+      if (savedIndex < loadedPages.length &&
+          loadedPages[savedIndex] == null) {
+        loadedPages[savedIndex] =
+            _buildPage(savedIndex);
+      }
+    });
+  }
+
+  Future<void> _clearSavedIndex() async {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.remove(
+      'home_selected_index',
+    );
+  }
+
+  // =====================================================
+  // PERMISOS
+  // =====================================================
+
   Future<void> _cargarPermisos() async {
+    if (!mounted) return;
+
     setState(() => loadingPermisos = true);
 
     Map<String, bool> permisos = {
@@ -81,8 +137,10 @@ class _HomeLayoutState extends State<HomeLayout> {
       'Cerrar sesión': true,
     };
 
-    // ADMIN: acceso total
+    // ADMIN → acceso total
     if (widget.role == Role.adm) {
+      if (!mounted) return;
+
       setState(() {
         permisosModulos = {
           'Dashboard': true,
@@ -93,36 +151,47 @@ class _HomeLayoutState extends State<HomeLayout> {
           'Usuarios': true,
           'Cerrar sesión': true,
         };
+
         loadingPermisos = false;
       });
+
       return;
     }
 
     try {
-      final permisosSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.user.uid)
-          .collection('permissions')
-          .get();
+      final permisosSnapshot =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(widget.user.uid)
+              .collection('permissions')
+              .get();
 
-      for (var doc in permisosSnapshot.docs) {
+      for (final doc in permisosSnapshot.docs) {
         final data = doc.data();
 
-        final modulo = data['module'] as String? ?? '';
+        final modulo =
+            data['module'] as String? ?? '';
 
-        final perms = Map<String, bool>.from(
+        final perms =
+            Map<String, bool>.from(
           data['permissions'] ?? {},
         );
 
         permisos[modulo] =
-            perms.values.any((value) => value == true);
+            perms.values.any(
+          (value) => value == true,
+        );
       }
+
+      if (!mounted) return;
 
       setState(() {
         permisosModulos = permisos;
         loadingPermisos = false;
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         loadingPermisos = false;
       });
@@ -142,6 +211,10 @@ class _HomeLayoutState extends State<HomeLayout> {
     return permisosModulos[label] ?? false;
   }
 
+  // =====================================================
+  // DETALLE LIBRO
+  // =====================================================
+
   void handleBookSelection(Book book) {
     setState(() {
       selectedBook = book;
@@ -149,12 +222,24 @@ class _HomeLayoutState extends State<HomeLayout> {
     });
   }
 
-  Future<void> onItemSelected(int index) async {
+  // =====================================================
+  // NAVEGACIÓN
+  // =====================================================
+
+  Future<void> onItemSelected(
+    int index,
+  ) async {
     final label = labels[index];
 
-    // CERRAR SESIÓN REAL
+    // =========================================
+    // CERRAR SESIÓN
+    // =========================================
+
     if (label == 'Cerrar sesión') {
-      await FirebaseAuth.instance.signOut();
+      await _clearSavedIndex();
+
+      await FirebaseAuth.instance
+          .signOut();
 
       if (!mounted) return;
 
@@ -167,16 +252,29 @@ class _HomeLayoutState extends State<HomeLayout> {
       return;
     }
 
+    // =========================================
     // VALIDAR PERMISOS
+    // =========================================
+
     if (!_tieneAccesoModulo(label)) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         const SnackBar(
-          content: Text('No tienes permisos'),
-          backgroundColor: Colors.redAccent,
+          content:
+              Text('No tienes permisos'),
+          backgroundColor:
+              Colors.redAccent,
         ),
       );
+
       return;
     }
+
+    // =========================================
+    // CAMBIO DE VISTA
+    // =========================================
 
     setState(() {
       selectedIndex = index;
@@ -184,13 +282,20 @@ class _HomeLayoutState extends State<HomeLayout> {
 
       if (index < loadedPages.length &&
           loadedPages[index] == null) {
-        loadedPages[index] = _buildPage(index);
+        loadedPages[index] =
+            _buildPage(index);
       }
     });
 
-    // CERRAR DRAWER EN MÓVIL
-    if (_scaffoldKey.currentState?.isDrawerOpen ??
+    await _saveSelectedIndex(index);
+
+    // cerrar drawer móvil
+    if (_scaffoldKey
+            .currentState
+            ?.isDrawerOpen ??
         false) {
+      if (!mounted) return;
+
       Navigator.pop(context);
     }
   }
@@ -202,12 +307,14 @@ class _HomeLayoutState extends State<HomeLayout> {
 
       case 1:
         return InventarioPage(
-          onBookSelected: handleBookSelection,
+          onBookSelected:
+              handleBookSelection,
         );
 
       case 2:
         return AcervoPage(
-          onAcervoSelected: handleBookSelection,
+          onAcervoSelected:
+              handleBookSelection,
         );
 
       case 3:
@@ -223,91 +330,129 @@ class _HomeLayoutState extends State<HomeLayout> {
 
       default:
         return const Center(
-          child: Text('Vista no encontrada'),
+          child:
+              Text('Vista no encontrada'),
         );
     }
   }
+
+  // =====================================================
+  // BUILD
+  // =====================================================
 
   @override
   Widget build(BuildContext context) {
     if (loadingPermisos) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(),
+          child:
+              CircularProgressIndicator(),
         ),
       );
     }
 
     final bool isMobile =
-        MediaQuery.of(context).size.width < 800;
+        MediaQuery.of(context).size.width <
+            800;
 
     return Scaffold(
       key: _scaffoldKey,
 
-      // DRAWER PARA MÓVIL
+      // =====================================
+      // DRAWER MOBILE
+      // =====================================
+
       drawer: isMobile
           ? Sidebar(
-              selectedIndex: selectedIndex,
-              onItemSelected: onItemSelected,
-              userName: widget.user.name,
-              userRole: widget.user.roleName,
-              permisosModulos: permisosModulos,
+              selectedIndex:
+                  selectedIndex,
+              onItemSelected:
+                  onItemSelected,
+              userName:
+                  widget.user.name,
+              userRole:
+                  widget.user.roleName,
+              permisosModulos:
+                  permisosModulos,
             )
           : null,
 
-      // APPBAR PARA MÓVIL
+      // =====================================
+      // APPBAR MOBILE
+      // =====================================
+
       appBar: isMobile
           ? AppBar(
               backgroundColor:
-                  const Color(0xFF1C2532),
+                  const Color(
+                0xFF1C2532,
+              ),
               title: Text(
                 labels[selectedIndex],
-                style: const TextStyle(
+                style:
+                    const TextStyle(
                   color: Colors.white,
                 ),
               ),
-              iconTheme: const IconThemeData(
+              iconTheme:
+                  const IconThemeData(
                 color: Colors.white,
               ),
               elevation: 0,
             )
           : null,
 
+      // =====================================
+      // BODY
+      // =====================================
+
       body: Row(
         children: [
-          // SIDEBAR EN ESCRITORIO
+          // sidebar desktop
           if (!isMobile)
             Sidebar(
-              selectedIndex: selectedIndex,
-              onItemSelected: onItemSelected,
-              userName: widget.user.name,
-              userRole: widget.user.roleName,
-              permisosModulos: permisosModulos,
+              selectedIndex:
+                  selectedIndex,
+              onItemSelected:
+                  onItemSelected,
+              userName:
+                  widget.user.name,
+              userRole:
+                  widget.user.roleName,
+              permisosModulos:
+                  permisosModulos,
             ),
 
           Expanded(
             child: Container(
-              color: const Color(0xFFF2F3F5),
+              color:
+                  const Color(0xFFF2F3F5),
 
               child: showingDetail &&
                       selectedBook != null
                   ? DetalleLibroPage(
-                      key: const ValueKey(
+                      key:
+                          const ValueKey(
                         'DetalleLibro',
                       ),
-                      book: selectedBook!,
+                      book:
+                          selectedBook!,
                       onBack: () {
                         setState(() {
-                          showingDetail = false;
+                          showingDetail =
+                              false;
                         });
                       },
                     )
                   : IndexedStack(
-                      index: selectedIndex,
-                      children: List.generate(
+                      index:
+                          selectedIndex,
+                      children:
+                          List.generate(
                         loadedPages.length,
                         (index) =>
-                            loadedPages[index] ??
+                            loadedPages[
+                                    index] ??
                             const SizedBox(),
                       ),
                     ),

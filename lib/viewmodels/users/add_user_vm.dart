@@ -99,4 +99,62 @@ class AddUserVM {
       rethrow;
     }
   }
+
+  ///ACTUALIZAR USUARIO
+  Future<void> updateUsuario(
+    UserModel user,
+    Map<String, Map<String, bool>> permisos,
+  ) async {
+    final errors = user.validate();
+    if (errors.isNotEmpty) throw Exception(errors.join(', '));
+
+    await _firestore.collection('users').doc(user.uid).update({
+      'name':      user.name,
+      'expiresAt': user.expiresAt != null
+          ? Timestamp.fromDate(user.expiresAt!)
+          : FieldValue.delete(),
+      'status':    user.status,
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+
+    for (final mod in permisos.keys) {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('permissions')
+          .doc(mod)
+          .set({
+        'module':      mod,
+        'permissions': permisos[mod],
+      });
+    }
+  }
+
+  /// OBTENER PERMISOS DE UN USUARIO
+  Future<Map<String, Map<String, bool>>> getPermisos(String uid) async {
+    final result = <String, Map<String, bool>>{
+      for (final m in ['Inventario', 'Acervo', 'Ventas', 'Donaciones', 'Usuarios'])
+        m: {for (final a in ['Ver', 'Agregar', 'Editar', 'Eliminar', 'Importar', 'Exportar', 'QR', 'Historial']) a: false},
+    };
+
+    final snap = await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('permissions')
+        .get();
+
+    for (final doc in snap.docs) {
+      final mod  = doc.data()['module'] as String?;
+      final perms = doc.data()['permissions'] as Map<String, dynamic>?;
+      if (mod != null && result.containsKey(mod) && perms != null) {
+        for (final a in perms.keys) {
+          if (result[mod]!.containsKey(a)) {
+            result[mod]![a] = perms[a] as bool? ?? false;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
 }

@@ -515,7 +515,7 @@ class _AddBookDialogState extends State<AddBookDialog> {
     return panelLabeledField(
       label: 'Área de conocimiento',
       child: DropdownButtonFormField<String>(
-        value: _selectedAreaConocimiento.isEmpty
+        initialValue: _selectedAreaConocimiento.isEmpty
             ? null
             : _selectedAreaConocimiento,
         decoration: panelInputDecoration(hint: 'Seleccione el área'),

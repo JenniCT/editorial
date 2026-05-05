@@ -12,6 +12,7 @@ import '../../viewmodels/docs/export_vm.dart';
 //=========================== VISTAS SECUNDARIAS ===========================//
 import '../users/add_user.dart';
 import 'details_user.dart';
+import 'edit_user.dart';
 import '../basic/import/import.dart';
 import '../basic/export/download_dialog.dart';
 
@@ -76,6 +77,14 @@ class _UsersPageState extends State<UsersPage> {
     }
   }
 
+  Future<void> _recargarUsuarios() async {
+    await _loadUsuarios();
+
+    if (!mounted) return;
+
+    setState(() {});
+  }
+
   //=========================== SELECCIÓN ===========================//
   List<UserModel> get _selectedUsers =>
       _allUsuarios.where((u) => u.selected).toList();
@@ -103,16 +112,23 @@ class _UsersPageState extends State<UsersPage> {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => DetailsUserPage(
-              usuario: user,
-              onBack: () => Navigator.pop(context),
-            ),
-          ),
+        onTap: () {
+          showUserDetailDialog(
+            context,
+            user,
+            onEdit: () {
+              showEditUserDialog(
+                context,
+                user,
+                onUpdated: () => _recargarUsuarios(),
+              );
+            },
+          );
+        },
+        child: SizedBox(
+          width: double.infinity,
+          child: child,
         ),
-        child: SizedBox(width: double.infinity, child: child),
       ),
     );
   }
@@ -181,8 +197,7 @@ class _UsersPageState extends State<UsersPage> {
       120, // estado
       220, // acciones
     ];
-    final List<UserModel> itemsToShow =
-        _isSearching ? _filteredUsuarios : _allUsuarios;
+    final List<UserModel> itemsToShow = _isSearching ? _filteredUsuarios : _allUsuarios;
     final startIndex = _currentPage * _itemsPerPage;
     final endIndex =
         (startIndex + _itemsPerPage).clamp(0, itemsToShow.length);
@@ -247,23 +262,22 @@ class _UsersPageState extends State<UsersPage> {
                             await _viewModel.addUsuario(newUser, {});
                           }
 
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text('Importación completada con éxito')),
-                            );
-                            _loadUsuarios();
-                          }
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Importación completada con éxito'),
+                            ),
+                          );
+
+                          _loadUsuarios();
                         } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error en la importación: $e'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error en la importación: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
                         }
                       },
                     ),
@@ -285,8 +299,7 @@ class _UsersPageState extends State<UsersPage> {
                     if (option == null) return;
 
                     if (option == 'all') {
-                      final allData =
-                          _viewModel.mapUsersToExport(_allUsuarios);
+                      final allData =  _viewModel.mapUsersToExport(_allUsuarios);
                       if (!context.mounted) return;
                       await _exportVM.exportToExcel(
                         data: allData,
@@ -303,8 +316,7 @@ class _UsersPageState extends State<UsersPage> {
                         );
                         return;
                       }
-                      final selectedData =
-                          _viewModel.mapUsersToExport(_selectedUsers);
+                      final selectedData = _viewModel.mapUsersToExport(_selectedUsers);
                       if (!context.mounted) return;
                       await _exportVM.exportToExcel(
                         data: selectedData,
@@ -429,7 +441,7 @@ class _UsersPageState extends State<UsersPage> {
                           TableActions(
                             showCost: false,
                             showQR: false,
-                            onEdit: () {},
+                            onEdit: ()=> showEditUserDialog(context, user, onUpdated: () => _recargarUsuarios()),
                             onQr: () {},
                             onHistory: () {},
                             onDelete: () {},

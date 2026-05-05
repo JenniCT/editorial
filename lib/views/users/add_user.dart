@@ -59,7 +59,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
 
   void _toggleModulo(String m, bool value) {
     setState(() {
-      for (final a in _kAcciones) _permisos[m]![a] = value;
+      for (final a in _kAcciones) {_permisos[m]![a] = value;}
     });
   }
 

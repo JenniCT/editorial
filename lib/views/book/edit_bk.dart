@@ -278,17 +278,28 @@ class _EditBookDialogState extends State<EditBookDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: panelField('Año', _anioController,
-                          hint: 'Ej. 2023',
-                          onlyDigits: true,
-                          maxLength: 4,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Obligatorio';
-                            final yr = int.tryParse(v);
-                            if (yr == null || yr < 1000 ||
-                                yr > DateTime.now().year + 1) return 'Año inválido';
-                            return null;
-                          }),
+                      child: panelField(
+                        'Año',
+                        _anioController,
+                        hint: 'Ej. 2023',
+                        onlyDigits: true,
+                        maxLength: 4,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Obligatorio';
+                          }
+
+                          final yr = int.tryParse(v);
+
+                          if (yr == null ||
+                              yr < 1000 ||
+                              yr > DateTime.now().year + 1) {
+                            return 'Año inválido';
+                          }
+
+                          return null;
+                        },
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -330,7 +341,7 @@ class _EditBookDialogState extends State<EditBookDialog> {
                 panelLabeledField(
                   label: 'Área de conocimiento',
                   child: DropdownButtonFormField<String>(
-                    value: _selectedAreaConocimiento,
+                    initialValue: _selectedAreaConocimiento,
                     decoration: panelInputDecoration(hint: 'Seleccione el área'),
                     style: const TextStyle(
                         fontSize: 13,
@@ -417,7 +428,7 @@ class _EditBookDialogState extends State<EditBookDialog> {
               height: 160,
               width: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _imagePlaceholder(),
+              errorBuilder: (_, _, _) => _imagePlaceholder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -543,8 +554,8 @@ void showEditBookDialog(
     barrierLabel: 'Editar libro',
     barrierColor: const Color.fromRGBO(0, 0, 0, 0.45),
     transitionDuration: const Duration(milliseconds: 280),
-    pageBuilder: (_, __, ___) => const SizedBox.shrink(),
-    transitionBuilder: (ctx, anim, _, __) {
+    pageBuilder: (_, _, _) => const SizedBox.shrink(),
+    transitionBuilder: (ctx, anim, _, _) {
       final curved =
           CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
       return SlideTransition(

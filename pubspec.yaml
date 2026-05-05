@@ -25,8 +25,8 @@ dependencies:
 
   # SQLITE - PARA BASE DE DATOS LOCAL Y MODO OFFLINE
   drift: ^2.28.2                # PAQUETE PRINCIPAL DE DRIFT
-  drift_flutter: ^0.2.7         # EXTENSIÓN DE DRIFT PARA INTEGRACIÓN CON FLUTTER
-  sqlite3_flutter_libs: ^0.5.39 # BIBLIOTECAS NATIVAS DE SQLITE NECESARIAS
+  drift_flutter: ^0.3.0         # EXTENSIÓN DE DRIFT PARA INTEGRACIÓN CON FLUTTER
+  sqlite3_flutter_libs: ^0.6.0+eol # BIBLIOTECAS NATIVAS DE SQLITE NECESARIAS
   sqflite_common_ffi: ^2.3.0
 
   # GESTIÓN DE ESTADO Y ACCESO A ARCHIVOS
@@ -40,10 +40,10 @@ dependencies:
   file_selector: ^1.0.3  #SELECTOR DE CARPETA DE ARCHIVOS
   file_selector_windows: ^0.9.2
   screenshot: 3.0.0      # CAPTURA DE PANTALLA DEL WIDGET
-  share_plus: ^12.0.0    # COMPARTIR CONTENIDO ENTRE APLICACIONES
-  file_picker: ^10.3.2   # SELECCIÓN DE ARCHIVOS DESDE EL SITEMA
+  share_plus: ^12.0.2    # COMPARTIR CONTENIDO ENTRE APLICACIONES
+  file_picker: ^8.1.2  # SELECCIÓN DE ARCHIVOS DESDE EL SITEMA
   pdf: ^3.10.4           # GENERACIÓN Y MANIPULACIÓN DE ARCHIVOS PDF
-  csv: ^6.0.0            # LECTURA Y ESCRITURA DE ARCHIVOS CSV
+  csv: ^5.0.0            # LECTURA Y ESCRITURA DE ARCHIVOS CSV
   excel: ^4.0.6
   qr_flutter: ^4.1.0     # GENERA CÓDIGO QR
   web: ^1.1.1
@@ -64,6 +64,8 @@ dependencies:
   flutter_animate: ^4.2.0    # ANIMACIONES SENCILLAS Y EFECTOS VISUALES
   cached_network_image: ^3.4.1
   dotted_border: ^3.1.0
+  open_file: ^3.5.11
+  shared_preferences: ^2.5.5
 
 
 # DEPENDENCIAS DE DESARROLLO

@@ -27,9 +27,10 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
   final AcervoViewModel _viewModel = AcervoViewModel();
 
   // ─── Estado ───────────────────────────────────────────────────────────────
-  String _selectedAreaConocimiento = 'Sin definir';
-  File? _selectedImage;
+  String _selectedAreaConocimiento = '';
+  File?     _selectedImage;
   Uint8List? _imageBytes;
+  bool _isUpdating  = false;
   bool _showUrlField = false;
 
   // ─── Controllers ──────────────────────────────────────────────────────────
@@ -43,7 +44,8 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
   final _isbnController      = TextEditingController();
   final _edicionController   = TextEditingController();
   final _copiasController    = TextEditingController();
-  final _precioController    = TextEditingController();
+  final _estanteController   = TextEditingController();
+  final _almacenController   = TextEditingController();
 
   final List<String> _areasConocimiento = [
     'Sin definir',
@@ -59,7 +61,19 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
 
   // ─── Lifecycle ────────────────────────────────────────────────────────────
   @override
+  void initState() {
+    super.initState();
+    _editorialController.text = 'Dirección Editorial';
+    _copiasController.addListener(_onCopiasChanged);
+    _estanteController.addListener(_onEstanteChanged);
+    _almacenController.addListener(_onAlmacenChanged);
+  }
+
+  @override
   void dispose() {
+    _copiasController.removeListener(_onCopiasChanged);
+    _estanteController.removeListener(_onEstanteChanged);
+    _almacenController.removeListener(_onAlmacenChanged);
     _imageUrlController.dispose();
     _tituloController.dispose();
     _subtituloController.dispose();
@@ -70,21 +84,22 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
     _isbnController.dispose();
     _edicionController.dispose();
     _copiasController.dispose();
-    _precioController.dispose();
+    _estanteController.dispose();
+    _almacenController.dispose();
     super.dispose();
   }
 
   // ─── Imagen ───────────────────────────────────────────────────────────────
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
+    final picker     = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       setState(() {
         _selectedImage = File(pickedFile.path);
-        _imageBytes = bytes;
+        _imageBytes    = bytes;
         _imageUrlController.clear();
-        _showUrlField = false;
+        _showUrlField  = false;
       });
     }
   }
@@ -92,13 +107,13 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
   void _clearImage() {
     setState(() {
       _selectedImage = null;
-      _imageBytes = null;
+      _imageBytes    = null;
       _imageUrlController.clear();
-      _showUrlField = false;
+      _showUrlField  = false;
     });
   }
 
-  // ─── Guardar ──────────────────────────────────────────────────────────────
+  // ─── Guardar — lógica de acervo intacta ───────────────────────────────────
   Future<void> _saveAcervo() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -109,8 +124,8 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
       imagenUrl: _selectedImage == null && _imageUrlController.text.isNotEmpty
           ? _imageUrlController.text.trim()
           : null,
-      titulo:     _tituloController.text.trim(),
-      subtitulo:  _subtituloController.text.isNotEmpty
+      titulo:    _tituloController.text.trim(),
+      subtitulo: _subtituloController.text.isNotEmpty
           ? _subtituloController.text.trim()
           : null,
       autor:      _autorController.text.trim(),
@@ -118,21 +133,80 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
       coleccion:  _coleccionController.text.isNotEmpty
           ? _coleccionController.text.trim()
           : null,
-      anio:       int.tryParse(_anioController.text) ?? 0,
-      isbn:       _isbnController.text.isNotEmpty
+      anio:    int.tryParse(_anioController.text) ?? 0,
+      isbn:    _isbnController.text.isNotEmpty
           ? _isbnController.text.trim()
           : null,
-      edicion:    int.tryParse(_edicionController.text) ?? 1,
-      copias:     copias,
-      estante:    0,       // acervo siempre en 0
-      almacen:    copias,  // acervo va todo al almacén
-      areaConocimiento: _selectedAreaConocimiento,
-      estado:       false, // acervo
+      edicion: int.tryParse(_edicionController.text) ?? 1,
+      copias:  copias,
+      estante: 0,      // acervo: estante siempre 0
+      almacen: copias, // acervo: todo va al almacén
+      areaConocimiento: _selectedAreaConocimiento.isEmpty
+          ? 'Sin definir'
+          : _selectedAreaConocimiento,
+      estado:        false, // acervo
       fechaRegistro: DateTime.now(),
       registradoPor: FirebaseAuth.instance.currentUser?.uid ?? 'desconocido',
     );
 
     await _viewModel.addAcervo(book, context);
+  }
+
+  // ─── Validaciones stock ───────────────────────────────────────────────────
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content:         Text(message),
+      backgroundColor: Colors.redAccent,
+      duration:        const Duration(seconds: 2),
+    ));
+  }
+
+  void _onCopiasChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+    final copias  = int.tryParse(_copiasController.text) ?? 0;
+    final almacen = int.tryParse(_almacenController.text) ?? 0;
+    if (almacen > copias) {
+      _showError('Almacén no puede ser mayor que el número total de copias');
+      _almacenController.text = copias.toString();
+      _estanteController.text = '0';
+    } else {
+      final estante = copias - almacen;
+      if (estante >= 0) _estanteController.text = estante.toString();
+    }
+    _isUpdating = false;
+  }
+
+  void _onEstanteChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+    final copias  = int.tryParse(_copiasController.text) ?? 0;
+    final estante = int.tryParse(_estanteController.text) ?? 0;
+    if (estante > copias) {
+      _showError('Estante no puede ser mayor que el número total de copias');
+      _estanteController.text = copias.toString();
+      _almacenController.text = '0';
+    } else {
+      final almacen = copias - estante;
+      if (almacen >= 0) _almacenController.text = almacen.toString();
+    }
+    _isUpdating = false;
+  }
+
+  void _onAlmacenChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+    final copias  = int.tryParse(_copiasController.text) ?? 0;
+    final almacen = int.tryParse(_almacenController.text) ?? 0;
+    if (almacen > copias) {
+      _showError('Almacén no puede ser mayor que el número total de copias');
+      _almacenController.text = copias.toString();
+      _estanteController.text = '0';
+    } else {
+      final estante = copias - almacen;
+      if (estante >= 0) _estanteController.text = estante.toString();
+    }
+    _isUpdating = false;
   }
 
   // ─── Build ────────────────────────────────────────────────────────────────
@@ -141,16 +215,16 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
     return Form(
       key: _formKey,
       child: SidePanel(
-        title: 'Agregar libro al acervo',
-        headerIcon: CupertinoIcons.archivebox_fill,
-        onSave: _saveAcervo,
-        saveLabel: 'Agregar al acervo',
+        title:       'Agregar libro al acervo',
+        headerIcon:  CupertinoIcons.archivebox_fill,
+        onSave:      _saveAcervo,
+        saveLabel:   'Agregar al acervo',
         bodyBuilder: (_) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Imagen ──────────────────────────────────────────────────────
             PanelSection(
-              title: 'Imagen del libro',
+              title:    'Imagen del libro',
               children: [_buildImageSection()],
             ),
 
@@ -197,13 +271,15 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
                     Expanded(
                       child: panelField(
                         'Año', _anioController,
-                        hint: 'Ej. 2023',
+                        hint:       'Ej. 2023',
                         onlyDigits: true,
-                        maxLength: 4,
+                        maxLength:  4,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) return 'Obligatorio';
                           final yr = int.tryParse(v);
-                          if (yr == null || yr < 1000 || yr > DateTime.now().year + 1) {
+                          if (yr == null ||
+                              yr < 1000 ||
+                              yr > DateTime.now().year + 1) {
                             return 'Año inválido';
                           }
                           return null;
@@ -213,17 +289,18 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: panelField('Edición', _edicionController,
-                          hint: 'Ej. 1', required: false, onlyDigits: true),
+                          hint:       'Ej. 1',
+                          required:   false,
+                          onlyDigits: true),
                     ),
                   ],
                 ),
               ],
             ),
 
-            // ── Stock / Precio ───────────────────────────────────────────────
-            // NOTA: en acervo no hay estante/almacén manual, solo copias y precio
+            // ── Stock ────────────────────────────────────────────────────────
             PanelSection(
-              title: 'Inventario',
+              title: 'Stock',
               children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,24 +308,24 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
                     Expanded(
                       child: panelField(
                         'Número de copias', _copiasController,
-                        hint: '1',
+                        hint:       '0',
                         onlyDigits: true,
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Obligatorio'
-                            : null,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: panelField(
-                        'Precio', _precioController,
-                        hint: '0.00',
-                        // precio permite decimales, no usamos onlyDigits
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Obligatorio';
-                          if (double.tryParse(v) == null) return 'Valor inválido';
-                          return null;
-                        },
+                        'Estante', _estanteController,
+                        hint:       '0',
+                        onlyDigits: true,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: panelField(
+                        'Almacén', _almacenController,
+                        hint:       '0',
+                        onlyDigits: true,
                       ),
                     ),
                   ],
@@ -258,9 +335,9 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
 
             // ── Clasificación ────────────────────────────────────────────────
             PanelSection(
-              title: 'Clasificación',
+              title:           'Clasificación',
               showDividerAfter: false,
-              children: [_buildClasificacionSection()],
+              children:        [_buildClasificacionSection()],
             ),
           ],
         ),
@@ -288,21 +365,21 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
             children: [
               TextButton.icon(
                 onPressed: _pickImage,
-                icon: const Icon(CupertinoIcons.photo, size: 14),
+                icon:  const Icon(CupertinoIcons.photo, size: 14),
                 label: const Text('Cambiar'),
                 style: TextButton.styleFrom(
                     foregroundColor: const Color(0xFF052B67),
-                    padding: EdgeInsets.zero,
+                    padding:   EdgeInsets.zero,
                     textStyle: const TextStyle(fontSize: 13)),
               ),
               const SizedBox(width: 16),
               TextButton.icon(
                 onPressed: _clearImage,
-                icon: const Icon(Icons.close, size: 14),
+                icon:  const Icon(Icons.close, size: 14),
                 label: const Text('Quitar'),
                 style: TextButton.styleFrom(
                     foregroundColor: Colors.redAccent,
-                    padding: EdgeInsets.zero,
+                    padding:   EdgeInsets.zero,
                     textStyle: const TextStyle(fontSize: 13)),
               ),
             ],
@@ -320,19 +397,19 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
             child: Image.network(
               urlText,
               height: 160,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_,_, _) => _imagePlaceholder(),
+              width:  double.infinity,
+              fit:    BoxFit.cover,
+              errorBuilder: (_, _, _) => _imagePlaceholder(),
             ),
           ),
           const SizedBox(height: 10),
           TextButton.icon(
             onPressed: _clearImage,
-            icon: const Icon(Icons.close, size: 14),
+            icon:  const Icon(Icons.close, size: 14),
             label: const Text('Quitar imagen'),
             style: TextButton.styleFrom(
                 foregroundColor: Colors.redAccent,
-                padding: EdgeInsets.zero,
+                padding:   EdgeInsets.zero,
                 textStyle: const TextStyle(fontSize: 13)),
           ),
         ],
@@ -351,22 +428,22 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
             ),
             child: Container(
               height: 110,
-              width: double.infinity,
+              width:  double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color:        const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(CupertinoIcons.cloud_upload,
-                      size: 30,
+                      size:  30,
                       color: const Color(0xFF052B67).withValues(alpha: 0.45)),
                   const SizedBox(height: 8),
                   Text(
                     'Arrastra una imagen aquí',
                     style: TextStyle(
-                        fontSize: 13,
+                        fontSize:   13,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF052B67).withValues(alpha: 0.65)),
                   ),
@@ -388,8 +465,10 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
           child: Row(
             children: [
               Icon(
-                _showUrlField ? CupertinoIcons.chevron_up : CupertinoIcons.link,
-                size: 13,
+                _showUrlField
+                    ? CupertinoIcons.chevron_up
+                    : CupertinoIcons.link,
+                size:  13,
                 color: const Color(0xFF052B67),
               ),
               const SizedBox(width: 6),
@@ -398,8 +477,8 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
                     ? 'Ocultar campo de URL'
                     : 'O ingresa una URL de imagen',
                 style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF052B67),
+                    fontSize:   12,
+                    color:      Color(0xFF052B67),
                     fontWeight: FontWeight.w600),
               ),
             ],
@@ -410,10 +489,10 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
           const SizedBox(height: 8),
           TextFormField(
             controller: _imageUrlController,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF1C2532)),
-            decoration:
-                panelInputDecoration(hint: 'https://ejemplo.com/portada.jpg')
-                    .copyWith(
+            style:      const TextStyle(fontSize: 13, color: Color(0xFF1C2532)),
+            decoration: panelInputDecoration(
+                    hint: 'https://ejemplo.com/portada.jpg')
+                .copyWith(
               prefixIcon: const Icon(CupertinoIcons.link,
                   size: 16, color: Color(0xFF6B7280)),
             ),
@@ -426,8 +505,8 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
 
   Widget _imagePlaceholder() => Container(
         height: 160,
-        color: const Color(0xFFF8FAFC),
-        child: const Center(
+        color:  const Color(0xFFF8FAFC),
+        child:  const Center(
             child: Icon(CupertinoIcons.photo,
                 color: Color(0xFFCCCCCC), size: 40)),
       );
@@ -437,44 +516,48 @@ class _AddAcervoDialogState extends State<AddAcervoDialog> {
     return panelLabeledField(
       label: 'Área de conocimiento',
       child: DropdownButtonFormField<String>(
-        value: _selectedAreaConocimiento,
+        initialValue: _selectedAreaConocimiento.isEmpty
+          ? null
+          : _selectedAreaConocimiento,
         decoration: panelInputDecoration(hint: 'Seleccione el área'),
         style: const TextStyle(
-            fontSize: 13,
-            color: Color(0xFF1C2532),
+            fontSize:   13,
+            color:      Color(0xFF1C2532),
             fontWeight: FontWeight.w500),
         dropdownColor: Colors.white,
-        isExpanded: true,
-        borderRadius: BorderRadius.circular(10),
+        isExpanded:    true,
+        borderRadius:  BorderRadius.circular(10),
         items: _areasConocimiento
             .map((a) => DropdownMenuItem(
-                value: a, child: Text(a, overflow: TextOverflow.ellipsis)))
+                value: a,
+                child: Text(a, overflow: TextOverflow.ellipsis)))
             .toList(),
         onChanged: (v) =>
-            setState(() => _selectedAreaConocimiento = v ?? 'Sin definir'),
+            setState(() => _selectedAreaConocimiento = v ?? ''),
         validator: (v) =>
             (v == null || v.isEmpty) ? 'Selecciona un área' : null,
       ),
     );
   }
+
 }
 
 // ─── Función de apertura ──────────────────────────────────────────────────────
 void showAddAcervoDialog(BuildContext context, Function(Book) onAdd) {
   showGeneralDialog(
-    context: context,
+    context:            context,
     barrierDismissible: true,
-    barrierLabel: 'Agregar libro al acervo',
-    barrierColor: const Color.fromRGBO(0, 0, 0, 0.45),
+    barrierLabel:       'Agregar libro al acervo',
+    barrierColor:       const Color.fromRGBO(0, 0, 0, 0.45),
     transitionDuration: const Duration(milliseconds: 280),
-    pageBuilder: (_, _, _) => const SizedBox.shrink(),
+    pageBuilder:        (_, _, _) => const SizedBox.shrink(),
     transitionBuilder: (ctx, anim, _, _) {
       final curved =
           CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
       return SlideTransition(
         position: Tween<Offset>(
           begin: const Offset(1, 0),
-          end: Offset.zero,
+          end:   Offset.zero,
         ).animate(curved),
         child: Align(
           alignment: Alignment.centerRight,

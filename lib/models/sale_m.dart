@@ -9,7 +9,9 @@ class Sale {
   final String userEmail;
   final String lugar;
   final double total;
-  final double precioUnitario; // 👈 NUEVO
+  final double precioUnitario;
+  final int deEstante;
+  final int deAlmacen;
   bool selected;
 
   Sale({
@@ -24,7 +26,9 @@ class Sale {
     required this.lugar,
     required this.total,
     this.precioUnitario = 0.0,
-    this.selected = false,
+    this.deEstante      = 0,
+    this.deAlmacen      = 0,
+    this.selected       = false,
   });
 
   Sale copyWith({
@@ -39,6 +43,8 @@ class Sale {
     String? lugar,
     double? total,
     double? precioUnitario,
+    int? deEstante,
+    int? deAlmacen,
     bool? selected,
   }) {
     return Sale(
@@ -53,6 +59,8 @@ class Sale {
       lugar:          lugar          ?? this.lugar,
       total:          total          ?? this.total,
       precioUnitario: precioUnitario ?? this.precioUnitario,
+      deEstante:      deEstante      ?? this.deEstante,
+      deAlmacen:      deAlmacen      ?? this.deAlmacen,
       selected:       selected       ?? this.selected,
     );
   }
@@ -68,23 +76,27 @@ class Sale {
       'userEmail':      userEmail,
       'lugar':          lugar,
       'total':          total,
-      'precioUnitario': precioUnitario, 
+      'precioUnitario': precioUnitario,
+      'deEstante':      deEstante,
+      'deAlmacen':      deAlmacen,
     };
   }
 
   factory Sale.fromMap(Map<String, dynamic> map, {String? id}) {
     return Sale(
       id:             id,
-      bookId:         map['bookId']         ?? '',
-      titulo:         map['titulo']         ?? '',
-      autor:          map['autor']          ?? '',
-      cantidad:       (map['cantidad']      ?? 0) as int,
+      bookId:         map['bookId']          ?? '',
+      titulo:         map['titulo']          ?? '',
+      autor:          map['autor']           ?? '',
+      cantidad:       (map['cantidad']       ?? 0) as int,
       fecha:          DateTime.parse(map['fecha']),
-      userId:         map['userId']         ?? '',
-      userEmail:      map['userEmail']      ?? '',
-      lugar:          map['lugar']          ?? 'Desconocido',
-      total:          (map['total']         ?? 0.0).toDouble(),
-      precioUnitario: (map['precioUnitario'] ?? 0.0).toDouble(), 
+      userId:         map['userId']          ?? '',
+      userEmail:      map['userEmail']       ?? '',
+      lugar:          map['lugar']           ?? 'Desconocido',
+      total:          (map['total']          ?? 0.0).toDouble(),
+      precioUnitario: (map['precioUnitario'] ?? 0.0).toDouble(),
+      deEstante:      (map['deEstante']      ?? 0) as int,
+      deAlmacen:      (map['deAlmacen']      ?? 0) as int,
     );
   }
 }

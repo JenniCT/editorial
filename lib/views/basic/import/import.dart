@@ -81,7 +81,9 @@ class _ImportDialogState extends State<ImportDialog> {
                       : () async {
                         setState(() => _isProcessing = true);
                         await widget.onImportConfirmed(_previewData!);
-                        if (mounted) Navigator.pop(context);
+                        
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
                       },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1C2532),

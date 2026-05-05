@@ -45,13 +45,15 @@ class BookViewModel {
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (_) {
-        // AUTO-CIERRE OPCIONAL DEL MENSAJE
+      builder: (dialogContext) {
         if (autoCerrar) {
-          Future.delayed(const Duration(milliseconds: 300), () {
-            if (context.mounted) Navigator.of(context).pop();
+          Future.delayed(const Duration(seconds: 2), () {
+            if (dialogContext.mounted) {
+              Navigator.of(dialogContext).pop();
+            }
           });
         }
+
         return CustomToast(
           title: title,
           message: message,
@@ -61,8 +63,6 @@ class BookViewModel {
       },
     );
   }
-
-
   //=========================== GENERADOR DE ID TEMPORAL ===========================//
   // ESTA FUNCIÓN CREA UN ID ÚNICO PARA DETECTAR REGISTROS DUPLICADOS
   String generarIdTemporal(Book book) {
@@ -92,8 +92,8 @@ class BookViewModel {
         if (context.mounted) {
           _mostrarDialogo(
             context,
-            title: 'REGISTRO DUPLICADO',
-            message: 'YA EXISTE UN LIBRO CON ESE TÍTULO, AUTOR Y AÑO.',
+            title: 'Registro duplicado',
+            message: 'Ya existe un libro con ese título, autor y año.',
             color: Colors.orangeAccent,
             icon: Icons.warning_amber_rounded,
             autoCerrar: false,
@@ -153,8 +153,8 @@ class BookViewModel {
         onSuccess?.call();
         _mostrarDialogo(
           context,
-          title: '¡REGISTRO EXITOSO!',
-          message: 'EL LIBRO SE HA GUARDADO CORRECTAMENTE.',
+          title: '¡Registro exitoso!',
+          message: 'El libro se ha registrado correctamente.',
           color: Colors.green,
           icon: Icons.check_circle_outline,
         );
@@ -166,8 +166,8 @@ class BookViewModel {
       if (context.mounted) {
         _mostrarDialogo(
           context,
-          title: 'ERROR',
-          message: 'NO SE PUDO REGISTRAR EL LIBRO. INTENTA NUEVAMENTE.',
+          title: 'Error',
+          message: 'No se pudo registrar el libro. Intenta nuevamente.',
           color: Colors.redAccent,
           icon: Icons.error_outline,
         );
@@ -250,17 +250,18 @@ class BookViewModel {
         await _firestore.collection('books').doc(book.id).update(updatedBook.toMap());
       }
 
-      if (context.mounted) {
-        Future.delayed(const Duration(milliseconds: 100), () {
-          _mostrarDialogo(
-            context,
-            title: '¡EDICIÓN EXITOSA!',
-            message: 'EL LIBRO SE HA ACTUALIZADO CORRECTAMENTE.',
-            color: Colors.green,
-            icon: Icons.check_circle_outline,
-          );
-        });
-      }
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (!context.mounted) return;
+
+        _mostrarDialogo(
+          context,
+          title: '¡Edición exitosa!',
+          message: 'El libro se ha actualizado correctamente.',
+          color: Colors.green,
+          icon: Icons.check_circle_outline,
+        );
+      });
+      
     } catch (e, stackTrace) {
       debugPrint('ERROR AL EDITAR LIBRO: $e');
       debugPrintStack(stackTrace: stackTrace);
@@ -268,8 +269,8 @@ class BookViewModel {
       if (context.mounted) {
         _mostrarDialogo(
           context,
-          title: 'ERROR',
-          message: 'NO SE PUDO ACTUALIZAR EL LIBRO.',
+          title: 'Error',
+          message: 'No se pudo editar el libro. Intenta nuevamente.',
           color: Colors.redAccent,
           icon: Icons.error_outline,
         );
